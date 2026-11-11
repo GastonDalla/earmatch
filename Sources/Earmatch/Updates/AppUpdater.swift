@@ -55,15 +55,18 @@ final class AppUpdater: NSObject, SPUStandardUserDriverDelegate {
     var supportsGentleScheduledUpdateReminders: Bool { true }
 
     func standardUserDriverShouldHandleShowingScheduledUpdate(_ update: SUAppcastItem, andInImmediateFocus immediateFocus: Bool) -> Bool {
-        UpdatePrompt.showsAlert(
-            immediateFocus: immediateFocus,
-            secondsSinceLaunch: ProcessInfo.processInfo.systemUptime - startedAt,
-            rekordboxIsFrontmost: NSWorkspace.shared.frontmostApplication?.bundleIdentifier == AccessibilityReader.rekordboxBundleID
-        )
+        false
     }
 
     func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
-        if !handleShowingUpdate { hasPendingReminder = true }
+        guard !handleShowingUpdate else { return }
+        hasPendingReminder = true
+        let asks = UpdatePrompt.asksNow(
+            secondsSinceLaunch: ProcessInfo.processInfo.systemUptime - startedAt,
+            rekordboxIsFrontmost: NSWorkspace.shared.frontmostApplication?.bundleIdentifier == AccessibilityReader.rekordboxBundleID
+        )
+        guard asks else { return }
+        Task { self.checkForUpdates() }
     }
 
     func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
