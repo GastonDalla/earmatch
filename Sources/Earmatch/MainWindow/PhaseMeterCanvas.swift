@@ -174,16 +174,16 @@ private struct PhaseMeterDrawing {
 }
 
 enum MeterSpeech {
-    static let noOtherMaster = OptionText.noOtherMaster
-    static let outOfPhaseWithMaster = L10n.text("out of phase with the master")
-    static let noTrack = L10n.text("no track loaded")
-    static let syncMaster = L10n.text("Sync Master")
-    private static let deckFormat = L10n.template("Deck %ld")
-    private static let masterDeckFormat = L10n.template("Master deck %ld")
-    private static let gridNotReadFormat = L10n.template("%@: beat grid not read")
-    private static let beatFormat = L10n.template("beat %ld of 4")
-    private static let counterFormat = L10n.template("%@ bars")
-    private static let outOfPhaseWithDeckFormat = L10n.template("out of phase with deck %ld")
+    static var noOtherMaster: String { OptionText.noOtherMaster }
+    static var outOfPhaseWithMaster: String { L10n.text("out of phase with the master") }
+    static var noTrack: String { L10n.text("no track loaded") }
+    static var syncMaster: String { L10n.text("Sync Master") }
+    private static var deckFormat: String { L10n.template("Deck %ld") }
+    private static var masterDeckFormat: String { L10n.template("Master deck %ld") }
+    private static var gridNotReadFormat: String { L10n.template("%@: beat grid not read") }
+    private static var beatFormat: String { L10n.template("beat %ld of 4") }
+    private static var counterFormat: String { L10n.template("%@ bars") }
+    private static var outOfPhaseWithDeckFormat: String { L10n.template("out of phase with deck %ld") }
 
     static func deck(_ number: Int) -> String { String(format: deckFormat, number) }
     static func masterDeck(_ number: Int) -> String { String(format: masterDeckFormat, number) }

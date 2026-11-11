@@ -3,6 +3,7 @@ import SwiftUI
 
 struct PracticeProgressChart: View {
     let days: [PracticeDay]
+    var chartHeight: CGFloat = 58
 
     var body: some View {
         let measured = days.compactMap(\.medianPhaseErrorMilliseconds)
@@ -23,7 +24,7 @@ struct PracticeProgressChart: View {
                 Canvas { context, size in
                     PracticeProgressDrawing(values: days.map(\.medianPhaseErrorMilliseconds)).draw(in: &context, size: size)
                 }
-                .frame(height: 58)
+                .frame(height: chartHeight)
                 HStack {
                     Text(days.first.map { PracticeStrings.shortDay($0.day) } ?? "")
                     Spacer()
@@ -37,8 +38,7 @@ struct PracticeProgressChart: View {
                 .minimumScaleFactor(0.8)
             }
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(WindowTheme.well))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(WindowTheme.hairline))
+            .surface(cornerRadius: 10, fill: WindowTheme.well, stroke: WindowTheme.hairline)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(PracticeStrings.progressAccessibility(days.map { (PracticeStrings.shortDay($0.day), $0.medianPhaseErrorMilliseconds) }))

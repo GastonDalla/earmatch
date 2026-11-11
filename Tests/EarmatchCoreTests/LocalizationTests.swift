@@ -136,4 +136,21 @@ import EarmatchCore
         let text = Self.marked { L10n.format("Live · %.0f fps · %.1f ms", 112.0, 2.14) }
         #expect(text == "⟦Live · 112 fps · 2.1 ms⟧")
     }
+
+    @Test func theInstalledLanguageAnswersEveryThreadUntilTheNextInstall() async {
+        await #expect(processExitsWith: .success) {
+            let spanish: L10n.Lookup = { $0 == "Capture stopped" ? "Captura detenida" : $0 }
+            L10n.install(spanish, locale: Locale(identifier: "es_ES"))
+            let answers = await withTaskGroup(of: [String].self) { group in
+                for _ in 0 ..< 8 {
+                    group.addTask { [L10n.text("Capture stopped"), L10n.format("%.1f ms", 2.5), L10n.locale?.identifier ?? "-"] }
+                }
+                return await group.reduce(into: []) { $0.append($1) }
+            }
+            precondition(answers.count == 8 && answers.allSatisfy { $0 == ["Captura detenida", "2,5 ms", "es_ES"] })
+            precondition(L10n.english { [L10n.text("Capture stopped"), L10n.format("%.1f ms", 2.5)] } == ["Capture stopped", "2.5 ms"])
+            L10n.install({ $0 }, locale: Locale(identifier: "en_US"))
+            precondition(L10n.text("Capture stopped") == "Capture stopped" && L10n.locale?.identifier == "en_US")
+        }
+    }
 }

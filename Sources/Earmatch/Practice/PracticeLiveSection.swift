@@ -80,8 +80,7 @@ private struct TempoMatchLine: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(colour.opacity(0.10)))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(colour.opacity(0.22)))
+        .surface(cornerRadius: 8, fill: colour.opacity(0.10), stroke: colour.opacity(0.22))
     }
 }
 
@@ -92,7 +91,7 @@ private struct PracticeWaiting: View {
                 .font(.system(size: 18, weight: .medium))
                 .foregroundStyle(WindowTheme.sectionText)
                 .frame(width: 30, height: 30)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(WindowTheme.well))
+                .background(WindowTheme.well, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(PracticeStrings.waitingTitle)

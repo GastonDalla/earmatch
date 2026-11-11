@@ -11,7 +11,7 @@ struct PracticeErrorMeter: View {
         Canvas { context, size in
             PracticeErrorMeterDrawing(errorMilliseconds: errorMilliseconds, isDimmed: isDimmed).draw(in: &context, size: size)
         }
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.black))
+        .background(Color.black, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .accessibilityHidden(true)
     }
 

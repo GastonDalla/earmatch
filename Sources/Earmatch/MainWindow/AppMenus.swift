@@ -3,10 +3,10 @@ import EarmatchCore
 
 enum Credit {
     static let author = "GastonDalla"
-    static let line = L10n.format("Made by %@", author)
+    static var line: String { L10n.format("Made by %@", author) }
     static let url = URL(string: "https://github.com/GastonDalla")!
     static let displayURL = "github.com/GastonDalla"
-    static let menuLine = "\(line) · \(displayURL)"
+    static var menuLine: String { "\(line) · \(displayURL)" }
 
     static func openProfile() {
         NSWorkspace.shared.open(url)
@@ -39,8 +39,8 @@ enum AboutPanel {
 }
 
 enum MainMenu {
-    static func install() {
-        guard NSApp.mainMenu == nil else { return }
+    static func install(replacing: Bool = false, selectPane: @escaping (MainWindowPane) -> Void) {
+        guard replacing || NSApp.mainMenu == nil else { return }
         let main = NSMenu()
 
         let appMenu = NSMenu(title: "Earmatch")
@@ -55,6 +55,15 @@ enum MainMenu {
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L10n.text("Quit Earmatch"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         main.addItem(submenuItem(appMenu))
+
+        let viewMenu = NSMenu(title: L10n.text("View"))
+        for pane in MainWindowPane.allCases {
+            let item = ClosureMenuItem(title: pane.title) { selectPane(pane) }
+            item.keyEquivalent = pane.keyEquivalent
+            item.keyEquivalentModifierMask = .command
+            viewMenu.addItem(item)
+        }
+        main.addItem(submenuItem(viewMenu))
 
         let windowMenu = NSMenu(title: L10n.text("Window"))
         windowMenu.addItem(withTitle: L10n.text("Close"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")

@@ -1,5 +1,6 @@
 import AppKit
 import EarmatchCore
+import os
 
 final class OverlayController {
     var isPeeking = false {
@@ -420,7 +421,7 @@ final class OverlayController {
     }
 }
 
-private struct DrawnHistory {
+nonisolated private struct DrawnHistory {
     private static let count = 16
     private var times = [Double](repeating: -.infinity, count: DrawnHistory.count)
     private var phases = [Double](repeating: 0, count: DrawnHistory.count)
@@ -442,36 +443,41 @@ private struct DrawnHistory {
     }
 }
 
-private final class FrameHandoff {
-    private let lock = NSLock()
-    private var frame: FrameReading?
-    private var isScheduled = false
+nonisolated private final class FrameHandoff: Sendable {
+    private struct State {
+        var frame: FrameReading?
+        var isScheduled = false
+    }
+
+    private let state = OSAllocatedUnfairLock(uncheckedState: State())
 
     func put(_ newFrame: FrameReading) -> Bool {
-        lock.lock()
-        let replaced = frame
-        frame = newFrame
-        let mustSchedule = !isScheduled
-        isScheduled = true
-        lock.unlock()
+        let (replaced, mustSchedule) = state.withLockUnchecked { state in
+            let replaced = state.frame
+            state.frame = newFrame
+            let mustSchedule = !state.isScheduled
+            state.isScheduled = true
+            return (replaced, mustSchedule)
+        }
         withExtendedLifetime(replaced) {}
         return mustSchedule
     }
 
     func take() -> FrameReading? {
-        lock.lock()
-        defer { lock.unlock() }
-        isScheduled = false
-        let taken = frame
-        frame = nil
-        return taken
+        state.withLockUnchecked { state in
+            state.isScheduled = false
+            let taken = state.frame
+            state.frame = nil
+            return taken
+        }
     }
 
     func discard(capturedBefore time: Double) {
-        lock.lock()
-        let stale = frame.flatMap { $0.time < time ? $0 : nil }
-        if stale != nil { frame = nil }
-        lock.unlock()
+        let stale = state.withLockUnchecked { state in
+            let stale = state.frame.flatMap { $0.time < time ? $0 : nil }
+            if stale != nil { state.frame = nil }
+            return stale
+        }
         withExtendedLifetime(stale) {}
     }
 }

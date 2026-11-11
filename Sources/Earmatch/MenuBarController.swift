@@ -92,10 +92,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 }
 
-final class ClosureMenuItem: NSMenuItem {
-    private let handler: () -> Void
+nonisolated final class ClosureMenuItem: NSMenuItem {
+    private let handler: @MainActor () -> Void
 
-    init(title: String, handler: @escaping () -> Void) {
+    init(title: String, handler: @escaping @MainActor () -> Void) {
         self.handler = handler
         super.init(title: title, action: #selector(run), keyEquivalent: "")
         target = self
@@ -104,5 +104,5 @@ final class ClosureMenuItem: NSMenuItem {
     @available(*, unavailable)
     required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
-    @objc private func run() { handler() }
+    @MainActor @objc private func run() { handler() }
 }

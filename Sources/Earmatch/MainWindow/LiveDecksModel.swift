@@ -1,9 +1,15 @@
 import Foundation
+import Observation
 import EarmatchCore
 
-final class LiveDecksModel: ObservableObject {
-    @Published private(set) var snapshot: LiveDecksSnapshot?
-    private var receivedAt: TimeInterval = 0
+@Observable
+final class LiveDecksModel {
+    private(set) var snapshot: LiveDecksSnapshot? {
+        didSet { decks = (snapshot?.decks ?? []).sorted { $0.number < $1.number } }
+    }
+
+    private(set) var decks: [LiveDeckSnapshot] = []
+    @ObservationIgnored private var receivedAt: TimeInterval = 0
 
     func apply(_ snapshot: LiveDecksSnapshot, at time: TimeInterval) {
         receivedAt = time
@@ -16,10 +22,6 @@ final class LiveDecksModel: ObservableObject {
 
     func expire(olderThan age: TimeInterval, now: TimeInterval) {
         if snapshot != nil, now - receivedAt > age { snapshot = nil }
-    }
-
-    var decks: [LiveDeckSnapshot] {
-        (snapshot?.decks ?? []).sorted { $0.number < $1.number }
     }
 
     var previewMeter: PhaseMeterDisplay? {

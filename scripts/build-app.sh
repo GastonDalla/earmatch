@@ -1,18 +1,4 @@
 #!/usr/bin/env bash
-# Builds build/Earmatch.app as a universal binary (Apple silicon and Intel), embeds Sparkle and signs it.
-# A universal build needs Xcode; with only the Command Line Tools installed it falls back
-# to this Mac's architecture and says so.
-# A real signing identity keeps the code requirement stable, so macOS keeps the
-# Accessibility and Screen Recording grants across rebuilds. Ad-hoc signing works,
-# but macOS will ask for both permissions again after every build.
-#
-# Environment:
-#   EARMATCH_SIGN_IDENTITY       codesign identity, or "-" for ad-hoc; default: the first "Apple Development"
-#                                or "Developer ID Application" identity in the keychain, else ad-hoc.
-#   EARMATCH_SPARKLE_PUBLIC_KEY  Sparkle EdDSA public key (base64, from generate_keys). Written to
-#                                SUPublicEDKey. Without it the app keeps the updater off.
-#   EARMATCH_RELEASE=1           release build: automatic update checks on by default
-#                                (SUEnableAutomaticChecks). Set by scripts/release.sh.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -82,10 +68,6 @@ else
     flags=(--force --sign -)
 fi
 
-# Signs inside-out: Sparkle's XPC services, its helpers, the framework, then the app.
-# The XPC services keep the entitlements Sparkle ships them with (Sparkle's own instructions).
-# Autoupdate and Updater.app are signed without entitlements: the ad-hoc build of Autoupdate claims
-# com.apple.application-identifier, which a Developer ID binary may not carry without a provisioning profile.
 framework="$app/Contents/Frameworks/Sparkle.framework"
 for service in "$framework"/Versions/B/XPCServices/*.xpc; do
     if [[ -e "$service" ]]; then codesign "${flags[@]}" --preserve-metadata=entitlements "$service"; fi

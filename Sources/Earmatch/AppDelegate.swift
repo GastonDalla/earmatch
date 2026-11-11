@@ -22,6 +22,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menuBar.onOpenMainWindow = { [weak mainWindow] in mainWindow?.show() }
         menuBar.onCopyDiagnostics = { [weak mainWindow] in mainWindow?.copyDiagnostics() }
         mainWindow.extraDiagnostics = { [weak overlay] in overlay?.diagnostics.text ?? "" }
+        mainWindow.onLanguageChange = { [weak self, weak mainWindow] in
+            guard let self, let mainWindow else { return }
+            mainWindow.updateCapture(problem: overlay.captureMessage)
+            mainWindow.update(state: monitor.state)
+        }
 
         hotkeys.onPeekChanged = { [weak self] peeking in
             guard let self else { return }
@@ -42,8 +47,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         monitor.onChange = { [weak self] state in self?.render(state) }
         NotificationCenter.default.addObserver(forName: SettingsStore.didChange, object: store, queue: .main) { [weak self] _ in
-            guard let self else { return }
-            render(monitor.state)
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.render(self.monitor.state)
+            }
         }
 
         if !AccessibilityReader.isTrusted { AccessibilityReader.requestTrust() }

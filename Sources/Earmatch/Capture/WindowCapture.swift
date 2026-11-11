@@ -1,6 +1,7 @@
 import AppKit
 import CoreMedia
 import EarmatchCore
+import os
 import QuartzCore
 import ScreenCaptureKit
 
@@ -27,8 +28,12 @@ final class WindowCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         }
     }
 
-    var onFrame: ((CMSampleBuffer, Int) -> Void)?
     var onStatusChange: ((Status) -> Void)?
+
+    var onFrame: (@Sendable (CMSampleBuffer, Int) -> Void)? {
+        get { delivery.withLock { $0.onFrame } }
+        set { delivery.withLock { $0.onFrame = newValue } }
+    }
 
     private(set) var status: Status = .stopped {
         didSet { if status != oldValue { onStatusChange?(status) } }
@@ -41,13 +46,18 @@ final class WindowCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         let windowFrame: CGRect
     }
 
+    nonisolated private struct Delivery {
+        var stream: ObjectIdentifier?
+        var generation = 0
+        var onFrame: (@Sendable (CMSampleBuffer, Int) -> Void)?
+    }
+
     private var wanted: Target?
     private var stream: SCStream?
     private var configuration: SCStreamConfiguration?
     private var streamedSize: CGSize?
     private(set) var generation = 0
-    private let deliveryLock = NSLock()
-    private var delivering: (stream: ObjectIdentifier, generation: Int)?
+    private let delivery = OSAllocatedUnfairLock(initialState: Delivery())
     private var schedule = RetrySchedule()
     private static var askedForPermission = false
 
@@ -107,6 +117,7 @@ final class WindowCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         stream = nil
         if status != .waitingForWindow { status = .starting }
         SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: false) { [weak self] content, error in
+            nonisolated(unsafe) let content = content
             DispatchQueue.main.async {
                 guard let self, self.generation == startGeneration else { return }
                 guard let content else {
@@ -213,29 +224,31 @@ final class WindowCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         status = newStatus
     }
 
-    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    nonisolated func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         guard type == .screen, Self.frameStatus(of: sampleBuffer) == .complete else { return }
-        deliveryLock.lock()
-        let current = delivering
-        deliveryLock.unlock()
-        guard let current, current.stream == ObjectIdentifier(stream) else { return }
-        onFrame?(sampleBuffer, current.generation)
+        let current = delivery.withLock { $0 }
+        guard current.stream == ObjectIdentifier(stream), let onFrame = current.onFrame else { return }
+        onFrame(sampleBuffer, current.generation)
     }
 
     private func setDelivering(_ value: (stream: ObjectIdentifier, generation: Int)?) {
-        deliveryLock.lock()
-        delivering = value
-        deliveryLock.unlock()
-    }
-
-    func stream(_ stream: SCStream, didStopWithError error: Error) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self, stream === self.stream else { return }
-            fail(error.localizedDescription)
+        delivery.withLock { delivery in
+            delivery.stream = value?.stream
+            delivery.generation = value?.generation ?? 0
         }
     }
 
-    static func frameStatus(of sampleBuffer: CMSampleBuffer) -> SCFrameStatus? {
+    nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) {
+        let stopped = delivery.withLock { $0 }
+        guard stopped.stream == ObjectIdentifier(stream) else { return }
+        let message = error.localizedDescription
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.stream != nil, generation == stopped.generation else { return }
+            fail(message)
+        }
+    }
+
+    nonisolated static func frameStatus(of sampleBuffer: CMSampleBuffer) -> SCFrameStatus? {
         guard let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
               let raw = attachments.first?[.status] as? Int
         else { return nil }

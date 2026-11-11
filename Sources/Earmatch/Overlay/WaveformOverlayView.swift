@@ -105,7 +105,7 @@ final class SideMeterView: LayerHostView {
     }
 }
 
-private final class DeckPane: CALayer {
+nonisolated private final class DeckPane: CALayer {
     let meter = PhaseMeterLayer()
     private(set) var showsMeter = true
     private let waveform = CALayer()

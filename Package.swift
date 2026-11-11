@@ -1,5 +1,10 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.4
 import PackageDescription
+
+let upcomingFeatures: [SwiftSetting] = [
+    .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
+    .enableUpcomingFeature("InferIsolatedConformances"),
+]
 
 let package = Package(
     name: "Earmatch",
@@ -8,22 +13,24 @@ let package = Package(
         .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
     ],
     targets: [
-        // Pure logic: parsing rekordbox's Accessibility snapshot, pixel detection, phase math.
-        .target(name: "EarmatchCore"),
-        // macOS adapters: Accessibility, ScreenCaptureKit, overlay windows, menu bar, updates.
+        .target(
+            name: "EarmatchCore",
+            swiftSettings: upcomingFeatures
+        ),
         .executableTarget(
             name: "Earmatch",
             dependencies: [
                 "EarmatchCore",
                 .product(name: "Sparkle", package: "Sparkle"),
             ],
-            swiftSettings: [.swiftLanguageMode(.v5)],
+            swiftSettings: [.defaultIsolation(MainActor.self)] + upcomingFeatures,
             linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
         ),
         .testTarget(
             name: "EarmatchCoreTests",
             dependencies: ["EarmatchCore"],
-            resources: [.copy("Fixtures")]
+            resources: [.copy("Fixtures")],
+            swiftSettings: upcomingFeatures
         ),
     ]
 )

@@ -25,7 +25,7 @@ class LayerHostView: NSView {
     }
 }
 
-enum OverlayColor {
+nonisolated enum OverlayColor {
     static let masterOrange = CGColor(srgbRed: 240 / 255, green: 140 / 255, blue: 40 / 255, alpha: 1)
     static let masterOrangeDim = CGColor(srgbRed: 130 / 255, green: 72 / 255, blue: 22 / 255, alpha: 1)
     static let deckBlue = CGColor(srgbRed: 60 / 255, green: 140 / 255, blue: 220 / 255, alpha: 1)

@@ -3,7 +3,6 @@ import Foundation
 import Observation
 import QuartzCore
 
-@MainActor
 @Observable
 final class PracticeController {
     static let livePublishInterval: TimeInterval = 1.0 / 15
@@ -20,6 +19,14 @@ final class PracticeController {
 
     nonisolated init(store: PracticeStore = PracticeStore()) {
         self.store = store
+    }
+
+    init(sample overview: PracticeOverview, live: PracticeLiveStatus?) {
+        store = PracticeStore(url: URL(fileURLWithPath: "/dev/null"))
+        appliedRevision = .max
+        self.overview = overview
+        self.live = live
+        isMixing = live != nil
     }
 
     func loadHistory() async {

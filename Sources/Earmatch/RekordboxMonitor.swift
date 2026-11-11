@@ -18,7 +18,7 @@ final class RekordboxMonitor {
     private let windowGapTolerance: TimeInterval = 0.5
     private var windowSeenAt: CFTimeInterval = 0
     private let queue = DispatchQueue(label: "earmatch.accessibility", qos: .userInteractive)
-    private let reader = LiveWindowReader()
+    private lazy var reader = LiveWindowReader(queue: queue) { [weak self] notification in self?.handle(notification) }
     private var timer: Timer?
     private var pollInFlight = false
     private var pollRequested = false
@@ -29,13 +29,16 @@ final class RekordboxMonitor {
     func start() {
         guard timer == nil else { return }
         AccessibilityReader.applyGlobalTimeout()
-        reader.onNotification = { [weak self] notification in self?.handle(notification) }
-        let timer = Timer(timeInterval: tickInterval, repeats: true) { [weak self] _ in self?.tick() }
+        let timer = Timer(timeInterval: tickInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.tick() }
+        }
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
         workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-        ) { [weak self] _ in self?.requestPoll() }
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.requestPoll() }
+        }
         tick()
     }
 
@@ -138,7 +141,7 @@ final class RekordboxMonitor {
     }
 }
 
-private final class LiveWindowReader {
+nonisolated private final class LiveWindowReader: @unchecked Sendable {
     struct Poll {
         var layout: RekordboxLayout?
         var windowFrame: CGRect?
@@ -147,8 +150,8 @@ private final class LiveWindowReader {
         var mainWindowIsGone = false
     }
 
-    var onNotification: ((String) -> Void)?
-
+    private let queue: DispatchQueue
+    private let onNotification: @MainActor (String) -> Void
     private let fullReadInterval: TimeInterval = 1.0
 
     private var current: AccessibilityReader.MainWindowRead?
@@ -164,7 +167,13 @@ private final class LiveWindowReader {
     private var observedWindow: (pid: pid_t, window: AXUIElement)?
     private let observerSlot = ObserverSlot()
 
+    init(queue: DispatchQueue, onNotification: @escaping @MainActor (String) -> Void) {
+        self.queue = queue
+        self.onNotification = onNotification
+    }
+
     func poll(pid: pid_t) -> Poll {
+        dispatchPrecondition(condition: .onQueue(queue))
         guard backoff.allowsPoll(at: Date()) else { return Poll() }
         do {
             let frame = try refresh(pid: pid)
@@ -185,11 +194,13 @@ private final class LiveWindowReader {
     }
 
     func windowFrame() -> CGRect? {
+        dispatchPrecondition(condition: .onQueue(queue))
         guard backoff.allowsPoll(at: Date()), let window = current?.window else { return nil }
         return try? AccessibilityReader.frame(of: window)
     }
 
     func reset() {
+        dispatchPrecondition(condition: .onQueue(queue))
         current = nil
         currentPID = nil
         located = nil
@@ -279,8 +290,7 @@ private final class LiveWindowReader {
 
     private func observe(pid: pid_t, window: AXUIElement) {
         if let observedWindow, observedWindow.pid == pid, CFEqual(observedWindow.window, window) { return }
-        guard let observer = WindowNotificationObserver(pid: pid, window: window, handler: { [weak self] name in self?.onNotification?(name) })
-        else { return }
+        guard let observer = WindowNotificationObserver(pid: pid, window: window, handler: onNotification) else { return }
         observedWindow = (pid, window)
         DispatchQueue.main.async { [observerSlot] in observerSlot.replace(with: observer) }
     }
@@ -289,17 +299,16 @@ private final class LiveWindowReader {
 private final class ObserverSlot {
     private var observer: WindowNotificationObserver?
 
+    nonisolated init() {}
+
     func replace(with newObserver: WindowNotificationObserver?) {
-        dispatchPrecondition(condition: .onQueue(.main))
         observer = newObserver
     }
 }
 
-private final class WindowNotificationObserver {
-    let pid: pid_t
-    let window: AXUIElement
-    private var observer: AXObserver?
-    private let handler: (String) -> Void
+nonisolated private final class WindowNotificationObserver: @unchecked Sendable {
+    private let observer: AXObserver
+    private let handler: @MainActor (String) -> Void
 
     private static let appNotifications = [
         kAXFocusedWindowChangedNotification, kAXMainWindowChangedNotification,
@@ -307,15 +316,14 @@ private final class WindowNotificationObserver {
     ]
     private static let windowNotifications = [kAXMovedNotification, kAXResizedNotification]
 
-    init?(pid: pid_t, window: AXUIElement, handler: @escaping (String) -> Void) {
-        self.pid = pid
-        self.window = window
+    init?(pid: pid_t, window: AXUIElement, handler: @escaping @MainActor (String) -> Void) {
         self.handler = handler
         var created: AXObserver?
         let callback: AXObserverCallback = { _, _, notification, refcon in
             guard let refcon else { return }
-            let me = Unmanaged<WindowNotificationObserver>.fromOpaque(refcon).takeUnretainedValue()
-            me.handler(notification as String)
+            let handler = Unmanaged<WindowNotificationObserver>.fromOpaque(refcon).takeUnretainedValue().handler
+            let name = notification as String
+            MainActor.assumeIsolated { handler(name) }
         }
         guard AXObserverCreate(pid, callback, &created) == .success, let created else { return nil }
         observer = created
@@ -332,8 +340,6 @@ private final class WindowNotificationObserver {
     }
 
     deinit {
-        if let observer {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
-        }
+        CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
     }
 }

@@ -2,22 +2,18 @@ import SwiftUI
 import EarmatchCore
 
 struct LiveDecksPanel: View {
-    @ObservedObject var model: MainWindowModel
-    @ObservedObject var live: LiveDecksModel
+    let model: MainWindowModel
+    let live: LiveDecksModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let line = StatusText.liveDecks(model.status, snapshot: live.snapshot)
         let isConnected = line.tone == .live
-        OptionCard {
+        PaneCard(title: WindowText.liveDecks) {
             ZStack(alignment: .topLeading) {
                 if isConnected {
-                    VStack(spacing: Spacing.medium) {
-                        ForEach(live.decks, id: \.number) { deck in
-                            LiveDeckRow(deck: deck, showsMeter: model.settings.isPhaseMeterEnabled)
-                        }
-                    }
-                    .transition(.opacity)
+                    DeckGrid(decks: live.decks, showsMeter: model.settings.isPhaseMeterEnabled)
+                        .transition(.opacity)
                 } else {
                     EmptyDecks().transition(.opacity)
                 }
@@ -25,6 +21,28 @@ struct LiveDecksPanel: View {
             CardStatusRow(line: line)
         }
         .animation(WindowTheme.motion(reduceMotion, duration: 0.25), value: isConnected)
+    }
+}
+
+private struct DeckGrid: View {
+    let decks: [LiveDeckSnapshot]
+    let showsMeter: Bool
+
+    var body: some View {
+        let columns = decks.count > 2 ? 2 : 1
+        let rows = stride(from: 0, to: decks.count, by: columns).map { Array(decks[$0 ..< min($0 + columns, decks.count)]) }
+        Grid(horizontalSpacing: Spacing.medium, verticalSpacing: 14) {
+            ForEach(rows, id: \.first?.number) { row in
+                GridRow {
+                    ForEach(row, id: \.number) { deck in
+                        LiveDeckRow(deck: deck, showsMeter: showsMeter)
+                    }
+                    if row.count < columns {
+                        Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -54,7 +72,7 @@ private struct LiveDeckRow: View {
                     MeterCaption(text: LiveDecksText.readingGrid)
                 }
             }
-            .frame(height: 52)
+            .frame(height: 60)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
@@ -109,8 +127,7 @@ private struct DeckBadge: View {
             .monospacedDigit()
             .foregroundStyle(isDimmed ? WindowTheme.sectionText : WindowTheme.primaryText)
             .frame(width: 22, height: 22)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(WindowTheme.well))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Color.white.opacity(isDimmed ? 0.06 : 0.14)))
+            .surface(cornerRadius: 6, fill: WindowTheme.well, stroke: Color.white.opacity(isDimmed ? 0.06 : 0.14))
     }
 }
 
@@ -122,15 +139,14 @@ private struct SyncMasterChip: View {
             .foregroundStyle(WindowTheme.master)
             .padding(.horizontal, Spacing.small)
             .padding(.vertical, 3)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(WindowTheme.master.opacity(0.14)))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(WindowTheme.master.opacity(0.35)))
+            .surface(cornerRadius: 6, fill: WindowTheme.master.opacity(0.14), stroke: WindowTheme.master.opacity(0.35))
     }
 }
 
 private enum LiveDecksText {
-    static let noTrack = L10n.text("No track loaded")
-    static let meterOff = L10n.text("Phase meter off")
-    static let readingGrid = L10n.text("Reading the beat grid…")
-    static let emptyHint = L10n.text("Both decks show here with their phase meters while rekordbox plays in front.")
-    static let syncMasterChip = L10n.text("SYNC MASTER")
+    static var noTrack: String { L10n.text("No track loaded") }
+    static var meterOff: String { L10n.text("Phase meter off") }
+    static var readingGrid: String { L10n.text("Reading the beat grid…") }
+    static var emptyHint: String { L10n.text("Both decks show here with their phase meters while rekordbox plays in front.") }
+    static var syncMasterChip: String { L10n.text("SYNC MASTER") }
 }

@@ -26,7 +26,9 @@ final class HotkeyMonitor {
         installGlobalMonitor()
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
-        ) { [weak self] _ in self?.checkTrust() }
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkTrust() }
+        }
     }
 
     func stop() {
@@ -48,7 +50,9 @@ final class HotkeyMonitor {
             trustTimer?.invalidate()
             trustTimer = nil
         } else if trustTimer == nil {
-            let timer = Timer(timeInterval: Self.trustCheckInterval, repeats: true) { [weak self] _ in self?.checkTrust() }
+            let timer = Timer(timeInterval: Self.trustCheckInterval, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.checkTrust() }
+            }
             RunLoop.main.add(timer, forMode: .common)
             trustTimer = timer
         }

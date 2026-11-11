@@ -2,7 +2,7 @@ import AppKit
 import EarmatchCore
 import QuartzCore
 
-final class PhaseMeterLayer: CALayer {
+nonisolated final class PhaseMeterLayer: CALayer {
     static let compactWidth: CGFloat = 380
     static let compactHeight: CGFloat = 34
 
@@ -185,7 +185,7 @@ final class PhaseMeterLayer: CALayer {
     }
 }
 
-private struct MeterGeometry {
+nonisolated private struct MeterGeometry {
     enum LabelPlace {
         case leftOfMeter(x: CGFloat, y: CGFloat)
         case rightOfMeter(x: CGFloat, y: CGFloat)
@@ -243,7 +243,7 @@ private struct MeterGeometry {
     }
 }
 
-private final class RowLayer: CALayer {
+nonisolated private final class RowLayer: CALayer {
     private static let maxTicks = Int(2 * PhaseMeterModel.cdj3000Span) + 1
 
     private let boxes = (0 ..< 4).map { _ in CALayer() }

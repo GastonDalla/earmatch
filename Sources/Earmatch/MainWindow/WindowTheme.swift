@@ -9,6 +9,7 @@ enum WindowTheme {
     static let granted = Color(red: 0.30, green: 0.85, blue: 0.42)
 
     static let background = Color(red: 0.110, green: 0.110, blue: 0.118)
+    static let sidebar = Color(red: 0.086, green: 0.086, blue: 0.094)
     static let card = Color(red: 0.145, green: 0.145, blue: 0.157)
     static let well = Color(red: 0.086, green: 0.086, blue: 0.094)
     static let hairline = Color.white.opacity(0.08)
@@ -50,6 +51,7 @@ enum Spacing {
 
 enum TypeScale {
     static let title = Font.system(size: 24, weight: .bold)
+    static let paneTitle = Font.system(size: 20, weight: .bold)
     static let headline = Font.system(size: 15, weight: .semibold)
     static let body = Font.system(size: 13)
     static let bodyStrong = Font.system(size: 13, weight: .semibold)
@@ -58,33 +60,6 @@ enum TypeScale {
     static let section = Font.system(size: 11, weight: .bold)
     static let label = Font.system(size: 10.5, weight: .semibold, design: .monospaced)
     static let counter = Font.system(size: 12.5, weight: .medium).monospacedDigit()
-}
-
-struct CardSectionTitle: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(TypeScale.section)
-            .tracking(2.4)
-            .foregroundStyle(WindowTheme.sectionText)
-            .padding(.leading, Spacing.tight)
-            .padding(.top, Spacing.large)
-            .padding(.bottom, Spacing.small)
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
-struct OptionCard<Content: View>: View {
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.medium) { content }
-            .padding(Spacing.medium)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(WindowTheme.card))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(WindowTheme.hairline))
-    }
 }
 
 struct CardStatusRow<Trailing: View>: View {
@@ -143,14 +118,13 @@ struct KeyCap: View {
             .foregroundStyle(WindowTheme.primaryText)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
-            .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(WindowTheme.well))
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Color.white.opacity(0.14)))
+            .surface(cornerRadius: 5, fill: WindowTheme.well, stroke: Color.white.opacity(0.14))
     }
 }
 
 struct LiveChip: View {
-    private static let title = L10n.text("LIVE")
-    private static let spokenTitle = L10n.text("Live")
+    private static var title: String { L10n.text("LIVE") }
+    private static var spokenTitle: String { L10n.text("Live") }
 
     var body: some View {
         HStack(spacing: 5) {
@@ -159,7 +133,7 @@ struct LiveChip: View {
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 2)
-        .background(Capsule().fill(WindowTheme.accent.opacity(0.12)))
+        .background(WindowTheme.accent.opacity(0.12), in: Capsule())
         .accessibilityLabel(Self.spokenTitle)
     }
 }

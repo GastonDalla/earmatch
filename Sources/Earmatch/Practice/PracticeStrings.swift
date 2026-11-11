@@ -2,65 +2,64 @@ import EarmatchCore
 import Foundation
 
 enum PracticeStrings {
-    static let sectionTitle = L10n.text("PRACTICE")
-    static let title = L10n.text("Last mixes")
-    static let subtitle = L10n.text("Times every mix you make by ear")
-    static let waitingTitle = L10n.text("Waiting for a mix")
-    static let waitingBody = L10n.text("Play both decks together. Each mix of 8 seconds or more is timed and saved.")
-    static let emptyTitle = L10n.text("No mixes yet")
-    static let emptyBody = L10n.text("Your mixes show up here with a replay of the last one and your progress day by day.")
-    static let lastMix = L10n.text("LAST MIX")
-    static let replay = L10n.text("REPLAY")
-    static let progress = L10n.text("PROGRESS")
-    static let tempoMatch = L10n.text("Tempo match")
-    static let drift = L10n.text("Drift")
-    static let averageError = L10n.text("Avg error")
-    static let worstError = L10n.text("Worst")
-    static let notMatched = L10n.text("Not matched")
+    static var title: String { L10n.text("Last mixes") }
+    static var subtitle: String { L10n.text("Times every mix you make by ear") }
+    static var waitingTitle: String { L10n.text("Waiting for a mix") }
+    static var waitingBody: String { L10n.text("Play both decks together. Each mix of 8 seconds or more is timed and saved.") }
+    static var emptyTitle: String { L10n.text("No mixes yet") }
+    static var emptyBody: String { L10n.text("Your mixes show up here with a replay of the last one and your progress day by day.") }
+    static var lastMix: String { L10n.text("LAST MIX") }
+    static var replay: String { L10n.text("REPLAY") }
+    static var progress: String { L10n.text("PROGRESS") }
+    static var tempoMatch: String { L10n.text("Tempo match") }
+    static var drift: String { L10n.text("Drift") }
+    static var averageError: String { L10n.text("Avg error") }
+    static var worstError: String { L10n.text("Worst") }
+    static var notMatched: String { L10n.text("Not matched") }
     static let noValue = "—"
-    static let behind = L10n.text("BEHIND")
-    static let ahead = L10n.text("AHEAD")
-    static let play = L10n.text("Replay")
-    static let stop = L10n.text("Stop")
-    static let playHint = L10n.text("Replays the phase error of the last transition")
-    static let stopHint = L10n.text("Stops the replay")
-    static let medianPerDay = L10n.text("Median phase error per day")
-    static let today = L10n.text("Today")
-    static let waitingForTempo = L10n.text("Saved once the decks play 8 seconds together")
-    static let noPhase = L10n.text("Reading the beat grids…")
-    static let matchingTempos = L10n.text("Matching tempos")
-    static let averageAfterMatch = L10n.text("Average appears once the tempos match")
-    static let waitingForDecks = L10n.text("Waiting for both decks to play")
-    static let temposNeverMatched = L10n.text("tempos never matched")
-    static let inPhase = L10n.text("in phase")
-    static let timeAxis = L10n.text("Time")
-    static let phaseErrorAxis = L10n.text("Phase error")
+    static var behind: String { L10n.text("BEHIND") }
+    static var ahead: String { L10n.text("AHEAD") }
+    static var play: String { L10n.text("Replay") }
+    static var stop: String { L10n.text("Stop") }
+    static var playHint: String { L10n.text("Replays the phase error of the last transition") }
+    static var stopHint: String { L10n.text("Stops the replay") }
+    static var medianPerDay: String { L10n.text("Median phase error per day") }
+    static var today: String { L10n.text("Today") }
+    static var waitingForTempo: String { L10n.text("Saved once the decks play 8 seconds together") }
+    static var noPhase: String { L10n.text("Reading the beat grids…") }
+    static var matchingTempos: String { L10n.text("Matching tempos") }
+    static var averageAfterMatch: String { L10n.text("Average appears once the tempos match") }
+    static var waitingForDecks: String { L10n.text("Waiting for both decks to play") }
+    static var temposNeverMatched: String { L10n.text("tempos never matched") }
+    static var inPhase: String { L10n.text("in phase") }
+    static var timeAxis: String { L10n.text("Time") }
+    static var phaseErrorAxis: String { L10n.text("Phase error") }
 
-    private static let deckPairFormat = L10n.template("Deck %ld → Deck %ld")
-    private static let matchedAfterFormat = L10n.template("Tempos matched in %@")
-    private static let matchingFormat = L10n.template("Matching tempos · %@")
-    private static let averageSinceMatchFormat = L10n.template("Average %@ since the tempos matched")
-    private static let worstAtFormat = L10n.template("Worst at %@")
-    private static let downFormat = L10n.template("Down from %@ to %@")
-    private static let upFormat = L10n.template("Up from %@ to %@")
-    private static let steadyFormat = L10n.template("Steady at %@")
-    private static let timingFormat = L10n.template("Timing deck %ld → deck %ld")
-    private static let mixingIntoFormat = L10n.template("Mixing deck %ld into deck %ld for %@")
-    private static let temposMatchedAfterFormat = L10n.template("tempos matched after %@")
-    private static let temposApartFormat = L10n.template("tempos %@ apart")
-    private static let phaseErrorFormat = L10n.template("phase error %@")
-    private static let lastMixFormat = L10n.template("Last mix, %@, %@ long")
-    private static let driftFormat = L10n.template("drift %@")
-    private static let averagePhaseErrorFormat = L10n.template("average phase error %@")
-    private static let worstFormat = L10n.template("worst %@")
-    private static let replaySummaryFormat = L10n.template("Phase error of the last transition, %@ long")
-    private static let temposMatchedAtFormat = L10n.template("tempos matched at %@")
-    private static let worstErrorAtFormat = L10n.template("worst %@ at %@")
-    private static let noPhaseErrorFormat = L10n.template("%@, no phase error")
-    private static let aheadFormat = L10n.template("%@ ahead")
-    private static let behindFormat = L10n.template("%@ behind")
+    private static var deckPairFormat: String { L10n.template("Deck %ld → Deck %ld") }
+    private static var matchedAfterFormat: String { L10n.template("Tempos matched in %@") }
+    private static var matchingFormat: String { L10n.template("Matching tempos · %@") }
+    private static var averageSinceMatchFormat: String { L10n.template("Average %@ since the tempos matched") }
+    private static var worstAtFormat: String { L10n.template("Worst at %@") }
+    private static var downFormat: String { L10n.template("Down from %@ to %@") }
+    private static var upFormat: String { L10n.template("Up from %@ to %@") }
+    private static var steadyFormat: String { L10n.template("Steady at %@") }
+    private static var timingFormat: String { L10n.template("Timing deck %ld → deck %ld") }
+    private static var mixingIntoFormat: String { L10n.template("Mixing deck %ld into deck %ld for %@") }
+    private static var temposMatchedAfterFormat: String { L10n.template("tempos matched after %@") }
+    private static var temposApartFormat: String { L10n.template("tempos %@ apart") }
+    private static var phaseErrorFormat: String { L10n.template("phase error %@") }
+    private static var lastMixFormat: String { L10n.template("Last mix, %@, %@ long") }
+    private static var driftFormat: String { L10n.template("drift %@") }
+    private static var averagePhaseErrorFormat: String { L10n.template("average phase error %@") }
+    private static var worstFormat: String { L10n.template("worst %@") }
+    private static var replaySummaryFormat: String { L10n.template("Phase error of the last transition, %@ long") }
+    private static var temposMatchedAtFormat: String { L10n.template("tempos matched at %@") }
+    private static var worstErrorAtFormat: String { L10n.template("worst %@ at %@") }
+    private static var noPhaseErrorFormat: String { L10n.template("%@, no phase error") }
+    private static var aheadFormat: String { L10n.template("%@ ahead") }
+    private static var behindFormat: String { L10n.template("%@ behind") }
 
-    private static let locale = AppLanguage.locale
+    private static var locale: Locale { AppLanguage.locale }
 
     private static func fill(_ format: String, _ arguments: any CVarArg...) -> String {
         String(format: format, locale: locale, arguments: arguments)

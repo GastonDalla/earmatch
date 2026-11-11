@@ -12,7 +12,7 @@ final class DisplayLinkDriver {
         proxy.driver = self
     }
 
-    deinit {
+    isolated deinit {
         link?.invalidate()
     }
 

@@ -16,6 +16,7 @@ final class AppUpdater: NSObject, SPUStandardUserDriverDelegate {
     }
 
     private var controller: SPUStandardUpdaterController?
+    private var startedAt = ProcessInfo.processInfo.systemUptime
     private let menuItems = NSHashTable<NSMenuItem>.weakObjects()
 
     private var hasPendingReminder = false {
@@ -26,11 +27,18 @@ final class AppUpdater: NSObject, SPUStandardUserDriverDelegate {
 
     func start(info: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
         guard controller == nil, Self.isConfigured(info) else { return }
-        controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
+        let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
+        self.controller = controller
+        startedAt = ProcessInfo.processInfo.systemUptime
+        if controller.updater.automaticallyChecksForUpdates {
+            controller.updater.checkForUpdatesInBackground()
+        }
     }
 
     func checkForUpdates() {
-        controller?.updater.checkForUpdates()
+        guard let controller else { return }
+        NSApp.activate()
+        controller.updater.checkForUpdates()
     }
 
     func makeMenuItem() -> NSMenuItem? {
@@ -47,7 +55,11 @@ final class AppUpdater: NSObject, SPUStandardUserDriverDelegate {
     var supportsGentleScheduledUpdateReminders: Bool { true }
 
     func standardUserDriverShouldHandleShowingScheduledUpdate(_ update: SUAppcastItem, andInImmediateFocus immediateFocus: Bool) -> Bool {
-        immediateFocus && NSApp.isActive
+        UpdatePrompt.showsAlert(
+            immediateFocus: immediateFocus,
+            secondsSinceLaunch: ProcessInfo.processInfo.systemUptime - startedAt,
+            rekordboxIsFrontmost: NSWorkspace.shared.frontmostApplication?.bundleIdentifier == AccessibilityReader.rekordboxBundleID
+        )
     }
 
     func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {

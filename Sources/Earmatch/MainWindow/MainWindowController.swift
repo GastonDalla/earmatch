@@ -5,9 +5,10 @@ import SwiftUI
 
 final class MainWindowController: NSObject, NSWindowDelegate {
     var extraDiagnostics: () -> String = { "" }
+    var onLanguageChange: () -> Void = {}
 
     private static let liveSnapshotLifetime: TimeInterval = 0.75
-    private static let frameAutosaveName = "EarmatchMainWindow"
+    private static let frameAutosaveName = "EarmatchSidebarWindow"
 
     private let store: SettingsStore
     private let model: MainWindowModel
@@ -25,15 +26,23 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     init(store: SettingsStore, practice: PracticeController) {
         self.store = store
         self.practice = practice
-        model = MainWindowModel(store: store)
+        model = MainWindowModel(store: store,
+                                rememberedPane: UserDefaults.standard.string(forKey: MainWindowPane.storageKey),
+                                language: AppLanguage.choice,
+                                canCheckForUpdates: AppUpdater.shared.isAvailable)
         super.init()
         model.onCopyDiagnostics = { [weak self] in self?.copyDiagnostics() }
+        model.onCheckForUpdates = { AppUpdater.shared.checkForUpdates() }
+        model.onPaneSelected = { pane in UserDefaults.standard.set(pane.rawValue, forKey: MainWindowPane.storageKey) }
+        model.onLanguageSelected = { [weak self] choice in self?.changeLanguage(to: choice) }
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
-        ) { [weak self] _ in self?.model.refreshPermissions() }
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.model.refreshPermissions() }
+        }
     }
 
-    deinit {
+    isolated deinit {
         permissionTimer?.invalidate()
         liveExpiryTimer?.invalidate()
         if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
@@ -45,7 +54,7 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         self.window = window
         if !window.isVisible { model.windowDidOpen() }
         startPermissionChecks()
-        MainMenu.install()
+        installMenus(replacing: false)
         if NSApp.activationPolicy() != .regular { NSApp.setActivationPolicy(.regular) }
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
@@ -60,18 +69,10 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     func updateCapture(problem: String?) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in self?.updateCapture(problem: problem) }
-            return
-        }
         model.apply(captureProblem: problem)
     }
 
     func updateLive(_ snapshot: LiveDecksSnapshot) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in self?.updateLive(snapshot) }
-            return
-        }
         guard model.isVisible else { return }
         liveReceivedAt = CACurrentMediaTime()
         live.apply(snapshot, at: liveReceivedAt)
@@ -91,6 +92,20 @@ final class MainWindowController: NSObject, NSWindowDelegate {
             settings: store.settings,
             extra: extraDiagnostics()
         ).text
+    }
+
+    func select(_ pane: MainWindowPane) {
+        model.select(pane)
+    }
+
+    private func changeLanguage(to choice: AppLanguageChoice) {
+        AppLanguage.select(choice)
+        installMenus(replacing: true)
+        onLanguageChange()
+    }
+
+    private func installMenus(replacing: Bool) {
+        MainMenu.install(replacing: replacing, selectPane: { [weak self] pane in self?.select(pane) })
     }
 
     func copyDiagnostics() {
@@ -121,7 +136,9 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 
     private func startPermissionChecks() {
         guard permissionTimer == nil else { return }
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in self?.model.refreshPermissions() }
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.model.refreshPermissions() }
+        }
         RunLoop.main.add(timer, forMode: .common)
         permissionTimer = timer
     }
@@ -141,7 +158,9 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     private func armLiveExpiry(after delay: TimeInterval) {
-        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in self?.liveExpiryFired() }
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.liveExpiryFired() }
+        }
         RunLoop.main.add(timer, forMode: .common)
         liveExpiryTimer = timer
     }
@@ -163,7 +182,7 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     private func makeWindow() -> NSWindow {
-        let size = NSSize(width: 440, height: 820)
+        let size = Self.fittedSize(MainWindowMetrics.defaultSize, minimum: MainWindowMetrics.minimumSize)
         let window = MainWindow(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
@@ -175,8 +194,8 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         window.appearance = NSAppearance(named: .darkAqua)
         window.backgroundColor = NSColor(WindowTheme.background)
         window.isReleasedWhenClosed = false
-        window.contentMinSize = NSSize(width: size.width, height: 420)
-        window.contentMaxSize = NSSize(width: size.width, height: 4000)
+        window.tabbingMode = .disallowed
+        window.contentMinSize = MainWindowMetrics.minimumSize
         window.delegate = self
 
         let hosting = NSHostingView(rootView: MainWindowView(model: model, live: live, practice: practice))
@@ -187,6 +206,12 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         window.setFrameAutosaveName(Self.frameAutosaveName)
         watchInput(in: window)
         return window
+    }
+
+    private static func fittedSize(_ size: CGSize, minimum: CGSize) -> NSSize {
+        guard let visible = NSScreen.main?.visibleFrame.size else { return size }
+        return NSSize(width: max(minimum.width, min(size.width, visible.width)),
+                      height: max(minimum.height, min(size.height, visible.height)))
     }
 
     private func watchInput(in window: NSWindow) {

@@ -2,9 +2,9 @@ import AppKit
 import ApplicationServices
 import EarmatchCore
 
-struct AccessibilityStall: Error {}
+nonisolated struct AccessibilityStall: Error {}
 
-final class AccessibilityReader {
+nonisolated enum AccessibilityReader {
     static let timeout: Float = 0.25
 
     static func applyGlobalTimeout() {
@@ -13,17 +13,17 @@ final class AccessibilityReader {
 
     static let rekordboxBundleID = "com.pioneerdj.rekordboxdj"
 
-    private static let attributes = [
+    private static let attributeNames = [
         kAXRoleAttribute, kAXTitleAttribute, kAXValueAttribute, kAXHelpAttribute,
         kAXPositionAttribute, kAXSizeAttribute, kAXChildrenAttribute,
-    ] as CFArray
+    ]
     private static let maxElements = 3000
     private static let maxDepth = 8
 
     static var isTrusted: Bool { AXIsProcessTrusted() }
 
     static func requestTrust() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
@@ -41,14 +41,15 @@ final class AccessibilityReader {
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, timeout)
         guard let windows = try copy(app, kAXWindowsAttribute) as? [AXUIElement] else { return nil }
+        let attributes = attributeNames as CFArray
         for window in windows {
-            let values = try read(window)
+            let values = try read(window, attributes)
             guard values.subrole == kAXStandardWindowSubrole as String, values.title == "rekordbox",
                   let windowFrame = values.frame
             else { continue }
             var elements: [AXElementSnapshot] = []
             var refs: [AXUIElement] = []
-            try collect(values.children, origin: windowFrame.origin, depth: 0, into: &elements, refs: &refs)
+            try collect(values.children, attributes, origin: windowFrame.origin, depth: 0, into: &elements, refs: &refs)
             return MainWindowRead(window: window, snapshot: RekordboxWindowSnapshot(windowFrame: windowFrame, elements: elements), elementRefs: refs)
         }
         return nil
@@ -72,15 +73,16 @@ final class AccessibilityReader {
     static func mainWindowIsFocused(pid: pid_t) throws -> Bool {
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, timeout)
-        guard let focused = try copy(app, kAXFocusedWindowAttribute) else { return false }
-        let values = try read(focused as! AXUIElement)
+        guard let focused = try copy(app, kAXFocusedWindowAttribute), CFGetTypeID(focused) == AXUIElementGetTypeID() else { return false }
+        let values = try read(focused as! AXUIElement, attributeNames as CFArray)
         return values.subrole == kAXStandardWindowSubrole as String && values.title == "rekordbox"
     }
 
-    private static func collect(_ children: [AXUIElement], origin: CGPoint, depth: Int, into elements: inout [AXElementSnapshot], refs: inout [AXUIElement]) throws {
+    private static func collect(_ children: [AXUIElement], _ attributes: CFArray, origin: CGPoint, depth: Int,
+                                into elements: inout [AXElementSnapshot], refs: inout [AXUIElement]) throws {
         guard depth < maxDepth else { return }
         for child in children where elements.count < maxElements {
-            let values = try read(child)
+            let values = try read(child, attributes)
             if let role = values.role, let frame = values.frame {
                 elements.append(AXElementSnapshot(
                     role: role,
@@ -91,7 +93,7 @@ final class AccessibilityReader {
                 ))
                 refs.append(child)
             }
-            try collect(values.children, origin: origin, depth: depth + 1, into: &elements, refs: &refs)
+            try collect(values.children, attributes, origin: origin, depth: depth + 1, into: &elements, refs: &refs)
         }
     }
 
@@ -105,7 +107,7 @@ final class AccessibilityReader {
         var children: [AXUIElement] = []
     }
 
-    private static func read(_ element: AXUIElement) throws -> Values {
+    private static func read(_ element: AXUIElement, _ attributes: CFArray) throws -> Values {
         var result = Values()
         var array: CFArray?
         let error = AXUIElementCopyMultipleAttributeValues(element, attributes, AXCopyMultipleAttributeOptions(rawValue: 0), &array)

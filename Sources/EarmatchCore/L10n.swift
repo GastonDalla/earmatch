@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public enum L10n {
     public typealias Lookup = @Sendable (String) -> String
@@ -6,22 +7,25 @@ public enum L10n {
     @TaskLocal public static var override: Lookup?
     @TaskLocal public static var overrideLocale: Locale?
 
-    nonisolated(unsafe) private static var installed: Lookup = { $0 }
-    nonisolated(unsafe) private static var installedLocale: Locale?
-
-    public static func install(_ lookup: @escaping Lookup, locale: Locale) {
-        installed = lookup
-        installedLocale = locale
+    private struct Installation: Sendable {
+        var lookup: Lookup = { $0 }
+        var locale: Locale?
     }
 
-    public static var locale: Locale? { override == nil ? installedLocale : overrideLocale }
+    private static let installation = OSAllocatedUnfairLock(initialState: Installation())
+
+    public static func install(_ lookup: @escaping Lookup, locale: Locale) {
+        installation.withLock { $0 = Installation(lookup: lookup, locale: locale) }
+    }
+
+    public static var locale: Locale? { override == nil ? installation.withLock { $0.locale } : overrideLocale }
 
     public static func english<T>(_ body: () -> T) -> T {
         $override.withValue({ $0 }) { $overrideLocale.withValue(nil, operation: body) }
     }
 
     public static func text(_ key: String) -> String {
-        (override ?? installed)(key)
+        (override ?? installation.withLock { $0.lookup })(key)
     }
 
     public static func template(_ key: String) -> String {

@@ -4,6 +4,7 @@ import SwiftUI
 
 struct PracticeReplayView: View {
     let trace: PracticeTrace
+    var traceHeight: CGFloat = 56
     @State private var playbackStart: Date?
 
     private var playbackSeconds: Double { min(max(trace.durationSeconds / 6, 4), 12) }
@@ -23,7 +24,7 @@ struct PracticeReplayView: View {
                 }
             }
             TimelineView(.animation(minimumInterval: nil, paused: !isPlaying)) { timeline in
-                ReplayWell(trace: trace, cursor: cursor(at: timeline.date), isPlaying: isPlaying)
+                ReplayWell(trace: trace, cursor: cursor(at: timeline.date), isPlaying: isPlaying, traceHeight: traceHeight)
             }
         }
         .task(id: playbackStart) {
@@ -50,6 +51,7 @@ private struct ReplayWell: View {
     let trace: PracticeTrace
     let cursor: Double?
     let isPlaying: Bool
+    let traceHeight: CGFloat
 
     var body: some View {
         let error = cursor.flatMap(trace.errorMilliseconds(at:))
@@ -65,7 +67,7 @@ private struct ReplayWell: View {
             Canvas { context, size in
                 PracticeTraceDrawing(trace: trace, cursor: cursor).draw(in: &context, size: size)
             }
-            .frame(height: 56)
+            .frame(height: traceHeight)
             HStack {
                 Text(PracticeStrings.duration(0))
                 Spacer()
@@ -77,8 +79,7 @@ private struct ReplayWell: View {
             .foregroundStyle(WindowTheme.sectionText)
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(WindowTheme.well))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(WindowTheme.hairline))
+        .surface(cornerRadius: 10, fill: WindowTheme.well, stroke: WindowTheme.hairline)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(PracticeStrings.replayAccessibility(
             duration: trace.durationSeconds, matchedAt: trace.matchedAtSeconds,

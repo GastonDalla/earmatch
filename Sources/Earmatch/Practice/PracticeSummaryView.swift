@@ -6,15 +6,16 @@ struct PracticeSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
-                PracticeLabel(text: PracticeStrings.lastMix)
-                Spacer(minLength: Spacing.small)
-                Text(PracticeStrings.lastMixDetail(mix))
-                    .font(TypeScale.status)
-                    .monospacedDigit()
-                    .foregroundStyle(WindowTheme.secondaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
+                    PracticeLabel(text: PracticeStrings.lastMix)
+                    Spacer(minLength: Spacing.small)
+                    detail.fixedSize()
+                }
+                VStack(alignment: .leading, spacing: Spacing.tight) {
+                    PracticeLabel(text: PracticeStrings.lastMix)
+                    detail.minimumScaleFactor(0.85)
+                }
             }
             Grid(horizontalSpacing: Spacing.small, verticalSpacing: Spacing.small) {
                 GridRow {
@@ -36,6 +37,14 @@ struct PracticeSummaryView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(PracticeStrings.summaryAccessibility(mix))
+    }
+
+    private var detail: some View {
+        Text(PracticeStrings.lastMixDetail(mix))
+            .font(TypeScale.status)
+            .monospacedDigit()
+            .foregroundStyle(WindowTheme.secondaryText)
+            .lineLimit(1)
     }
 
     private func errorColour(_ milliseconds: Double?) -> Color {
@@ -76,7 +85,6 @@ private struct PracticeMetric: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(WindowTheme.well))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(WindowTheme.hairline))
+        .surface(cornerRadius: 10, fill: WindowTheme.well, stroke: WindowTheme.hairline)
     }
 }

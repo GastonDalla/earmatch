@@ -32,7 +32,7 @@ enum Permissions {
             """
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", script, "earmatch-relaunch", String(ProcessInfo.processInfo.processIdentifier), Bundle.main.bundleURL.path]
+        process.arguments = ["-c", script, "earmatch-relaunch", String(ProcessInfo.processInfo.processIdentifier), Bundle.main.bundleURL.path(percentEncoded: false)]
         do {
             try process.run()
         } catch {

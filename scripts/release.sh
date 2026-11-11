@@ -1,30 +1,35 @@
 #!/usr/bin/env bash
-# Builds a release of Earmatch that anyone can download and open without Gatekeeper warnings:
-# Developer ID signature with the hardened runtime, a drag-to-Applications DMG, notarization,
-# stapling, and a Sparkle appcast item signed with the EdDSA key.
-#
-# It never uploads anything. At the end it prints the files to upload and the commands to do it.
-# One-time setup and the full release checklist: docs/RELEASING.md.
-#
-# Usage:
-#   scripts/release.sh [--dry-run] [--notes FILE]
-#
-#   --dry-run    Build, package and check everything that needs no credentials. Skips Developer ID
-#                signing, notarization, stapling and the signed appcast, and says so.
-#   --notes FILE Markdown release notes for this version (default: docs/release-notes/<version>.md).
-#
-# Environment:
-#   EARMATCH_SIGN_IDENTITY             Developer ID Application identity (default: the first one in the keychain)
-#   EARMATCH_NOTARY_PROFILE            notarytool keychain profile (xcrun notarytool store-credentials)
-#   EARMATCH_SPARKLE_PUBLIC_KEY        Sparkle EdDSA public key, built into Info.plist as SUPublicEDKey
-#   EARMATCH_SPARKLE_PRIVATE_KEY_FILE  optional file holding the EdDSA private key; default: the login keychain
-#   EARMATCH_SPARKLE_ACCOUNT           optional keychain account of the EdDSA key (generate_keys --account)
-#   EARMATCH_RELEASE_DIR               folder that keeps every released DMG and appcast.xml (default: build/releases)
-#   EARMATCH_PREVIOUS_APPCAST          optional published appcast.xml to start from when the folder has none
-#   EARMATCH_DOWNLOAD_URL_PREFIX       where the DMG will be downloaded from
-#                                      (default: https://github.com/GastonDalla/earmatch/releases/download/v<version>/)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+usage() {
+    cat <<'USAGE'
+Builds a release of Earmatch that anyone can download and open without Gatekeeper warnings:
+Developer ID signature with the hardened runtime, a drag-to-Applications DMG, notarization,
+stapling, and a Sparkle appcast item signed with the EdDSA key.
+
+It never uploads anything. At the end it prints the files to upload and the commands to do it.
+One-time setup and the full release checklist: docs/RELEASING.md.
+
+Usage:
+  scripts/release.sh [--dry-run] [--notes FILE]
+
+  --dry-run    Build, package and check everything that needs no credentials. Skips Developer ID
+               signing, notarization, stapling and the signed appcast, and says so.
+  --notes FILE Markdown release notes for this version (default: docs/release-notes/<version>.md).
+
+Environment:
+  EARMATCH_SIGN_IDENTITY             Developer ID Application identity (default: the first one in the keychain)
+  EARMATCH_NOTARY_PROFILE            notarytool keychain profile (xcrun notarytool store-credentials)
+  EARMATCH_SPARKLE_PUBLIC_KEY        Sparkle EdDSA public key, built into Info.plist as SUPublicEDKey
+  EARMATCH_SPARKLE_PRIVATE_KEY_FILE  optional file holding the EdDSA private key; default: the login keychain
+  EARMATCH_SPARKLE_ACCOUNT           optional keychain account of the EdDSA key (generate_keys --account)
+  EARMATCH_RELEASE_DIR               folder that keeps every released DMG and appcast.xml (default: build/releases)
+  EARMATCH_PREVIOUS_APPCAST          optional published appcast.xml to start from when the folder has none
+  EARMATCH_DOWNLOAD_URL_PREFIX       where the DMG will be downloaded from
+                                     (default: https://github.com/GastonDalla/earmatch/releases/download/v<version>/)
+USAGE
+}
 
 dry_run=0
 notes=""
@@ -36,7 +41,7 @@ while [[ $# -gt 0 ]]; do
             notes="$2"
             shift
             ;;
-        -h|--help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) usage; exit 0 ;;
         *) echo "error: unknown option $1 (see --help)" >&2; exit 2 ;;
     esac
     shift
@@ -213,7 +218,6 @@ hdiutil create -quiet -volname "Earmatch" -srcfolder "$staging" -fs HFS+ -format
 hdiutil verify -quiet "$dmg"
 echo "ok: $(du -h "$dmg" | cut -f1) $dmg"
 
-# Mounts a DMG read-only at a fresh folder and leaves its path in $mount.
 attach() {
     mount="$(mktemp -d)"
     hdiutil attach -readonly -nobrowse -noautoopen -quiet -mountpoint "$mount" "$1"

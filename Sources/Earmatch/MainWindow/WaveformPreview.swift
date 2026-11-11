@@ -26,9 +26,9 @@ struct WaveformPreview: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    private static let normalText = L10n.text("Preview: rekordbox's stacked waveforms")
-    private static let splitText = L10n.text("Preview: each deck's waveform in its own half with its own playhead")
-    private static let hiddenText = L10n.text("Preview: both waveforms hidden")
+    private static var normalText: String { L10n.text("Preview: rekordbox's stacked waveforms") }
+    private static var splitText: String { L10n.text("Preview: each deck's waveform in its own half with its own playhead") }
+    private static var hiddenText: String { L10n.text("Preview: both waveforms hidden") }
 
     private var accessibilityText: String {
         switch mode {

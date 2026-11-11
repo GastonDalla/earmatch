@@ -2,10 +2,11 @@ import CoreMedia
 import CoreVideo
 import EarmatchCore
 import Foundation
+import os
 import QuartzCore
 import ScreenCaptureKit
 
-struct BPMCovers: Equatable {
+nonisolated struct BPMCovers: Equatable {
     var oneDecimal: CGRect
     var noDecimals: CGRect
 
@@ -18,7 +19,7 @@ struct BPMCovers: Equatable {
     }
 }
 
-struct DeckFrameReading: Equatable {
+nonisolated struct DeckFrameReading: Equatable {
     var grid: BeatGridReading?
     var phase: PhaseTracker.Estimate
     var beatsPerSecond: Double?
@@ -27,7 +28,7 @@ struct DeckFrameReading: Equatable {
     var cueBeatsAhead: Double?
 }
 
-struct FrameReading {
+nonisolated struct FrameReading {
     let pixelBuffer: CVPixelBuffer
     let pixelSize: CGSize
     let scale: CGFloat
@@ -46,7 +47,7 @@ struct FrameReading {
     }
 }
 
-final class FrameAnalyzer {
+nonisolated final class FrameAnalyzer: Sendable {
     struct Input: Equatable {
         var decks: [DeckLayout]
         var windowSize: CGSize
@@ -54,24 +55,22 @@ final class FrameAnalyzer {
         var readsCues: Bool
     }
 
+    private struct Tracking {
+        var trackers: [Int: PhaseTracker] = [:]
+        var playheads: [Int: (strip: CGRect, position: CGFloat)] = [:]
+    }
+
     let stats = FrameStats()
-    private let lock = NSLock()
-    private var input: Input?
-    private var trackers: [Int: PhaseTracker] = [:]
-    private var playheads: [Int: (strip: CGRect, position: CGFloat)] = [:]
+    private let input = OSAllocatedUnfairLock<Input?>(initialState: nil)
+    private let tracking = OSAllocatedUnfairLock(initialState: Tracking())
 
     func configure(_ newInput: Input?) {
-        lock.lock()
-        input = newInput
-        lock.unlock()
+        input.withLock { $0 = newInput }
     }
 
     func analyze(_ sampleBuffer: CMSampleBuffer, generation: Int) -> FrameReading? {
         let started = CACurrentMediaTime()
-        lock.lock()
-        let input = self.input
-        lock.unlock()
-        guard let input, let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
+        guard let input = input.withLock({ $0 }), let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
               CVPixelBufferGetPixelFormatType(pixelBuffer) == kCVPixelFormatType_32BGRA
         else { return nil }
 
@@ -107,9 +106,12 @@ final class FrameAnalyzer {
         } else {
             nil
         }
-        var tracker = trackers[deck.number] ?? PhaseTracker()
-        let phase = tracker.update(grid, at: time)
-        trackers[deck.number] = tracker
+        let (phase, beatsPerSecond) = tracking.withLock { tracking in
+            var tracker = tracking.trackers[deck.number] ?? PhaseTracker()
+            let phase = tracker.update(grid, at: time)
+            tracking.trackers[deck.number] = tracker
+            return (phase, tracker.beatsPerSecond)
+        }
         let covers: BPMCovers? = measuresGlyphs ? deck.jogBPMFrame.map { jog in
             guard mapped else { return BPMCovers(oneDecimal: jog, noDecimals: jog) }
             return BPMCovers(oneDecimal: BPMGlyphMask.cover(.oneDecimal, jogFrame: jog, image: image),
@@ -124,26 +126,27 @@ final class FrameAnalyzer {
         return DeckFrameReading(
             grid: grid,
             phase: phase,
-            beatsPerSecond: tracker.beatsPerSecond,
+            beatsPerSecond: beatsPerSecond,
             isMaster: mapped && SyncMasterDetector.isMaster(button: deck.masterButtonFrame, in: image),
             bpmCovers: covers,
             cueBeatsAhead: cues
         )
     }
-}
 
-extension FrameAnalyzer {
-    fileprivate func playhead(of deck: Int, strip: WaveformStrip, in image: PixelImage) -> CGFloat {
-        if let found = PlayheadDetector.locate(strip, in: image) {
-            playheads[deck] = (strip.frame, found)
-            return found
+    private func playhead(of deck: Int, strip: WaveformStrip, in image: PixelImage) -> CGFloat {
+        let found = PlayheadDetector.locate(strip, in: image)
+        return tracking.withLock { tracking in
+            if let found {
+                tracking.playheads[deck] = (strip.frame, found)
+                return found
+            }
+            if let known = tracking.playheads[deck], known.strip == strip.frame { return known.position }
+            return strip.center + 0.5
         }
-        if let known = playheads[deck], known.strip == strip.frame { return known.position }
-        return strip.center + 0.5
     }
 }
 
-private struct FrameInfo {
+nonisolated private struct FrameInfo {
     var contentRect: CGRect?
     var contentScale: CGFloat = 1
     var scaleFactor: CGFloat = 2
@@ -184,7 +187,7 @@ private struct FrameInfo {
     }
 }
 
-enum FrameMappingProblem: Equatable {
+nonisolated enum FrameMappingProblem: Equatable {
     case noContentRect
     case sizeMismatch(frameWidth: Int, frameHeight: Int, windowWidth: Int, windowHeight: Int)
 
@@ -198,7 +201,7 @@ enum FrameMappingProblem: Equatable {
     }
 }
 
-final class FrameStats {
+nonisolated final class FrameStats: Sendable {
     struct Snapshot: Equatable {
         var framesPerSecond: Double = 0
         var averageProcessingMilliseconds: Double = 0
@@ -218,115 +221,95 @@ final class FrameStats {
 
     static let isTracing = ProcessInfo.processInfo.environment["EARMATCH_TRACE"] == "1"
 
-    private let lock = NSLock()
-    private var windowStart: Double?
-    private var frames = 0
-    private var totalProcessing = 0.0
-    private var maxProcessing = 0.0
-    private var lastFrameTime: Double?
-    private var intervals = 0
-    private var intervalSum = 0.0
-    private var intervalSquares = 0.0
-    private var totalLatency = 0.0
-    private var totalEarliestLatency = 0.0
-    private var maxLatency = 0.0
-    private var latencySamples = 0
-    private var totalCommit = 0.0
-    private var commitSamples = 0
-    private var repeatedFrames = 0
-    private var refreshes = 0
-    private var totalRefreshWork = 0.0
-    private var maxRefreshWork = 0.0
-    private var totalPredictionError = 0.0
-    private var predictionSamples = 0
-    private var heldFrames: [Int: Int] = [:]
-    private var lostFrames: [Int: Int] = [:]
-    private var last = Snapshot()
+    private struct Counters {
+        var windowStart: Double?
+        var frames = 0
+        var totalProcessing = 0.0
+        var maxProcessing = 0.0
+        var lastFrameTime: Double?
+        var intervals = 0
+        var intervalSum = 0.0
+        var intervalSquares = 0.0
+        var totalLatency = 0.0
+        var totalEarliestLatency = 0.0
+        var maxLatency = 0.0
+        var latencySamples = 0
+        var totalCommit = 0.0
+        var commitSamples = 0
+        var repeatedFrames = 0
+        var refreshes = 0
+        var totalRefreshWork = 0.0
+        var maxRefreshWork = 0.0
+        var totalPredictionError = 0.0
+        var predictionSamples = 0
+        var heldFrames: [Int: Int] = [:]
+        var lostFrames: [Int: Int] = [:]
+        var last = Snapshot()
 
-    var snapshot: Snapshot {
-        lock.lock()
-        defer { lock.unlock() }
-        return last
-    }
-
-    func recordCommit(seconds: Double) {
-        lock.lock()
-        totalCommit += seconds
-        commitSamples += 1
-        lock.unlock()
-    }
-
-    func recordScreen(earliest: Double, latest: Double) {
-        lock.lock()
-        totalEarliestLatency += earliest
-        totalLatency += latest
-        maxLatency = max(maxLatency, latest)
-        latencySamples += 1
-        lock.unlock()
-    }
-
-    func recordRepeatedFrame() {
-        lock.lock()
-        repeatedFrames += 1
-        lock.unlock()
-    }
-
-    func recordRefresh(workSeconds: Double) {
-        lock.lock()
-        refreshes += 1
-        totalRefreshWork += workSeconds
-        maxRefreshWork = max(maxRefreshWork, workSeconds)
-        lock.unlock()
-    }
-
-    func recordPredictionError(seconds: Double) {
-        lock.lock()
-        totalPredictionError += abs(seconds)
-        predictionSamples += 1
-        lock.unlock()
-    }
-
-    func record(processingSeconds: Double, frameTime: Double, decks: [Int: DeckFrameReading]) {
-        lock.lock()
-        defer { lock.unlock() }
-        frames += 1
-        totalProcessing += processingSeconds
-        maxProcessing = max(maxProcessing, processingSeconds)
-        if let previous = lastFrameTime, frameTime > previous {
-            let interval = frameTime - previous
-            intervals += 1
-            intervalSum += interval
-            intervalSquares += interval * interval
-        }
-        lastFrameTime = frameTime
-        last.deckStatus = decks.mapValues(\.phase.status)
-        for (number, deck) in decks {
-            if deck.phase.status == .held { heldFrames[number, default: 0] += 1 }
-            if deck.phase.status == .lost { lostFrames[number, default: 0] += 1 }
-        }
-        guard let start = windowStart else {
+        mutating func record(processingSeconds: Double, frameTime: Double, decks: [Int: DeckFrameReading]) -> String? {
+            frames += 1
+            totalProcessing += processingSeconds
+            maxProcessing = max(maxProcessing, processingSeconds)
+            if let previous = lastFrameTime, frameTime > previous {
+                let interval = frameTime - previous
+                intervals += 1
+                intervalSum += interval
+                intervalSquares += interval * interval
+            }
+            lastFrameTime = frameTime
+            last.deckStatus = decks.mapValues(\.phase.status)
+            for (number, deck) in decks {
+                if deck.phase.status == .held { heldFrames[number, default: 0] += 1 }
+                if deck.phase.status == .lost { lostFrames[number, default: 0] += 1 }
+            }
+            guard let start = windowStart else {
+                windowStart = frameTime
+                return nil
+            }
+            let elapsed = frameTime - start
+            guard elapsed >= 1 else { return nil }
+            last.framesPerSecond = Double(frames - 1) / elapsed
+            last.averageProcessingMilliseconds = totalProcessing / Double(frames) * 1000
+            last.maxProcessingMilliseconds = maxProcessing * 1000
+            last.averageLatencyMilliseconds = latencySamples > 0 ? totalLatency / Double(latencySamples) * 1000 : 0
+            last.averageEarliestLatencyMilliseconds = latencySamples > 0 ? totalEarliestLatency / Double(latencySamples) * 1000 : 0
+            last.maxLatencyMilliseconds = maxLatency * 1000
+            last.averageCommitMilliseconds = commitSamples > 0 ? totalCommit / Double(commitSamples) * 1000 : 0
+            last.repeatedFramesPerSecond = Double(repeatedFrames) / elapsed
+            if intervals > 1 {
+                let mean = intervalSum / Double(intervals)
+                last.captureJitterMilliseconds = max(0, intervalSquares / Double(intervals) - mean * mean).squareRoot() * 1000
+            }
+            last.refreshesPerSecond = Double(refreshes) / elapsed
+            last.averageRefreshMicroseconds = refreshes > 0 ? totalRefreshWork / Double(refreshes) * 1_000_000 : 0
+            last.maxRefreshMicroseconds = maxRefreshWork * 1_000_000
+            last.predictionErrorMilliseconds = predictionSamples > 0 ? totalPredictionError / Double(predictionSamples) * 1000 : nil
+            let trace = FrameStats.isTracing ? traceLine(decks: decks) : nil
             windowStart = frameTime
-            return
+            frames = 1
+            totalProcessing = 0
+            maxProcessing = 0
+            intervals = 0
+            intervalSum = 0
+            intervalSquares = 0
+            totalLatency = 0
+            totalEarliestLatency = 0
+            maxLatency = 0
+            latencySamples = 0
+            totalCommit = 0
+            commitSamples = 0
+            repeatedFrames = 0
+            refreshes = 0
+            totalRefreshWork = 0
+            maxRefreshWork = 0
+            totalPredictionError = 0
+            predictionSamples = 0
+            heldFrames = [:]
+            lostFrames = [:]
+            return trace
         }
-        let elapsed = frameTime - start
-        guard elapsed >= 1 else { return }
-        last.framesPerSecond = Double(frames - 1) / elapsed
-        last.averageProcessingMilliseconds = totalProcessing / Double(frames) * 1000
-        last.maxProcessingMilliseconds = maxProcessing * 1000
-        last.averageLatencyMilliseconds = latencySamples > 0 ? totalLatency / Double(latencySamples) * 1000 : 0
-        last.averageEarliestLatencyMilliseconds = latencySamples > 0 ? totalEarliestLatency / Double(latencySamples) * 1000 : 0
-        last.maxLatencyMilliseconds = maxLatency * 1000
-        last.averageCommitMilliseconds = commitSamples > 0 ? totalCommit / Double(commitSamples) * 1000 : 0
-        last.repeatedFramesPerSecond = Double(repeatedFrames) / elapsed
-        if intervals > 1 {
-            let mean = intervalSum / Double(intervals)
-            last.captureJitterMilliseconds = max(0, intervalSquares / Double(intervals) - mean * mean).squareRoot() * 1000
-        }
-        last.refreshesPerSecond = Double(refreshes) / elapsed
-        last.averageRefreshMicroseconds = refreshes > 0 ? totalRefreshWork / Double(refreshes) * 1_000_000 : 0
-        last.maxRefreshMicroseconds = maxRefreshWork * 1_000_000
-        last.predictionErrorMilliseconds = predictionSamples > 0 ? totalPredictionError / Double(predictionSamples) * 1000 : nil
-        if Self.isTracing {
+
+        private func traceLine(decks: [Int: DeckFrameReading]) -> String {
             let decksText = decks.keys.sorted().map { number -> String in
                 let deck = decks[number]!
                 let phase = deck.phase.phaseInBar.map { String(format: "%.2f", $0) } ?? "-"
@@ -334,34 +317,58 @@ final class FrameStats {
                 return "deck\(number)=\(deck.phase.status) phase=\(phase) bps=\(rate) master=\(deck.isMaster) held=\(heldFrames[number] ?? 0) lost=\(lostFrames[number] ?? 0)"
             }.joined(separator: " ")
             let prediction = last.predictionErrorMilliseconds.map { String(format: "%.1f ms", $0) } ?? "-"
-            let line = String(format: "earmatch: %.1f fps (interval sd %.2f ms), analysis avg %.2f ms max %.2f ms, capture-to-commit %.1f ms, capture-to-screen %.1f..%.1f ms (max %.1f), refreshes %.0f/s (no new frame %.0f/s, meters on every one) work avg %.0f us max %.0f us, meter error ",
-                              last.framesPerSecond, last.captureJitterMilliseconds, last.averageProcessingMilliseconds,
-                              last.maxProcessingMilliseconds, last.averageCommitMilliseconds, last.averageEarliestLatencyMilliseconds,
-                              last.averageLatencyMilliseconds, last.maxLatencyMilliseconds, last.refreshesPerSecond,
-                              last.repeatedFramesPerSecond, last.averageRefreshMicroseconds,
-                              last.maxRefreshMicroseconds) + prediction + "; " + decksText + "\n"
-            FileHandle.standardError.write(Data(line.utf8))
+            return String(format: "earmatch: %.1f fps (interval sd %.2f ms), analysis avg %.2f ms max %.2f ms, capture-to-commit %.1f ms, capture-to-screen %.1f..%.1f ms (max %.1f), refreshes %.0f/s (no new frame %.0f/s, meters on every one) work avg %.0f us max %.0f us, meter error ",
+                          last.framesPerSecond, last.captureJitterMilliseconds, last.averageProcessingMilliseconds,
+                          last.maxProcessingMilliseconds, last.averageCommitMilliseconds, last.averageEarliestLatencyMilliseconds,
+                          last.averageLatencyMilliseconds, last.maxLatencyMilliseconds, last.refreshesPerSecond,
+                          last.repeatedFramesPerSecond, last.averageRefreshMicroseconds,
+                          last.maxRefreshMicroseconds) + prediction + "; " + decksText + "\n"
         }
-        windowStart = frameTime
-        frames = 1
-        totalProcessing = 0
-        maxProcessing = 0
-        intervals = 0
-        intervalSum = 0
-        intervalSquares = 0
-        totalLatency = 0
-        totalEarliestLatency = 0
-        maxLatency = 0
-        latencySamples = 0
-        totalCommit = 0
-        commitSamples = 0
-        repeatedFrames = 0
-        refreshes = 0
-        totalRefreshWork = 0
-        maxRefreshWork = 0
-        totalPredictionError = 0
-        predictionSamples = 0
-        heldFrames = [:]
-        lostFrames = [:]
+    }
+
+    private let counters = OSAllocatedUnfairLock(initialState: Counters())
+
+    var snapshot: Snapshot {
+        counters.withLock { $0.last }
+    }
+
+    func recordCommit(seconds: Double) {
+        counters.withLock { counters in
+            counters.totalCommit += seconds
+            counters.commitSamples += 1
+        }
+    }
+
+    func recordScreen(earliest: Double, latest: Double) {
+        counters.withLock { counters in
+            counters.totalEarliestLatency += earliest
+            counters.totalLatency += latest
+            counters.maxLatency = max(counters.maxLatency, latest)
+            counters.latencySamples += 1
+        }
+    }
+
+    func recordRepeatedFrame() {
+        counters.withLock { $0.repeatedFrames += 1 }
+    }
+
+    func recordRefresh(workSeconds: Double) {
+        counters.withLock { counters in
+            counters.refreshes += 1
+            counters.totalRefreshWork += workSeconds
+            counters.maxRefreshWork = max(counters.maxRefreshWork, workSeconds)
+        }
+    }
+
+    func recordPredictionError(seconds: Double) {
+        counters.withLock { counters in
+            counters.totalPredictionError += abs(seconds)
+            counters.predictionSamples += 1
+        }
+    }
+
+    func record(processingSeconds: Double, frameTime: Double, decks: [Int: DeckFrameReading]) {
+        let trace = counters.withLock { $0.record(processingSeconds: processingSeconds, frameTime: frameTime, decks: decks) }
+        if let trace { FileHandle.standardError.write(Data(trace.utf8)) }
     }
 }
