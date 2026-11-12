@@ -15,7 +15,7 @@ public class HotkeyRecognizerTests
 
     static readonly HotkeyRecognizer.Outcome PeekStarts = new(Peek: true, TogglesEnabled: false);
     static readonly HotkeyRecognizer.Outcome PeekEnds = new(Peek: false, TogglesEnabled: false);
-    static readonly HotkeyRecognizer.Outcome Toggles = new(Peek: null, TogglesEnabled: true);
+    static readonly HotkeyRecognizer.Outcome Toggles = new(Peek: null, TogglesEnabled: true, Swallows: true);
 
     static HotkeyRecognizer Peeking()
     {
@@ -213,5 +213,58 @@ public class HotkeyRecognizerTests
 
         Assert.Equal([PeekEnds, HotkeyRecognizer.Outcome.None, Toggles], outcomes);
         Assert.False(recognizer.IsPeeking);
+    }
+
+    [Fact]
+    public void TheShortcutsEIsSwallowedSoWindowsDoesNotOpenExplorer()
+    {
+        var recognizer = new HotkeyRecognizer();
+
+        var outcomes = Press(recognizer, Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows), Down(Key.E), Down(Key.E), Up(Key.E));
+
+        Assert.Equal([false, false, false, true, true, true], outcomes.Select(outcome => outcome.Swallows));
+        Assert.Equal(Toggles, outcomes[3]);
+    }
+
+    [Fact]
+    public void ASwallowedEStaysSwallowedWhenItIsReleasedAfterTheModifiers()
+    {
+        var recognizer = new HotkeyRecognizer();
+        Press(recognizer, Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows), Down(Key.E));
+
+        var outcomes = Press(recognizer, Up(Key.LeftWindows), Up(Key.LeftAlt), Up(Key.LeftControl), Up(Key.E), Down(Key.E), Up(Key.E));
+
+        Assert.Equal([false, false, false, true, false, false], outcomes.Select(outcome => outcome.Swallows));
+    }
+
+    [Fact]
+    public void EveryOtherKeyReachesTheAppsUntouched()
+    {
+        HotkeyRecognizer.Event[][] presses =
+        [
+            [Down(Key.RightAlt), Up(Key.RightAlt)],
+            [Down(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Down(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Up(Key.RightAlt)],
+            [Down(Key.LeftWindows), Down(Key.E), Up(Key.E), Up(Key.LeftWindows)],
+            [Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.E), Up(Key.E)],
+            [Down(Key.LeftShift), Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows), Down(Key.E), Up(Key.E)],
+            [Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows), Down(R), Up(R)],
+            [Down(Key.E), Up(Key.E), Down(A), Up(A)],
+        ];
+
+        foreach (var press in presses)
+        {
+            Assert.All(Press(new HotkeyRecognizer(), press), outcome => Assert.False(outcome.Swallows));
+        }
+    }
+
+    [Fact]
+    public void ResetForgetsASwallowedE()
+    {
+        var recognizer = new HotkeyRecognizer();
+        Press(recognizer, Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows), Down(Key.E));
+
+        recognizer.Reset();
+
+        Assert.False(recognizer.Handle(Up(Key.E)).Swallows);
     }
 }

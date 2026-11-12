@@ -1,0 +1,12 @@
+{"capturedAt":"2026-11-12T10:33:51.5868396-03:00","os":"Microsoft Windows 10.0.26100","arch":"ARM64","scale":2,"process":{"path":"C:\\Program Files\\rekordbox\\rekordbox 7.2.19\\rekordbox.exe","id":2808,"version":"7.2.19.0342"},"truncated":false,
+ "nodes": [
+  {"index":0,"parent":-1,"depth":0,"controlType":"ControlType.Window","name":"rekordbox","helpText":"","value":null,"frame":[0,44,2048,1356]},
+  {"index":1,"parent":0,"depth":1,"controlType":"ControlType.Custom","name":"rekordbox","helpText":"","value":null,"frame":[0,888,2048,456]},
+  {"index":2,"parent":0,"depth":1,"controlType":"ControlType.TitleBar","name":"rekordbox","helpText":null,"value":null,"frame":[0,0,2048,45]},
+  {"index":3,"parent":2,"depth":2,"controlType":"ControlType.MenuBar","name":"Barra de men\u00FAs del sistema","helpText":null,"value":null,"frame":[0,0,44,44]},
+  {"index":4,"parent":3,"depth":3,"controlType":"ControlType.MenuItem","name":"System","helpText":null,"value":null,"frame":[0,0,44,44]},
+  {"index":5,"parent":2,"depth":2,"controlType":"ControlType.Button","name":"Minimizar","helpText":null,"value":null,"frame":[1767,0,94,44]},
+  {"index":6,"parent":2,"depth":2,"controlType":"ControlType.Button","name":"Restaurar","helpText":null,"value":null,"frame":[1861,0,92,44]},
+  {"index":7,"parent":2,"depth":2,"controlType":"ControlType.Button","name":"Cerrar","helpText":null,"value":null,"frame":[1953,0,95,44]}
+ ]
+}

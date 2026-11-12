@@ -113,6 +113,15 @@ Earmatch reads rekordbox's Accessibility labels and captures only the rekordbox 
 
 Released builds connect to the network only for updates (Sparkle): each time you open Earmatch, once a day while it runs, and when you choose **Check for Updates…**, Earmatch downloads `https://earmatch.gastondalla.com/appcast.xml`, and it downloads the new version from GitHub when you install one. Sparkle's system profiling stays off, so these requests carry only Earmatch's name and version, plus the IP address every web request shows. Development builds make no network connections.
 
+## Windows
+
+Earmatch for Windows is in progress in `windows/` (C# / .NET 10, WPF). It works with rekordbox 7 for Windows like the macOS app, with the same layouts and the same rule: the overlays show only while rekordbox is in front in PERFORMANCE mode with a 2Deck or 4Deck layout. So far it covers the jog BPM (fully, under every BPM precision, until the window capture can measure the digits), blind mode's pitch and header BPM, and both waveforms in Hide Both; the split waveform, the phase meters and the mix trainer come with the window capture.
+
+- **Requirements:** Windows 10 or 11, x64 or Arm64, and rekordbox 7. Windows asks for no permission. Build and test with the .NET 10 SDK: `dotnet build windows/Earmatch.slnx`, `dotnet test windows/Earmatch.slnx`, and `dotnet publish windows/src/Earmatch.App -c Release -r win-x64 --self-contained` for an app folder (`-r win-arm64` on Arm).
+- **First run:** open `Earmatch.exe`. Its icon sits in the notification area, in colour while the overlays run on rekordbox and grey otherwise, with the status in its tooltip; its menu replaces the macOS menu bar menu, and closing the window keeps Earmatch running there until **Quit Earmatch**.
+- **Hotkeys:** hold **Right Alt** (AltGr) to peek at rekordbox unchanged; **Ctrl+Alt+Win+E** turns Earmatch on or off; **Ctrl+1** to **Ctrl+4** switch the window's sections. Every key still reaches rekordbox, except the E of Ctrl+Alt+Win+E, which Earmatch keeps from Windows so it does not open File Explorer.
+- **Privacy:** Earmatch only reads rekordbox, through UI Automation (the labels and positions of its window); it never clicks, types into or controls rekordbox. `Earmatch.exe --dump-uia > rekordbox-uia.json` prints what it reads (the test-fixture format) and what it located.
+
 ## Credits
 
 Made by [GastonDalla](https://github.com/GastonDalla). The credit is also in the window's Setup section and permissions screen, in **About Earmatch** (app menu, and the menu bar menu once both permissions are allowed) and in the app's copyright.

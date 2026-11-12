@@ -5,12 +5,11 @@ public readonly record struct DeckPhases(double One, double Two);
 
 /// What the main window shows and changes (MainWindowModel.swift with LiveDecksModel and the practice controller's
 /// state), without WPF so it can be tested: the app's MainWindowModel adds the dispatcher, the language catalog and the
-/// app's actions. Overlays, rekordbox monitoring and capture come in later tasks; until then the status waits for
-/// rekordbox.
+/// app's actions. The app applies rekordbox's activation (Apply) and the decks it mirrors (ApplyLive).
 public class MainWindowState
 {
     private readonly SettingsStore? _store;
-    private readonly LiveDecksSnapshot? _snapshot;
+    private LiveDecksSnapshot? _snapshot;
     private OverlaySettings _settings;
 
     /// A window backed by the settings file. The store may announce a change from another thread (the tray, a hotkey),
@@ -126,6 +125,14 @@ public class MainWindowState
         Activation = activation;
         RekordboxVersion = rekordboxVersion;
         LayoutName = layoutName;
+        Changed?.Invoke();
+    }
+
+    /// Shows the decks Earmatch mirrors from rekordbox; LiveDecksSnapshot.Empty when it mirrors none.
+    public void ApplyLive(LiveDecksSnapshot snapshot)
+    {
+        if (snapshot == _snapshot) return;
+        _snapshot = snapshot;
         Changed?.Invoke();
     }
 

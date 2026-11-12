@@ -224,4 +224,27 @@ public sealed class MainWindowStateTests : IDisposable
         Assert.False(Sample(Decks((1, 1.25), (2, 3.5)), off).IsMirroringDecks);
         Assert.Equal(MainWindowStatus.Off, Sample(Decks(), off).WindowStatus);
     }
+
+    [Fact]
+    public void LiveDecksFromRekordboxAreShownOnceAndAnnounced()
+    {
+        var state = new MainWindowState(new SettingsStore(FilePath), RunNow);
+        var changes = 0;
+        state.Changed += () => changes++;
+        state.Apply(OverlayActivation.Active, "7.2.19", "2Deck Horizontal");
+        var decks = new LiveDecksSnapshot([new LiveDeckSnapshot(1, "Breaks 1", false, null), new LiveDeckSnapshot(2, "House 3", false, null)], 0, 0);
+
+        state.ApplyLive(decks);
+        state.ApplyLive(new LiveDecksSnapshot([new LiveDeckSnapshot(1, "Breaks 1", false, null), new LiveDeckSnapshot(2, "House 3", false, null)], 0, 0));
+
+        Assert.Equal(2, changes);
+        Assert.Equal(decks, state.Snapshot);
+        Assert.Equal([1, 2], state.Decks.Select(deck => deck.Number));
+        Assert.True(state.IsMirroringDecks);
+
+        state.ApplyLive(LiveDecksSnapshot.Empty);
+
+        Assert.Equal(3, changes);
+        Assert.False(state.IsMirroringDecks);
+    }
 }

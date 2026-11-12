@@ -1,10 +1,11 @@
 namespace Earmatch.Core;
 
-/// Recognizes Earmatch's keys in the key-down and key-up events of a Windows low-level keyboard hook (which only
-/// observes keys; it never swallows or sends any): hold Right Alt alone to peek under the overlays (any other key
-/// pressed with it ends the peek; Left Alt and the lock keys do not), and Ctrl+Alt+Windows+E turns Earmatch on or off.
-/// Right Alt stands for the macOS Right Option and Windows for Command. The recognizer tracks the held keys itself, so
-/// key repeats are recognized; Reset forgets them when the hook may have missed a release.
+/// Recognizes Earmatch's keys in the key-down and key-up events of a Windows low-level keyboard hook: hold Right Alt
+/// alone to peek under the overlays (any other key pressed with it ends the peek; Left Alt and the lock keys do not),
+/// and Ctrl+Alt+Windows+E turns Earmatch on or off. Right Alt stands for the macOS Right Option and Windows for
+/// Command. The hook passes every key on to the apps, except the shortcut's E (its presses, repeats and release),
+/// which it swallows so Windows does not take Windows+E and open File Explorer. The recognizer tracks the held keys
+/// itself, so key repeats are recognized; Reset forgets them when the hook may have missed a release.
 public sealed class HotkeyRecognizer
 {
     /// The Windows virtual-key codes the recognizer knows (winuser.h).
@@ -37,8 +38,8 @@ public sealed class HotkeyRecognizer
         public static Event KeyUp(int virtualKey, int scanCode = 0) => new(virtualKey, false, scanCode);
     }
 
-    /// Peek is the new peek state when it changed, null otherwise.
-    public readonly record struct Outcome(bool? Peek, bool TogglesEnabled)
+    /// Peek is the new peek state when it changed, null otherwise. Swallows says the hook must not pass the key on.
+    public readonly record struct Outcome(bool? Peek, bool TogglesEnabled, bool Swallows = false)
     {
         public static Outcome None => new(null, false);
     }
@@ -56,6 +57,7 @@ public sealed class HotkeyRecognizer
     private const Modifiers ToggleModifiers = Modifiers.Control | Modifiers.Alt | Modifiers.Windows;
 
     private readonly HashSet<int> _held = [];
+    private bool _isSwallowingE;
 
     public bool IsPeeking { get; private set; }
 
@@ -73,15 +75,23 @@ public sealed class HotkeyRecognizer
         {
             return isRepeat || Others() == Modifiers.None ? Outcome.None : SetPeeking(false);
         }
-        if (!keyEvent.IsDown) return Outcome.None;
+        if (!keyEvent.IsDown)
+        {
+            var swallows = key == VirtualKey.E && _isSwallowingE;
+            if (swallows) _isSwallowingE = false;
+            return Outcome.None with { Swallows = swallows };
+        }
         var outcome = SetPeeking(false);
-        return outcome with { TogglesEnabled = !isRepeat && Held() == ToggleModifiers && key == VirtualKey.E };
+        if (key != VirtualKey.E || Held() != ToggleModifiers) return outcome;
+        _isSwallowingE = true;
+        return outcome with { TogglesEnabled = !isRepeat, Swallows = true };
     }
 
     /// Ends a peek and forgets the held keys, for when the hook may have missed a release (focus or session changes).
     public Outcome Reset()
     {
         _held.Clear();
+        _isSwallowingE = false;
         return SetPeeking(false);
     }
 
