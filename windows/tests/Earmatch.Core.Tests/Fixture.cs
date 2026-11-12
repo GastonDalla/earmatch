@@ -4,11 +4,11 @@ namespace Earmatch.Core.Tests;
 
 static class Fixture
 {
-    public const double Scale = 2;
+    public const double VmDisplayAt200Percent = 2;
 
     public static string PathOf(string name) => System.IO.Path.Combine(AppContext.BaseDirectory, "Fixtures", name);
 
-    public static RekordboxWindowSnapshot Snapshot(string name) => UiaDump.Parse(File.ReadAllText(PathOf(name)), Scale);
+    public static RekordboxWindowSnapshot Snapshot(string name) => UiaDump.Parse(File.ReadAllText(PathOf(name)), VmDisplayAt200Percent);
 
     public static RekordboxLayout Layout(string name) => RekordboxLayout.Locate(Snapshot(name));
 

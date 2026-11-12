@@ -31,6 +31,16 @@ public class UpdateFeedTests
     [Theory]
     [InlineData("https://github.com/someone/else")]
     [InlineData("http://example.com/feed")]
+    [InlineData("HTTPS://EXAMPLE.COM/FEED")]
+    [InlineData("ftp://example.com/feed")]
+    [InlineData("file://server/share/earmatch-feed")]
+    [InlineData("//example.com/feed")]
+    public void AWebAddressInTheOverrideIsNeverUsedAsAFeed(string value)
+    {
+        Assert.Equal(new UpdateFeed(UpdateFeedKind.Invalid, value), UpdateFeed.Resolve(value));
+    }
+
+    [Theory]
     [InlineData(@"feeds\earmatch")]
     [InlineData(@"C:feeds")]
     [InlineData(@"\feeds")]

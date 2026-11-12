@@ -234,6 +234,6 @@ public class PhaseMeterTrackerTests
         }
 
         Assert.Equal(0, StoppedRate(new PhaseTracker(), spacing: 30));
-        Assert.Equal(0, StoppedRate(new PhaseTracker(layoutScale: 2), spacing: 60));
+        Assert.Equal(0, StoppedRate(new PhaseTracker(screenUnitsPerPoint: 2), spacing: 60));
     }
 }

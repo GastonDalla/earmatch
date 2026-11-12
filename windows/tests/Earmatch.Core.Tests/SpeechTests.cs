@@ -11,8 +11,10 @@ public class SpeechTests
     static PhaseMeterRow Row(PhaseMeterRole role, int deck, int? beat, bool? onMastersBeat, string counter) =>
         new(role, deck, false, beat, null, onMastersBeat, [], [], PhaseMeterTickDirection.Up, counter);
 
-    static PhaseMeterDisplay Meter(params PhaseMeterRow[] rows) =>
-        new(PhaseMeterType.Box, 1, null, PhaseMeterCounterSide.Left, PhaseMeterModel.LineSpan, [.. rows]);
+    static PhaseMeterDisplay Meter(params PhaseMeterRow[] rows) => MeterWithMaster(1, rows);
+
+    static PhaseMeterDisplay MeterWithMaster(int? masterPlayer, params PhaseMeterRow[] rows) =>
+        new(PhaseMeterType.Box, masterPlayer, null, PhaseMeterCounterSide.Left, PhaseMeterModel.LineSpan, [.. rows]);
 
     [Fact]
     public void DeckRow_ReadsTheDeckTitleBeatPhaseAndCounter()
@@ -20,6 +22,14 @@ public class SpeechTests
         var deck = new LiveDeckSnapshot(2, "Strobe", false, Meter(Row(PhaseMeterRole.Master, 1, 0, null, "12.1"), Row(PhaseMeterRole.Deck, 2, 2, false, "08.3")));
         Assert.Equal("Deck 2, Strobe, beat 3 of 4, out of phase with deck 1, 08.3 bars", English(() => MeterSpeech.DeckRow(deck, showsMeter: true)));
         Assert.Equal("Deck 2, Strobe, beat 3 de 4, fuera de fase con el deck 1, 08.3 compases", Spanish(() => MeterSpeech.DeckRow(deck, showsMeter: true)));
+    }
+
+    [Fact]
+    public void DeckRow_SaysOutOfPhaseOnlyWhenTheMasterDeckIsKnown()
+    {
+        var deck = new LiveDeckSnapshot(2, "Strobe", false, MeterWithMaster(null, Row(PhaseMeterRole.Deck, 2, 2, false, "08.3")));
+        Assert.Equal("Deck 2, Strobe, beat 3 of 4, 08.3 bars", English(() => MeterSpeech.DeckRow(deck, showsMeter: true)));
+        Assert.Equal("Deck 2, Strobe, beat 3 de 4, 08.3 compases", Spanish(() => MeterSpeech.DeckRow(deck, showsMeter: true)));
     }
 
     [Fact]

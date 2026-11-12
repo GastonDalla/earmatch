@@ -41,6 +41,8 @@ done
 step() { printf '\n==> %s\n' "$*"; }
 skip() { printf 'SKIPPED: %s\n' "$*"; }
 fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
+pipefail_safe_contains() { grep -q -- "$2" <<<"$1"; }
+file_contains() { grep -q -- "$2" "$1"; }
 
 repo="GastonDalla/earmatch"
 root="$PWD"
@@ -118,13 +120,13 @@ for rid in "${runtimes[@]}"; do
         [[ -s "$file" ]] || fail "vpk did not write $file"
     done
     [[ "$(head -c 2 "$setup")" == "MZ" ]] || fail "$setup is not a Windows program"
-    listing="$(unzip -l "$package")"
-    manifest="$(unzip -p "$package" '*.nuspec')"
-    grep -q " lib/app/Earmatch.exe$" <<<"$listing" || fail "$package has no Earmatch.exe"
-    grep -q "<version>$version</version>" <<<"$manifest" || fail "$package is not version $version"
-    grep -q "<channel>$rid</channel>" <<<"$manifest" || fail "$package is not on the $rid channel"
-    grep -q "\"$(basename "$package")\"" "$feed" || fail "$feed does not list $(basename "$package")"
-    grep -q "\"Version\": *\"$version\"" "$feed" || fail "$feed does not list version $version"
+    whole_package_listing="$(unzip -l "$package")"
+    whole_package_manifest="$(unzip -p "$package" '*.nuspec')"
+    pipefail_safe_contains "$whole_package_listing" " lib/app/Earmatch.exe$" || fail "$package has no Earmatch.exe"
+    pipefail_safe_contains "$whole_package_manifest" "<version>$version</version>" || fail "$package is not version $version"
+    pipefail_safe_contains "$whole_package_manifest" "<channel>$rid</channel>" || fail "$package is not on the $rid channel"
+    file_contains "$feed" "\"$(basename "$package")\"" || fail "$feed does not list $(basename "$package")"
+    file_contains "$feed" "\"Version\": *\"$version\"" || fail "$feed does not list version $version"
     echo "ok: $rid: $(du -h "$setup" | cut -f1) Setup.exe, $(du -h "$package" | cut -f1) update package, feed releases.$rid.json"
     uploads+=("$setup" "$package" "$feed")
 done

@@ -144,32 +144,24 @@ public sealed class AppUpdater : IDisposable
                         window.CloseIfOpen();
                         return;
                     case UpdateChoice.Skip:
-                        _store.SetValue(UpdatePrompt.SkippedVersionKey, version);
+                        RememberSkippedVersion(version);
                         Set(State.Skipped());
                         window.CloseIfOpen();
                         return;
                 }
                 Set(State.Downloading());
                 var cancellation = window.ShowDownload();
-                try
+                var problem = await DownloadAndInstallAtExitAsync(_manager, update, window, cancellation);
+                Set(State.AfterDownload(cancellation.IsCancellationRequested, problem));
+                switch (State.Phase)
                 {
-                    await _manager.DownloadUpdatesAsync(update, percent => window.Dispatcher.BeginInvoke(() => window.ShowProgress(percent)), cancellation);
-                    window.ShowRestarting();
-                    _manager.WaitExitThenApplyUpdates(update.TargetFullRelease, silent: false, restart: true);
+                    case UpdatePhase.Postponed:
+                        window.CloseIfOpen();
+                        return;
+                    case UpdatePhase.Failed:
+                        window.ShowProblem(L10n.Format("Couldn't download the update: %@", problem));
+                        continue;
                 }
-                catch (OperationCanceledException)
-                {
-                    Set(State.Postponed());
-                    window.CloseIfOpen();
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    Set(State.DownloadFailed(exception.Message));
-                    window.ShowProblem(L10n.Format("Couldn't download the update: %@", exception.Message));
-                    continue;
-                }
-                Set(State.Restarting());
                 _quit();
                 return;
             }
@@ -177,6 +169,35 @@ public sealed class AppUpdater : IDisposable
         finally
         {
             _isBusy = false;
+        }
+    }
+
+    private static async Task<string?> DownloadAndInstallAtExitAsync(UpdateManager manager, UpdateInfo update, UpdateWindow window,
+        CancellationToken cancellation)
+    {
+        try
+        {
+            await manager.DownloadUpdatesAsync(update, percent => window.Dispatcher.BeginInvoke(() => window.ShowProgress(percent)), cancellation);
+            if (cancellation.IsCancellationRequested) return null;
+            window.ShowRestarting();
+            manager.WaitExitThenApplyUpdates(update.TargetFullRelease, silent: false, restart: true);
+            return null;
+        }
+        catch (Exception exception)
+        {
+            return exception.Message;
+        }
+    }
+
+    private void RememberSkippedVersion(string version)
+    {
+        try
+        {
+            _store.SetValue(UpdatePrompt.SkippedVersionKey, version);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine($"earmatch: the skipped version was not saved: {exception.Message}");
         }
     }
 

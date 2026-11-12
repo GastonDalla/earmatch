@@ -49,20 +49,22 @@ sealed class PixelBuffer
         }
     }
 
-    public PixelImage Image(ScreenPoint origin = default, double scale = 2) =>
-        new(Bytes, Width, Height, Width * 4, PixelImage.PixelLayout.Rgba, scale, origin);
+    public PixelImage Image(ScreenPoint origin = default, double scale = Fixture.VmDisplayAt200Percent) =>
+        new(Bytes, Width, Height, Width * 4, PixelImage.PixelLayout.Rgba, pixelsPerScreenUnit: scale, origin);
 
     public PixelImage WindowsImage(ScreenPoint pointOrigin = default) =>
-        new(Bytes, Width, Height, Width * 4, PixelImage.PixelLayout.Rgba, scale: 1, Physical.Point(pointOrigin), layoutScale: 2);
+        new(Bytes, Width, Height, Width * 4, PixelImage.PixelLayout.Rgba, pixelsPerScreenUnit: 1, Physical.Point(pointOrigin),
+            screenUnitsPerPoint: Physical.PixelsPerPoint);
 }
 
 static class Physical
 {
-    public const double Scale = 2;
+    public const double PixelsPerPoint = Fixture.VmDisplayAt200Percent;
 
-    public static ScreenPoint Point(ScreenPoint point) => new(point.X * Scale, point.Y * Scale);
+    public static ScreenPoint Point(ScreenPoint point) => new(point.X * PixelsPerPoint, point.Y * PixelsPerPoint);
 
-    public static ScreenRect Rect(ScreenRect rect) => new(rect.X * Scale, rect.Y * Scale, rect.Width * Scale, rect.Height * Scale);
+    public static ScreenRect Rect(ScreenRect rect) =>
+        new(rect.X * PixelsPerPoint, rect.Y * PixelsPerPoint, rect.Width * PixelsPerPoint, rect.Height * PixelsPerPoint);
 
     public static WaveformStrip Strip(WaveformStrip strip) => new(Rect(strip.Frame), strip.Orientation, Rect(strip.MarkerArea));
 }

@@ -21,30 +21,30 @@ public readonly struct PixelImage
 
     private readonly ReadOnlyMemory<byte> _bytes;
 
-    public PixelImage(ReadOnlyMemory<byte> bytes, int width, int height, int bytesPerRow, PixelLayout layout, double scale, ScreenPoint origin,
-        double layoutScale = 1)
+    public PixelImage(ReadOnlyMemory<byte> bytes, int width, int height, int bytesPerRow, PixelLayout layout, double pixelsPerScreenUnit,
+        ScreenPoint origin, double screenUnitsPerPoint = 1)
     {
         _bytes = bytes;
         Width = width;
         Height = height;
         BytesPerRow = bytesPerRow;
         Layout = layout;
-        Scale = scale;
+        PixelsPerScreenUnit = pixelsPerScreenUnit;
         Origin = origin;
-        LayoutScale = layoutScale;
+        ScreenUnitsPerPoint = screenUnitsPerPoint;
     }
 
     public int Width { get; }
     public int Height { get; }
     public int BytesPerRow { get; }
     public PixelLayout Layout { get; }
-    public double Scale { get; }
+    public double PixelsPerScreenUnit { get; }
     public ScreenPoint Origin { get; }
-    public double LayoutScale { get; }
+    public double ScreenUnitsPerPoint { get; }
 
-    public double PixelsPerPoint => Scale * LayoutScale;
+    public double PixelsPerPoint => PixelsPerScreenUnit * ScreenUnitsPerPoint;
 
-    public double Points(double points) => points * LayoutScale;
+    public double PointsInScreenUnits(double points) => points * ScreenUnitsPerPoint;
 
     public RGB Pixel(int x, int y)
     {
@@ -53,15 +53,15 @@ public readonly struct PixelImage
         return Layout == PixelLayout.Bgra ? new RGB(p[2], p[1], p[0]) : new RGB(p[0], p[1], p[2]);
     }
 
-    public int Column(double x) => Clamp((int)Math.Floor((x - Origin.X) * Scale), Width);
+    public int Column(double x) => Clamp(UnclampedColumn(x), Width);
 
-    public int UnclampedColumn(double x) => (int)Math.Floor((x - Origin.X) * Scale);
+    public int UnclampedColumn(double x) => (int)Math.Floor((x - Origin.X) * PixelsPerScreenUnit);
 
-    public int UnclampedRow(double y) => (int)Math.Floor((y - Origin.Y) * Scale);
+    public int UnclampedRow(double y) => (int)Math.Floor((y - Origin.Y) * PixelsPerScreenUnit);
 
-    public int Row(double y) => Clamp((int)Math.Floor((y - Origin.Y) * Scale), Height);
-    public double PointX(double column) => Origin.X + column / Scale;
-    public double PointY(double row) => Origin.Y + row / Scale;
+    public int Row(double y) => Clamp(UnclampedRow(y), Height);
+    public double ScreenX(double column) => Origin.X + column / PixelsPerScreenUnit;
+    public double ScreenY(double row) => Origin.Y + row / PixelsPerScreenUnit;
 
     private static int Clamp(int value, int limit) => Math.Min(Math.Max(value, 0), limit);
 }

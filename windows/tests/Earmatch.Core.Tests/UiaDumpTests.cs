@@ -18,12 +18,12 @@ public class UiaDumpTests
     {
         var json = Json(TwoDeckHorizontal);
 
-        var snapshot = UiaDump.Snapshot(UiaDump.ReadNodes(json), Scale);
-        var parsed = UiaDump.Parse(json, Scale);
+        var snapshot = UiaDump.Snapshot(UiaDump.ReadNodes(json), VmDisplayAt200Percent);
+        var parsed = UiaDump.Parse(json, VmDisplayAt200Percent);
 
         Assert.Equal(parsed.WindowFrame, snapshot.WindowFrame);
         Assert.Equal(parsed.Elements, snapshot.Elements);
-        Assert.Equal(Scale, snapshot.Scale);
+        Assert.Equal(VmDisplayAt200Percent, snapshot.Scale);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class UiaDumpTests
     {
         var nodes = UiaDump.ReadNodes(Json(TwoDeckHorizontal));
 
-        var snapshot = UiaDump.Snapshot(nodes, Scale, out var positions);
+        var snapshot = UiaDump.Snapshot(nodes, VmDisplayAt200Percent, out var positions);
 
         Assert.Equal(snapshot.Elements.Count, positions.Count);
         for (var index = 0; index < positions.Count; index++)
@@ -50,7 +50,7 @@ public class UiaDumpTests
         var written = UiaDump.Write(Info, nodes);
 
         Assert.Equal(nodes, UiaDump.ReadNodes(written));
-        Assert.Equal(Layout(TwoDeckHorizontal), RekordboxLayout.Locate(UiaDump.Parse(written, Scale)));
+        Assert.Equal(Layout(TwoDeckHorizontal), RekordboxLayout.Locate(UiaDump.Parse(written, VmDisplayAt200Percent)));
     }
 
     [Fact]

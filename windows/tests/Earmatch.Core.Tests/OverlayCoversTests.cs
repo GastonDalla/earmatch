@@ -13,7 +13,7 @@ public class OverlayCoversTests
         new(isBPMLimitEnabled: limit, bpmLimit: bpmLimit, isBlindModeEnabled: blind, waveformMode: waveform);
 
     static List<OverlayCover> Covers(string fixture, OverlaySettings settings) =>
-        OverlayCovers.Plan(Layout(fixture), settings, Scale).ToList();
+        OverlayCovers.Plan(Layout(fixture), settings, VmDisplayAt200Percent).ToList();
 
     [Theory]
     [InlineData(BPMLimit.OneDecimal)]
@@ -66,7 +66,7 @@ public class OverlayCoversTests
         var layout = Layout(TwoDeckHorizontal);
         layout.Decks[1] = layout.Decks[1] with { HeaderBPMFrame = null };
 
-        var covers = OverlayCovers.Plan(layout, Settings(limit: false, blind: true), Scale);
+        var covers = OverlayCovers.Plan(layout, Settings(limit: false, blind: true), VmDisplayAt200Percent);
 
         Assert.Equal([1], covers.Where(cover => cover.Kind == OverlayCoverKind.HeaderBPM).Select(cover => cover.Deck));
     }
@@ -100,7 +100,7 @@ public class OverlayCoversTests
     {
         var browse = Layout("uia-7.2.19-perf-browse.json");
 
-        Assert.DoesNotContain(OverlayCovers.Plan(browse, Settings(blind: true, waveform: WaveformMode.HideBoth), Scale),
+        Assert.DoesNotContain(OverlayCovers.Plan(browse, Settings(blind: true, waveform: WaveformMode.HideBoth), VmDisplayAt200Percent),
             cover => cover.Kind == OverlayCoverKind.Waveform);
     }
 

@@ -276,4 +276,20 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.Null(store.Problem);
         Assert.Equal(1, new PracticeStore(_file, TimeZoneInfo.Utc).Load().MixCount);
     }
+
+    [Fact]
+    public async Task TheStoreSavesMixesRecordedFromManyThreadsOneAfterAnother()
+    {
+        const int mixes = 24;
+        var start = new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero);
+        var store = new PracticeStore(_file, TimeZoneInfo.Utc);
+
+        var counts = await Task.WhenAll(Enumerable.Range(0, mixes)
+            .Select(index => Task.Run(() => store.Record(Result(start.AddMinutes(index))).MixCount)));
+
+        Assert.Equal(Enumerable.Range(1, mixes), counts.Order());
+        Assert.Null(store.Problem);
+        Assert.Equal(mixes, new PracticeStore(_file, TimeZoneInfo.Utc).Load().MixCount);
+        Assert.Equal(["practice.json"], Contents());
+    }
 }

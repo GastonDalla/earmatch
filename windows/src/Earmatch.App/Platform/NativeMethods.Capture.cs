@@ -17,14 +17,17 @@ internal static partial class NativeMethods
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    private unsafe struct CompositionTimingInfo
+    private unsafe struct DwmTimingInfo
     {
+        public const int PackedSizeInDwmapiH = 292;
+        private const int SizeUpToQpcVBlank = sizeof(uint) + 2 * sizeof(uint) + sizeof(ulong) + 2 * sizeof(uint) + sizeof(ulong);
+
         public uint Size;
         public UnsignedRatio RateRefresh;
         public ulong QpcRefreshPeriod;
         public UnsignedRatio RateCompose;
         public ulong QpcVBlank;
-        public fixed byte Rest[256];
+        public fixed byte FieldsAfterQpcVBlankNotRead[PackedSizeInDwmapiH - SizeUpToQpcVBlank];
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -60,7 +63,7 @@ internal static partial class NativeMethods
     private static partial int DwmGetWindowAttribute(IntPtr window, int attribute, out WindowRect value, int size);
 
     [LibraryImport("dwmapi.dll")]
-    private static partial int DwmGetCompositionTimingInfo(IntPtr window, ref CompositionTimingInfo info);
+    private static partial int DwmGetCompositionTimingInfo(IntPtr window, ref DwmTimingInfo info);
 
     [LibraryImport("user32.dll", SetLastError = true)]
     private static partial uint SendInput(uint count, Input[] inputs, int size);
@@ -88,7 +91,7 @@ internal static partial class NativeMethods
 
     public static bool CompositionTiming(out long vblank, out long period)
     {
-        var info = new CompositionTimingInfo { Size = 292 };
+        var info = new DwmTimingInfo { Size = DwmTimingInfo.PackedSizeInDwmapiH };
         var ok = DwmGetCompositionTimingInfo(IntPtr.Zero, ref info) >= 0 && info.QpcRefreshPeriod > 0;
         vblank = ok ? (long)info.QpcVBlank : 0;
         period = ok ? (long)info.QpcRefreshPeriod : 0;

@@ -307,8 +307,14 @@ public partial class App : Application
         try
         {
             using var signal = EventWaitHandle.OpenExisting(ShowSignalName);
-            LetRunningInstanceComeToFront();
-            signal.Set();
+            try
+            {
+                LetRunningInstanceComeToFront();
+            }
+            finally
+            {
+                signal.Set();
+            }
         }
         catch (WaitHandleCannotBeOpenedException)
         {
@@ -321,12 +327,36 @@ public partial class App : Application
     private static void LetRunningInstanceComeToFront()
     {
         using var current = System.Diagnostics.Process.GetCurrentProcess();
-        foreach (var process in System.Diagnostics.Process.GetProcessesByName(current.ProcessName))
+        foreach (var process in ProcessesNamedLike(current))
         {
             using (process)
             {
-                if (process.Id != current.Id && process.SessionId == current.SessionId) NativeMethods.AllowForeground(process.Id);
+                if (process.Id != current.Id && IsInSession(process, current.SessionId)) NativeMethods.AllowForeground(process.Id);
             }
+        }
+    }
+
+    private static System.Diagnostics.Process[] ProcessesNamedLike(System.Diagnostics.Process current)
+    {
+        try
+        {
+            return System.Diagnostics.Process.GetProcessesByName(current.ProcessName);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return [];
+        }
+    }
+
+    private static bool IsInSession(System.Diagnostics.Process process, int sessionId)
+    {
+        try
+        {
+            return process.SessionId == sessionId;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return false;
         }
     }
 

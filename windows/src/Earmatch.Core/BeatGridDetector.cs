@@ -16,7 +16,7 @@ public static class BeatGridDetector
     public static BeatGridReading? Read(WaveformStrip strip, double playhead, PixelImage image)
     {
         var markers = FindMarkers(strip, playhead, image);
-        if (markers.Count < 3 || FitGrid(markers, playhead, minimumSpacing: image.Points(1)) is not { } grid) return null;
+        if (markers.Count < 3 || FitGrid(markers, playhead, minimumSpacing: image.PointsInScreenUnits(1)) is not { } grid) return null;
         var onGrid = markers.Where(marker => grid.Fits(marker.X)).ToList();
         var downbeats = onGrid.Where(marker => marker.IsDownbeat).Select(marker => marker.X).ToList();
         return new BeatGridReading(grid.Spacing, onGrid.Select(marker => marker.X).ToValueList(), downbeats.ToValueList(),
@@ -32,16 +32,16 @@ public static class BeatGridDetector
         var area = strip.MarkerArea;
         var isVertical = strip.Orientation == StripOrientation.Vertical;
         var (linesStart, linesEnd) = isVertical ? (image.Row(area.MinY), image.Row(area.MaxY)) : (image.Column(area.MinX), image.Column(area.MaxX));
-        var playheadLine = isVertical ? (playhead - image.Origin.Y) * image.Scale : (playhead - image.Origin.X) * image.Scale;
+        var playheadLine = isVertical ? (playhead - image.Origin.Y) * image.PixelsPerScreenUnit : (playhead - image.Origin.X) * image.PixelsPerScreenUnit;
         (int Start, int End) near, far;
         if (isVertical)
         {
-            near = (image.Column(area.MinX + image.Points(BandTop)), image.Column(area.MinX + image.Points(BandBottom)));
-            far = (image.Column(area.MaxX - image.Points(BandBottom)), image.Column(area.MaxX - image.Points(BandTop)));
+            near = (image.Column(area.MinX + image.PointsInScreenUnits(BandTop)), image.Column(area.MinX + image.PointsInScreenUnits(BandBottom)));
+            far = (image.Column(area.MaxX - image.PointsInScreenUnits(BandBottom)), image.Column(area.MaxX - image.PointsInScreenUnits(BandTop)));
         }
         else
         {
-            near = (image.Row(area.MinY + image.Points(BandTop)), image.Row(area.MinY + image.Points(BandBottom)));
+            near = (image.Row(area.MinY + image.PointsInScreenUnits(BandTop)), image.Row(area.MinY + image.PointsInScreenUnits(BandBottom)));
             far = (0, 0);
         }
         if (linesStart >= linesEnd || near.Start >= near.End) return [];
@@ -60,7 +60,7 @@ public static class BeatGridDetector
             var isCut = current.Start == linesStart || current.End == linesEnd - 1;
             if (isCut && widthInPoints < ClippedMinimum) return;
             var center = (current.Start + current.End + 1) / 2.0;
-            markers.Add(new Marker(isVertical ? image.PointY(center) : image.PointX(center), current.Red));
+            markers.Add(new Marker(isVertical ? image.ScreenY(center) : image.ScreenX(center), current.Red));
         }
 
         for (var line = linesStart; line < linesEnd; line++)
@@ -188,7 +188,7 @@ public static class PlayheadDetector
     {
         var isVertical = strip.Orientation == StripOrientation.Vertical;
         var area = strip.MarkerArea;
-        var reach = image.Points(SearchDistance);
+        var reach = image.PointsInScreenUnits(SearchDistance);
         var (candidatesStart, candidatesEnd) = isVertical
             ? (image.Row(strip.Center - reach), image.Row(strip.Center + reach))
             : (image.Column(strip.Center - reach), image.Column(strip.Center + reach));
@@ -219,7 +219,7 @@ public static class PlayheadDetector
         }
         if (first is not { } start) return null;
         var center = (start + last + 1) / 2.0;
-        return isVertical ? image.PointY(center) : image.PointX(center);
+        return isVertical ? image.ScreenY(center) : image.ScreenX(center);
     }
 }
 
@@ -227,11 +227,11 @@ public static class SyncMasterDetector
 {
     public static bool IsMaster(ScreenRect button, PixelImage image)
     {
-        var left = Math.Max(image.UnclampedColumn(button.MinX + image.Points(4)), 0);
-        var right = Math.Min(image.UnclampedColumn(button.MaxX - image.Points(4)), image.Width);
+        var left = Math.Max(image.UnclampedColumn(button.MinX + image.PointsInScreenUnits(4)), 0);
+        var right = Math.Min(image.UnclampedColumn(button.MaxX - image.PointsInScreenUnits(4)), image.Width);
         if (right <= left) return false;
-        var rows = new[] { button.MinY - image.Points(1), button.MinY, button.MinY + image.Points(1), button.MaxY - image.Points(2),
-            button.MaxY - image.Points(1), button.MaxY }.Select(image.UnclampedRow).Distinct();
+        var rows = new[] { button.MinY - image.PointsInScreenUnits(1), button.MinY, button.MinY + image.PointsInScreenUnits(1), button.MaxY - image.PointsInScreenUnits(2),
+            button.MaxY - image.PointsInScreenUnits(1), button.MaxY }.Select(image.UnclampedRow).Distinct();
         var best = 0;
         foreach (var row in rows.Where(row => row >= 0 && row < image.Height))
         {

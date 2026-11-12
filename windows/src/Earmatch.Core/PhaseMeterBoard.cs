@@ -2,12 +2,12 @@ namespace Earmatch.Core;
 
 public sealed record FrameMappingProblem(int FrameWidth, int FrameHeight, int WindowWidth, int WindowHeight)
 {
-    public const double SizeTolerance = 2;
+    public const double ResizeSlackInPixels = 2;
 
     public string Message => L10n.Format("frame shows %ldx%ld px but the window is %ldx%ld px", FrameWidth, FrameHeight, WindowWidth, WindowHeight);
 
     public static FrameMappingProblem? Check(int frameWidth, int frameHeight, ScreenSize window) =>
-        Math.Abs(frameWidth - window.Width) <= SizeTolerance && Math.Abs(frameHeight - window.Height) <= SizeTolerance
+        Math.Abs(frameWidth - window.Width) <= ResizeSlackInPixels && Math.Abs(frameHeight - window.Height) <= ResizeSlackInPixels
             ? null
             : new FrameMappingProblem(frameWidth, frameHeight, (int)Math.Round(window.Width), (int)Math.Round(window.Height));
 }
@@ -16,7 +16,9 @@ public sealed record FrameAnalysis(IReadOnlyDictionary<int, DeckFrameReading> De
 
 public sealed class PhaseMeterBoard
 {
-    public const int UnmappedFramesTolerated = 6;
+    public const int MismatchedFramesRiddenOutWhileResizing = 6;
+
+    private const double StoppedBelowBeatsPerSecond = 0.5;
 
     private readonly FrameStats? _tracedStats;
     private readonly Dictionary<int, DrawnHistory> _drawn = [];
@@ -44,7 +46,7 @@ public sealed class PhaseMeterBoard
     {
         problemChanged = false;
         if (_tracedStats is not null) MeasureMeterError(frame, _tracedStats);
-        if (frame.MappingProblem is not null && Latest is { MappingProblem: null } && _unmappedFrames < UnmappedFramesTolerated)
+        if (frame.MappingProblem is not null && Latest is { MappingProblem: null } && _unmappedFrames < MismatchedFramesRiddenOutWhileResizing)
         {
             _unmappedFrames++;
             return false;
@@ -138,37 +140,36 @@ public sealed class PhaseMeterBoard
         foreach (var (number, deck) in frame.Decks)
         {
             if (deck.Phase.Status != PhaseTrackerStatus.Live || deck.Phase.PhaseInBar is not { } measured || deck.BeatsPerSecond is not { } rate
-                || Math.Abs(rate) <= 0.5 || !_drawn.TryGetValue(number, out var history) || history.Phase(frame.Time, rate) is not { } drawn)
+                || Math.Abs(rate) <= StoppedBelowBeatsPerSecond
+                || !_drawn.TryGetValue(number, out var history) || history.Phase(frame.Time, rate) is not { } drawn)
                 continue;
-            var difference = (measured - drawn + 2) % 4;
-            var beats = (difference < 0 ? difference + 4 : difference) - 2;
-            stats.RecordPredictionError(beats / rate);
+            stats.RecordPredictionError(PhaseTracker.CircularBeats(measured - drawn) / rate);
         }
     }
 
     private sealed class DrawnHistory
     {
-        private const int Count = 16;
-        private const double MaxDistance = 0.0084;
-        private readonly double[] _times = Enumerable.Repeat(double.NegativeInfinity, Count).ToArray();
-        private readonly double[] _phases = new double[Count];
+        private const int RefreshesKept = 16;
+        private const double HalfARefreshAt60Hz = 0.0084;
+        private readonly double[] _times = Enumerable.Repeat(double.NegativeInfinity, RefreshesKept).ToArray();
+        private readonly double[] _phases = new double[RefreshesKept];
         private int _next;
 
         public void Append(double time, double phase)
         {
             _times[_next] = time;
             _phases[_next] = phase;
-            _next = (_next + 1) % Count;
+            _next = (_next + 1) % RefreshesKept;
         }
 
         public double? Phase(double time, double beatsPerSecond)
         {
             var best = 0;
-            for (var index = 1; index < Count; index++)
+            for (var index = 1; index < RefreshesKept; index++)
             {
                 if (Math.Abs(_times[index] - time) < Math.Abs(_times[best] - time)) best = index;
             }
-            if (!(Math.Abs(_times[best] - time) <= MaxDistance)) return null;
+            if (!(Math.Abs(_times[best] - time) <= HalfARefreshAt60Hz)) return null;
             return _phases[best] + beatsPerSecond * (time - _times[best]);
         }
     }

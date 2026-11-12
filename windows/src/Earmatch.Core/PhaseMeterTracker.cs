@@ -18,14 +18,14 @@ public sealed class PhaseTracker
 
     private readonly record struct Sample(double Time, double Phase, double Spacing);
 
-    private readonly double _layoutScale;
+    private readonly double _screenUnitsPerPoint;
     private readonly BeatRateEstimator _rate = new();
     private Sample? _good;
     private (Sample Sample, int Count)? _candidate;
 
-    public PhaseTracker(double layoutScale = 1)
+    public PhaseTracker(double screenUnitsPerPoint = 1)
     {
-        _layoutScale = layoutScale;
+        _screenUnitsPerPoint = screenUnitsPerPoint;
     }
 
     public double? BeatsPerSecond => _rate.BeatsPerSecond;
@@ -64,7 +64,7 @@ public sealed class PhaseTracker
 
     private PhaseEstimate Accept(Sample sample)
     {
-        _rate.Add(sample.Time, sample.Phase, quantum: 1 / Math.Max(sample.Spacing / _layoutScale, 1));
+        _rate.Add(sample.Time, sample.Phase, quantum: 1 / Math.Max(sample.Spacing / _screenUnitsPerPoint, 1));
         _good = sample;
         return new PhaseEstimate(sample.Phase, sample.Spacing, PhaseTrackerStatus.Live);
     }

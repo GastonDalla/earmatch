@@ -95,11 +95,11 @@ public class HotkeyRecognizerTests
     {
         var recognizer = new HotkeyRecognizer();
 
-        var outcomes = Press(recognizer, Down(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Down(Key.RightAlt));
+        var outcomes = Press(recognizer, Down(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode), Down(Key.RightAlt));
 
         Assert.Equal([HotkeyRecognizer.Outcome.None, PeekStarts], outcomes);
         Assert.Equal([PeekEnds, HotkeyRecognizer.Outcome.None],
-            Press(recognizer, Up(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode)));
+            Press(recognizer, Up(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode)));
     }
 
     [Fact]
@@ -241,7 +241,7 @@ public class HotkeyRecognizerTests
         HotkeyRecognizer.Event[][] presses =
         [
             [Down(Key.RightAlt), Up(Key.RightAlt)],
-            [Down(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Down(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Up(Key.RightAlt)],
+            [Down(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode), Down(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode), Up(Key.RightAlt)],
             [Down(Key.LeftWindows), Down(Key.E), Up(Key.E), Up(Key.LeftWindows)],
             [Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.E), Up(Key.E)],
             [Down(Key.LeftShift), Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows), Down(Key.E), Up(Key.E)],

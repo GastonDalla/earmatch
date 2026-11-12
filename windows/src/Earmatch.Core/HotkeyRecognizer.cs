@@ -4,26 +4,46 @@ public sealed class HotkeyRecognizer
 {
     public static class VirtualKey
     {
-        public const int Shift = 0x10;
-        public const int Control = 0x11;
-        public const int Alt = 0x12;
-        public const int CapsLock = 0x14;
-        public const int E = 0x45;
-        public const int LeftWindows = 0x5B;
-        public const int RightWindows = 0x5C;
-        public const int NumLock = 0x90;
-        public const int ScrollLock = 0x91;
-        public const int LeftShift = 0xA0;
-        public const int RightShift = 0xA1;
-        public const int LeftControl = 0xA2;
-        public const int RightControl = 0xA3;
-        public const int LeftAlt = 0xA4;
-        public const int RightAlt = 0xA5;
+        public const int Shift = WinUser.VK_SHIFT;
+        public const int Control = WinUser.VK_CONTROL;
+        public const int Alt = WinUser.VK_MENU;
+        public const int CapsLock = WinUser.VK_CAPITAL;
+        public const int E = 'E';
+        public const int LeftWindows = WinUser.VK_LWIN;
+        public const int RightWindows = WinUser.VK_RWIN;
+        public const int NumLock = WinUser.VK_NUMLOCK;
+        public const int ScrollLock = WinUser.VK_SCROLL;
+        public const int LeftShift = WinUser.VK_LSHIFT;
+        public const int RightShift = WinUser.VK_RSHIFT;
+        public const int LeftControl = WinUser.VK_LCONTROL;
+        public const int RightControl = WinUser.VK_RCONTROL;
+        public const int LeftAlt = WinUser.VK_LMENU;
+        public const int RightAlt = WinUser.VK_RMENU;
+        public const int Unassigned = WinUser.UnassignedVirtualKeyE8;
+
+        private static class WinUser
+        {
+            public const int VK_SHIFT = 0x10;
+            public const int VK_CONTROL = 0x11;
+            public const int VK_MENU = 0x12;
+            public const int VK_CAPITAL = 0x14;
+            public const int VK_LWIN = 0x5B;
+            public const int VK_RWIN = 0x5C;
+            public const int VK_NUMLOCK = 0x90;
+            public const int VK_SCROLL = 0x91;
+            public const int VK_LSHIFT = 0xA0;
+            public const int VK_RSHIFT = 0xA1;
+            public const int VK_LCONTROL = 0xA2;
+            public const int VK_RCONTROL = 0xA3;
+            public const int VK_LMENU = 0xA4;
+            public const int VK_RMENU = 0xA5;
+            public const int UnassignedVirtualKeyE8 = 0xE8;
+        }
     }
 
-    public const int AltGrControlScanCode = 0x21D;
+    public const int AltGrFakeLeftControlScanCode = 0x21D;
 
-    public const int MaskKey = 0xE8;
+    public const int MaskKey = VirtualKey.Unassigned;
 
     public readonly record struct Event(int VirtualKey, bool IsDown, int ScanCode = 0)
     {
@@ -56,7 +76,7 @@ public sealed class HotkeyRecognizer
     public Outcome Handle(Event keyEvent)
     {
         var key = keyEvent.VirtualKey;
-        if (key == MaskKey || IsLockKey(key) || (key == VirtualKey.LeftControl && keyEvent.ScanCode == AltGrControlScanCode)) return Outcome.None;
+        if (key == MaskKey || IsLockKey(key) || (key == VirtualKey.LeftControl && keyEvent.ScanCode == AltGrFakeLeftControlScanCode)) return Outcome.None;
         var isRepeat = keyEvent.IsDown && !_held.Add(key);
         if (!keyEvent.IsDown) _held.Remove(key);
         if (key == VirtualKey.RightAlt)

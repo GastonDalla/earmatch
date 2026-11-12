@@ -18,6 +18,25 @@ public class PhaseMeterBoardTests
 
     static readonly OverlaySettings Settings = new() { IsPhaseMeterEnabled = true, PhaseMeterType = PhaseMeterType.Line };
 
+    [Theory]
+    [InlineData(1000, 600)]
+    [InlineData(1002, 598)]
+    [InlineData(998, 602)]
+    public void AFrameAPixelOrTwoOffTheWindowBeingResizedStillMapsOntoIt(int frameWidth, int frameHeight)
+    {
+        Assert.Equal(2, FrameMappingProblem.ResizeSlackInPixels);
+        Assert.Null(FrameMappingProblem.Check(frameWidth, frameHeight, new ScreenSize(1000, 600)));
+    }
+
+    [Theory]
+    [InlineData(1003, 600)]
+    [InlineData(1000, 597)]
+    public void AFrameMoreThanTwoPixelsOffTheWindowIsAMappingProblem(int frameWidth, int frameHeight)
+    {
+        var problem = FrameMappingProblem.Check(frameWidth, frameHeight, new ScreenSize(1000, 600));
+        Assert.Equal(new FrameMappingProblem(frameWidth, frameHeight, 1000, 600), problem);
+    }
+
     [Fact]
     public void TheSyncMasterIsTheDeckWhoseMasterButtonIsLit()
     {
@@ -83,7 +102,7 @@ public class PhaseMeterBoardTests
         var problem = new FrameMappingProblem(800, 600, 1600, 1200);
         board.Accept(Frame(1, new() { [1] = Reading(1.0) }), layout, out _);
 
-        for (var frame = 0; frame < PhaseMeterBoard.UnmappedFramesTolerated; frame++)
+        for (var frame = 0; frame < PhaseMeterBoard.MismatchedFramesRiddenOutWhileResizing; frame++)
         {
             Assert.False(board.Accept(Frame(1.1 + frame * 0.01, new() { [1] = Reading(1.0) }, problem), layout, out _));
             Assert.True(board.HasFrame);

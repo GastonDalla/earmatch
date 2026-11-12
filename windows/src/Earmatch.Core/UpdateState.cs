@@ -61,6 +61,9 @@ public sealed record UpdateState
 
     public UpdateState DownloadFailed(string problem) => this with { Phase = UpdatePhase.Failed, Problem = problem };
 
+    public UpdateState AfterDownload(bool wasCancelled, string? problem) =>
+        wasCancelled ? Postponed() : problem is not null ? DownloadFailed(problem) : Restarting();
+
     public bool HasUpdate => Phase is UpdatePhase.Available or UpdatePhase.Postponed;
 
     public bool ShowsMenuItem => Phase != UpdatePhase.Off;

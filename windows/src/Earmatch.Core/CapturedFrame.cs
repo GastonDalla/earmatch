@@ -23,8 +23,8 @@ public sealed class FramePixels
     public int Height { get; }
     public int Stride { get; }
 
-    public PixelImage Image(ScreenPoint origin, double layoutScale) =>
-        new(Bytes, Width, Height, Stride, PixelImage.PixelLayout.Bgra, 1, origin, layoutScale);
+    public PixelImage Image(ScreenPoint origin, double screenUnitsPerPoint) =>
+        new(Bytes, Width, Height, Stride, PixelImage.PixelLayout.Bgra, pixelsPerScreenUnit: 1, origin, screenUnitsPerPoint);
 
     public void Release()
     {

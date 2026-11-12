@@ -2,7 +2,8 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Capture;
 
-internal sealed record FrameReaderInput(IReadOnlyList<DeckLayout> Decks, NativeMethods.WindowRect ReadRect, double LayoutScale, FrameAnalysisOptions Options);
+internal sealed record FrameReaderInput(IReadOnlyList<DeckLayout> Decks, NativeMethods.WindowRect ReadRect, double ScreenUnitsPerPoint,
+    FrameAnalysisOptions Options);
 
 internal sealed class FrameReader
 {
@@ -30,7 +31,7 @@ internal sealed class FrameReader
         var placement = FramePlacement.Of(raw.Bounds.Screen, raw.WindowRect.Screen, input.ReadRect.Screen);
         var pixels = raw.Pixels;
         var problem = FrameMappingProblem.Check(pixels.Width, pixels.Height, placement.ExpectedSize);
-        var image = pixels.Image(placement.Origin, input.LayoutScale);
+        var image = pixels.Image(placement.Origin, input.ScreenUnitsPerPoint);
         var decks = _analyzer.Analyze(image, input.Decks, input.Options, problem is null, raw.Time);
         if (Stats.Record(CaptureClock.Now - started, raw.Time, decks) is { } trace) Console.Error.WriteLine(trace);
         return new CapturedFrame(pixels, placement.Origin, new FrameAnalysis(decks, problem, raw.Time), raw.Generation);

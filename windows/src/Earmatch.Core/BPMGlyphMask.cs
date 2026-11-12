@@ -18,7 +18,7 @@ public static class BPMGlyphMask
         {
             left = (glyphs.IntegerDigits[^1].MaxX + glyphs.Point.MinX) / 2;
         }
-        var right = Math.Max(jogFrame.MaxX, last.MaxX + image.Points(1));
+        var right = Math.Max(jogFrame.MaxX, last.MaxX + image.PointsInScreenUnits(1));
         return new ScreenRect(left, jogFrame.MinY, right - left, jogFrame.Height);
     }
 
@@ -50,8 +50,8 @@ public static class BPMGlyphMask
 
         public readonly ScreenRect Rect(PixelImage image)
         {
-            double minX = image.PointX(First), maxX = image.PointX(Last + 1);
-            double minY = image.PointY(Top), maxY = image.PointY(Bottom + 1);
+            double minX = image.ScreenX(First), maxX = image.ScreenX(Last + 1);
+            double minY = image.ScreenY(Top), maxY = image.ScreenY(Bottom + 1);
             return new ScreenRect(minX, minY, maxX - minX, maxY - minY);
         }
     }

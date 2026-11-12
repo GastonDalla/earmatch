@@ -16,23 +16,23 @@ public static class CueCountdown
 
     public static ValueList<CueMarker> Markers(ScreenRect strip, double minX, PixelImage image)
     {
-        var left = image.Column(Math.Max(strip.MinX, minX - image.Points(8)));
+        var left = image.Column(Math.Max(strip.MinX, minX - image.PointsInScreenUnits(8)));
         var right = image.Column(strip.MaxX);
         if (right <= left) return [];
         var found = new List<CueMarker>();
 
-        var flagTop = image.Row(strip.MinY + image.Points(0.5));
-        var flagBottom = image.Row(strip.MinY + image.Points(3));
-        var flagBody = image.Row(strip.MinY + image.Points(9.5));
+        var flagTop = image.Row(strip.MinY + image.PointsInScreenUnits(0.5));
+        var flagBottom = image.Row(strip.MinY + image.PointsInScreenUnits(3));
+        var flagBody = image.Row(strip.MinY + image.PointsInScreenUnits(9.5));
         foreach (var run in Runs(left, right, flagTop, flagBottom, image, color => color.IsHotCuePink))
         {
             if (Contains(FlagWidth, run.Width(image)) && Fill(run, flagBody, image, color => color.IsHotCuePink) >= 0.5)
                 found.Add(new CueMarker(run.Center(image), CueMarkerKind.HotCue));
         }
 
-        var baseTop = image.Row(strip.MaxY - image.Points(4));
-        var baseBottom = image.Row(strip.MaxY - image.Points(0.5));
-        var narrow = image.Row(strip.MaxY - image.Points(9));
+        var baseTop = image.Row(strip.MaxY - image.PointsInScreenUnits(4));
+        var baseBottom = image.Row(strip.MaxY - image.PointsInScreenUnits(0.5));
+        var narrow = image.Row(strip.MaxY - image.PointsInScreenUnits(9));
         foreach (var run in Runs(left, right, baseTop, baseBottom, image, color => color.IsCueOrange))
         {
             if (!Contains(TriangleWidth, run.Width(image))) continue;
@@ -48,8 +48,8 @@ public static class CueCountdown
 
     public static double? BeatsToNextCue(ScreenRect strip, double playheadX, double beatSpacing, PixelImage image)
     {
-        if (!(beatSpacing > image.Points(1))) return null;
-        var ahead = Markers(strip, playheadX + image.Points(ReachedDistance), image);
+        if (!(beatSpacing > image.PointsInScreenUnits(1))) return null;
+        var ahead = Markers(strip, playheadX + image.PointsInScreenUnits(ReachedDistance), image);
         return ahead.Count > 0 ? (ahead[0].X - playheadX) / beatSpacing : null;
     }
 
@@ -68,7 +68,7 @@ public static class CueCountdown
     {
         public double Width(PixelImage image) => (Last - First + 1) / image.PixelsPerPoint;
 
-        public double Center(PixelImage image) => image.PointX((First + Last + 1) / 2.0);
+        public double Center(PixelImage image) => image.ScreenX((First + Last + 1) / 2.0);
     }
 
     private static bool Contains((double Min, double Max) range, double value) => value >= range.Min && value <= range.Max;

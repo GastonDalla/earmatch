@@ -32,10 +32,10 @@ public sealed class FrameAnalyzer
     {
         lock (_gate)
         {
-            if (image.LayoutScale != _trackerScale)
+            if (image.ScreenUnitsPerPoint != _trackerScale)
             {
                 _trackers.Clear();
-                _trackerScale = image.LayoutScale;
+                _trackerScale = image.ScreenUnitsPerPoint;
             }
             var readings = new Dictionary<int, DeckFrameReading>();
             foreach (var deck in decks) readings[deck.Number] = Read(deck, image, options, isMapped, time);
@@ -57,7 +57,7 @@ public sealed class FrameAnalyzer
         var isLoaded = deck.BPM is not null || deck.Title is not null;
         double? playhead = isMapped && isLoaded && deck.Strip is { } shown ? Playhead(deck.Number, shown, image) : null;
         var grid = deck.Strip is { } strip && playhead is { } position ? BeatGridDetector.Read(strip, position, image) : null;
-        if (!_trackers.TryGetValue(deck.Number, out var tracker)) _trackers[deck.Number] = tracker = new PhaseTracker(image.LayoutScale);
+        if (!_trackers.TryGetValue(deck.Number, out var tracker)) _trackers[deck.Number] = tracker = new PhaseTracker(image.ScreenUnitsPerPoint);
         var phase = tracker.Update(grid, time);
 
         BPMCovers? covers = null;
@@ -83,6 +83,6 @@ public sealed class FrameAnalyzer
             return found;
         }
         if (_playheads.TryGetValue(deck, out var known) && known.Strip == strip.Frame) return known.Position;
-        return strip.Center + image.Points(0.5);
+        return strip.Center + image.PointsInScreenUnits(0.5);
     }
 }

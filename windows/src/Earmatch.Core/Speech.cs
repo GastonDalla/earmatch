@@ -19,7 +19,7 @@ public static class MeterSpeech
             if (own.BeatInBar is { } beat)
             {
                 parts.Add(Beat(beat));
-                if (own.IsOnMastersBeat == false) parts.Add(OutOfPhase(meter.MasterPlayer ?? 0));
+                if (own.IsOnMastersBeat == false && meter.MasterPlayer is { } master) parts.Add(OutOfPhase(master));
             }
             parts.Add(Counter(own.Counter));
         }

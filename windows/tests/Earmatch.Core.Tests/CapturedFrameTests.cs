@@ -82,7 +82,7 @@ public class CapturedFrameTests
 
         Assert.Equal((60, 30, 400), (image.Width, image.Height, image.BytesPerRow));
         Assert.Equal(new ScreenPoint(10, 20), image.Origin);
-        Assert.Equal(2, image.LayoutScale);
+        Assert.Equal(2, image.ScreenUnitsPerPoint);
         Assert.Throws<ArgumentException>(() => new FramePixels(pool, bytes, 100, 51, 400));
         Assert.Throws<ArgumentException>(() => new FramePixels(pool, bytes, 101, 10, 400));
     }
