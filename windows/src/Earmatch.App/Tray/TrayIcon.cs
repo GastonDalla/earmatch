@@ -6,7 +6,8 @@ using Earmatch.Core;
 namespace Earmatch.App.Tray;
 
 /// The tray icon and its menu, the Windows counterpart of the macOS menu bar menu (MenuBarController.swift): the
-/// status, every option, Open Earmatch…, Copy Diagnostics, About, the credit and Quit. Like the macOS menu bar icon
+/// status, every option, Open Earmatch…, Copy Diagnostics, About, Check for Updates… (in installed copies), the credit
+/// and Quit. Like the macOS menu bar icon
 /// (waveform.circle.fill or waveform.circle), the icon is in full colour while the overlays run on rekordbox and
 /// greyed out otherwise; its tooltip says the status.
 public sealed class TrayIcon : IDisposable
@@ -120,6 +121,12 @@ public sealed class TrayIcon : IDisposable
         items.Add(Note(MenuText.PeekNote));
         items.Add(new ToolStripSeparator());
         items.Add(Action(MenuText.About, _about));
+        if (_model.Updates is { ShowsMenuItem: true } updates)
+        {
+            var item = Action(updates.MenuTitle, () => _model.CheckForUpdates());
+            item.Enabled = updates.IsMenuItemEnabled;
+            items.Add(item);
+        }
         items.Add(Action(Credit.MenuLine, SetupPane.OpenProfile));
         items.Add(Note(MenuText.Independence));
         items.Add(Action(WindowText.Quit, _quit));

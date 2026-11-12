@@ -60,6 +60,9 @@ public class MainWindowState
     public PracticeLiveStatus? PracticeLive { get; private set; }
     public bool IsMixing => PracticeLive is not null;
 
+    /// The updater's state for the Setup pane's update button; off until the app starts its updater, and in renders.
+    public UpdateState Updates { get; private set; } = UpdateState.Off("not started");
+
     public StatusContext Status => new(Activation, _settings, RekordboxVersion, CaptureProblem, LayoutName);
 
     public MainWindowStatus WindowStatus => MainWindowStatus.From(_settings.IsEnabled, Activation);
@@ -142,6 +145,14 @@ public class MainWindowState
         if (overview == PracticeOverview && live == PracticeLive) return;
         PracticeOverview = overview;
         PracticeLive = live;
+        Changed?.Invoke();
+    }
+
+    /// Shows the updater's state: whether the Setup pane offers Check for Updates… and what it says.
+    public void ApplyUpdates(UpdateState updates)
+    {
+        if (updates == Updates) return;
+        Updates = updates;
         Changed?.Invoke();
     }
 

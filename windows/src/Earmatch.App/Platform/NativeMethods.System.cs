@@ -159,6 +159,15 @@ internal static partial class NativeMethods
     [LibraryImport("user32.dll")]
     private static partial IntPtr GetAncestor(IntPtr window, uint flags);
 
+    /// The process of the foreground window; 0 when no window is in front.
+    public static uint ForegroundProcessId()
+    {
+        var window = GetForegroundWindow();
+        if (window == IntPtr.Zero) return 0;
+        GetWindowThreadProcessId(window, out var processId);
+        return processId;
+    }
+
     /// Whether a window is a top-level window rather than a child of another window.
     public static bool IsTopLevel(IntPtr window) => window != IntPtr.Zero && GetAncestor(window, GaRoot) == window;
 

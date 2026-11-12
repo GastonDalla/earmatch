@@ -41,6 +41,14 @@ public class DiagnosticsReportTests
     }
 
     [Fact]
+    public void TheUpdateStateFollowsTheRekordboxLine()
+    {
+        var text = (Report with { Updates = "Updates: off (development build)" }).Text;
+        Assert.Contains("rekordbox: not running\nUpdates: off (development build)\nStatus: ", text);
+        Assert.DoesNotContain("Updates:", Report.Text);
+    }
+
+    [Fact]
     public void AMatchingBoothIsNamed()
     {
         var settings = new OverlaySettings();

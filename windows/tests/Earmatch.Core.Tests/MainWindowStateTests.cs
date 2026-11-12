@@ -173,6 +173,29 @@ public sealed class MainWindowStateTests : IDisposable
     }
 
     [Fact]
+    public void TheUpdateStateStartsOffAndAnnouncesEachChange()
+    {
+        var state = new MainWindowState(new SettingsStore(FilePath), RunNow);
+        var changes = 0;
+        state.Changed += () => changes++;
+        Assert.False(state.Updates.ShowsMenuItem);
+
+        var installed = UpdateState.Ready("win-x64", "github.com/GastonDalla/earmatch");
+        state.ApplyUpdates(installed);
+        state.ApplyUpdates(UpdateState.Ready("win-x64", "github.com/GastonDalla/earmatch"));
+        state.ApplyUpdates(installed.Checked(DateTimeOffset.UnixEpoch, "0.1.3"));
+
+        Assert.Equal(2, changes);
+        Assert.Equal("Update Available…", state.Updates.MenuTitle);
+    }
+
+    [Fact]
+    public void ARenderShowsNoUpdateItem()
+    {
+        Assert.False(Sample(Decks()).Updates.ShowsMenuItem);
+    }
+
+    [Fact]
     public void ARenderChangesItsSettingsInMemory()
     {
         var state = Sample(Decks((1, 1.25), (2, 3.5)));

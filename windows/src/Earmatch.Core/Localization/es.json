@@ -200,7 +200,15 @@
     "Open Earmatch…": "Abrir Earmatch…",
     "Hold Right Alt to peek · Ctrl+Alt+Win+E turns Earmatch on or off": "Mantén Alt derecha para ver rekordbox · Ctrl+Alt+Win+E activa o desactiva Earmatch",
     "About Earmatch": "Acerca de Earmatch",
-    "Independent utility, not affiliated with AlphaTheta, Pioneer DJ or rekordbox": "Utilidad independiente, sin afiliación con AlphaTheta, Pioneer DJ ni rekordbox"
+    "Independent utility, not affiliated with AlphaTheta, Pioneer DJ or rekordbox": "Utilidad independiente, sin afiliación con AlphaTheta, Pioneer DJ ni rekordbox",
+    "Check for Updates…": "Buscar actualizaciones…",
+    "Update Available…": "Actualización disponible…",
+    "Downloading Update…": "Descargando actualización…",
+    "Earmatch %@ is available (you have %@).": "Earmatch %@ está disponible (tienes la %@).",
+    "Install it now? Earmatch quits and opens again to finish.": "¿Instalarla ahora? Earmatch se cierra y se vuelve a abrir para terminar.",
+    "You have the latest version of Earmatch (%@).": "Tienes la última versión de Earmatch (%@).",
+    "Couldn't check for updates: %@": "No se pudo buscar actualizaciones: %@",
+    "Couldn't download the update: %@": "No se pudo descargar la actualización: %@"
   },
   "plurals": {
     "Waiting for both decks · %ld mixes saved": {

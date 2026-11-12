@@ -11,6 +11,9 @@ public sealed record DiagnosticsReport(
     OverlaySettings Settings,
     string Extra)
 {
+    /// The updater's line (UpdateState.DiagnosticsLine); the app always sets it, a report without it leaves it out.
+    public string? Updates { get; init; }
+
     public string Text => L10n.English(() =>
     {
         static string OnOff(bool on) => on ? "on" : "off";
@@ -22,6 +25,10 @@ public sealed record DiagnosticsReport(
             $"Windows: {Windows}",
             $"PC: {Architecture}",
             $"rekordbox: {RekordboxVersion ?? "not running"}",
+        };
+        if (Updates is { Length: > 0 } updates) lines.Add(updates);
+        lines.AddRange(
+        [
             $"Status: {Activation.Message}",
             $"Enabled: {OnOff(settings.IsEnabled)}",
             $"Limit BPM display: {OnOff(settings.IsBPMLimitEnabled)}, {settings.BPMLimit.DisplayName}",
@@ -31,7 +38,7 @@ public sealed record DiagnosticsReport(
             $"Full blind mode: {OnOff(settings.IsBlindModeEnabled)}",
             $"Booth: {BoothPreset.Selected(settings)?.DisplayName ?? "custom"}",
             $"Mix trainer: {OnOff(settings.IsMixTrainerEnabled)}",
-        };
+        ]);
         var extra = Core.Text.TrimWhitespacesAndNewlines(Extra);
         if (extra.Length > 0) lines.AddRange(["", extra]);
         return string.Join("\n", lines) + "\n";

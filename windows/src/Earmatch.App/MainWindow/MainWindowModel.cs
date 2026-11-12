@@ -22,6 +22,9 @@ public sealed class MainWindowModel : MainWindowState
     public Func<bool> CopyDiagnostics { get; set; } = () => false;
     public Action Quit { get; set; } = () => { };
 
+    /// Check for Updates… (or Update Available…) in the Setup pane; MainWindowState.Updates says whether it shows.
+    public Action CheckForUpdates { get; set; } = () => { };
+
     public string VersionLabel => SystemInfo.ShortVersion is { } version ? $"v{version}" : WindowText.DevelopmentBuild;
 
     protected override void OnLanguageSelected(AppLanguageChoice choice) => AppLanguage.Install(choice);
