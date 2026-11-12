@@ -2,13 +2,15 @@
 
 Made by [GastonDalla](https://github.com/GastonDalla).
 
-Earmatch is a native macOS overlay for rekordbox 7 for practising beatmatching by ear. It covers the parts of rekordbox that let you mix by eye: the decimals of the jog BPM, the stacked waveforms that line up the beat grids, and it adds a Pioneer-style phase meter you can switch on when you want a check.
+Earmatch is a native overlay for rekordbox 7 on macOS and Windows for practising beatmatching by ear. It covers the parts of rekordbox that let you mix by eye: the decimals of the jog BPM, the stacked waveforms that line up the beat grids, and it adds a Pioneer-style phase meter you can switch on when you want a check.
 
 Earmatch only reads rekordbox. It never clicks, types into or controls rekordbox, and it never posts keyboard or mouse events.
 
+Download it from the [latest release](https://github.com/GastonDalla/earmatch/releases/latest): `Earmatch-<version>.dmg` for the Mac, `Earmatch-win-x64-Setup.exe` for most Windows PCs and `Earmatch-win-arm64-Setup.exe` for Windows on Arm. Both apps do the same things; the sections below describe the Mac app, and [Windows](#windows) lists what differs on Windows.
+
 ## Requirements
 
-- macOS 14 or later, on Apple silicon or Intel (the app is a universal binary).
+- macOS 14 or later, on Apple silicon or Intel (the app is a universal binary), or Windows 10 (version 2004 or later) or Windows 11, on x64 or Arm64.
 - rekordbox 7 in **PERFORMANCE** mode with any of the **2Deck Horizontal**, **2Deck Vertical**, **4Deck Horizontal** or **4Deck Vertical** layouts. The overlays hide in Browse, in other modes, and while another app or another rekordbox window is in front.
   - In vertical layouts every deck already has its own column, so Split behaves like Normal and the phase meters sit beside the columns.
   - In 4-deck layouts Split and Hide Both use a 2x2 grid that mirrors the deck quadrants; empty decks show nothing.
@@ -31,7 +33,7 @@ Run the tests with `swift test`.
 
 ## Releasing
 
-[docs/RELEASING.md](docs/RELEASING.md) describes the one-time setup (Developer ID certificate, notarization credentials, Sparkle keys) and each release: `./scripts/release.sh` builds a signed, notarized and stapled DMG and the signed update feed, and prints what to upload. `./scripts/release.sh --dry-run` checks everything that needs no credentials.
+[docs/RELEASING.md](docs/RELEASING.md) describes the one-time setup (Developer ID certificate, notarization credentials, Sparkle keys) and each release: `./scripts/release.sh` builds a signed, notarized and stapled DMG and the signed update feed, and prints what to upload. `./scripts/release.sh --dry-run` checks everything that needs no credentials. `windows/scripts/release-windows.sh` builds the Windows installers and update packages for the same GitHub release.
 
 ## First run
 
@@ -115,7 +117,7 @@ Released builds connect to the network only for updates (Sparkle): each time you
 
 ## Windows
 
-Earmatch for Windows is in progress in `windows/` (C# / .NET 10, WPF). It works with rekordbox 7 for Windows like the macOS app, with the same layouts and the same rule: the overlays show only while rekordbox is in front in PERFORMANCE mode with a 2Deck or 4Deck layout. It covers the BPM limit (the jog's digits measured from the captured window), blind mode, Normal, Split and Hide Both, the four phase meter types with the bar counter or the cue countdown, the live decks mirror and the mix trainer with its practice history (`%APPDATA%\Earmatch\practice.json`, the macOS file format).
+Earmatch for Windows is a native Windows app built from `windows/` (C# / .NET 10, WPF), released next to the Mac app in each [GitHub release](https://github.com/GastonDalla/earmatch/releases/latest). It works with rekordbox 7 for Windows like the macOS app, with the same layouts and the same rule: the overlays show only while rekordbox is in front in PERFORMANCE mode with a 2Deck or 4Deck layout. It covers the BPM limit (the jog's digits measured from the captured window), blind mode, Normal, Split and Hide Both, the four phase meter types with the bar counter or the cue countdown, the live decks mirror and the mix trainer with its practice history (`%APPDATA%\Earmatch\practice.json`, the macOS file format).
 
 - **Requirements:** Windows 10 or 11, x64 or Arm64, and rekordbox 7. Windows asks for no permission. Build and test with the .NET 10 SDK: `dotnet build windows/Earmatch.slnx`, `dotnet test windows/Earmatch.slnx`, and `dotnet publish windows/src/Earmatch.App -c Release -r win-x64 --self-contained` for an app folder (`-r win-arm64` on Arm).
 - **Install:** download `Earmatch-win-x64-Setup.exe` (most PCs) or `Earmatch-win-arm64-Setup.exe` (Windows on Arm) from the GitHub release of the version and open it. It installs Earmatch for your account only, without asking for an administrator, in `%LocalAppData%\Earmatch`, adds it to the Start menu and the desktop, and opens it. The installer is not signed yet, so Windows SmartScreen says "Windows protected your PC" the first time: choose **More info**, then **Run anyway**.
