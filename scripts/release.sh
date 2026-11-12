@@ -320,6 +320,10 @@ if ! "$generate_appcast" ${key_args[@]+"${key_args[@]}"} \
     rollback_appcast
     fail "generate_appcast failed; the notarized DMG is still at $dmg. Fix the problem and run the release again"
 fi
+if [[ -z "${EARMATCH_DOWNLOAD_URL_PREFIX:-}" ]] && ! scripts/pin-appcast-urls.sh "$release_dir/appcast.xml" "$repo"; then
+    rollback_appcast
+    fail "could not point each appcast item at its own GitHub release; the previous appcast was restored"
+fi
 if ! grep -q "sparkle:edSignature" "$release_dir/appcast.xml"; then
     rollback_appcast
     fail "appcast.xml has no EdDSA signature; the previous appcast was restored"

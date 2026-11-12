@@ -112,7 +112,7 @@ Open a new terminal so the variables are set.
    3. makes `build/release-<version>/Earmatch-<version>.dmg` with `Earmatch.app` and an `Applications` link to drag it onto, verifies the image and its layout, and signs it;
    4. notarizes it (`xcrun notarytool submit --keychain-profile "$EARMATCH_NOTARY_PROFILE" --wait`; it prints the `notarytool log` command when Apple rejects it), staples the ticket and validates it;
    5. checks Gatekeeper (`spctl -a -vv`) on the DMG and on the app inside it;
-   6. copies the DMG and the notes into `EARMATCH_RELEASE_DIR` and runs Sparkle's `generate_appcast`, which signs the new item with the EdDSA key (macOS asks once to let it read the key from the keychain), embeds the notes and points the download at `https://github.com/GastonDalla/earmatch/releases/download/v<version>/Earmatch-<version>.dmg`.
+   6. copies the DMG and the notes into `EARMATCH_RELEASE_DIR` and runs Sparkle's `generate_appcast`, which signs the new item with the EdDSA key (macOS asks once to let it read the key from the keychain), embeds the notes and points the download at `https://github.com/GastonDalla/earmatch/releases/download/v<version>/Earmatch-<version>.dmg`. `generate_appcast` also moves the older items to that new release's address, so `scripts/pin-appcast-urls.sh` then points every item back at its own `v<version>` release (skipped when `EARMATCH_DOWNLOAD_URL_PREFIX` is set).
 5. **Upload.** Run the commands the script prints:
 
    ```sh
