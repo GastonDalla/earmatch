@@ -167,6 +167,7 @@
     "Capturing the rekordbox window": "Capturing the rekordbox window",
     "Capture failed: %@": "Capture failed: %@",
     "rekordbox window not found": "rekordbox window not found",
+    "Capture does not match the rekordbox window: %@": "Capture does not match the rekordbox window: %@",
     "Times every mix you make by ear": "Times every mix you make by ear",
     "frame shows %ldx%ld px but the window is %ldx%ld px": "frame shows %ldx%ld px but the window is %ldx%ld px",
     "Waiting for a mix": "Waiting for a mix",

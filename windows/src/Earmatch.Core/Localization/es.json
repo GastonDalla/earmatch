@@ -167,6 +167,7 @@
     "Capturing the rekordbox window": "Capturando la ventana de rekordbox",
     "Capture failed: %@": "La captura falló: %@",
     "rekordbox window not found": "no se encontró la ventana de rekordbox",
+    "Capture does not match the rekordbox window: %@": "La captura no coincide con la ventana de rekordbox: %@",
     "Times every mix you make by ear": "Cronometra cada mezcla que haces de oído",
     "frame shows %ldx%ld px but the window is %ldx%ld px": "el fotograma mide %ldx%ld px pero la ventana mide %ldx%ld px",
     "Waiting for a mix": "Esperando una mezcla",

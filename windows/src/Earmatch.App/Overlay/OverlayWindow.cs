@@ -10,27 +10,29 @@ namespace Earmatch.App.Overlay;
 /// rekordbox (WS_EX_TRANSPARENT), never takes the focus (WS_EX_NOACTIVATE), stays out of Alt+Tab and the taskbar
 /// (WS_EX_TOOLWINDOW) and is drawn with per-pixel alpha (WS_EX_LAYERED). It is placed in physical screen pixels, the
 /// coordinates of rekordbox's UI Automation frames; WPF scales its content to the monitor's DPI (the app is per-monitor
-/// DPI aware). It hosts any WPF visual: a solid cover here, the phase meters once the pixels are read.
+/// DPI aware). It hosts any WPF visual: a solid cover, a BPM mask, a phase meter or the split waveform. An opaque
+/// overlay (the split waveform panel) skips the per-pixel alpha: it stays layered for the click-through, at full opacity.
 internal sealed class OverlayWindow : IDisposable
 {
     private readonly HwndSource _source;
     private Int32Rect _placed = Int32Rect.Empty;
     private bool _isShown;
 
-    public OverlayWindow(Visual content)
+    public OverlayWindow(Visual content, bool isOpaque = false)
     {
         var parameters = new HwndSourceParameters("Earmatch overlay")
         {
             WindowStyle = NativeMethods.WsPopup,
             ExtendedWindowStyle = NativeMethods.WsExLayered | NativeMethods.WsExTransparent | NativeMethods.WsExNoActivate
                 | NativeMethods.WsExToolWindow | NativeMethods.WsExTopmost,
-            UsesPerPixelTransparency = true,
+            UsesPerPixelTransparency = !isOpaque,
             PositionX = 0,
             PositionY = 0,
             Width = 1,
             Height = 1,
         };
         _source = new HwndSource(parameters) { RootVisual = content };
+        if (isOpaque) NativeMethods.SetLayeredWindowAttributes(_source.Handle, 0, 255, NativeMethods.LwaAlpha);
         // On a monitor with another scale WPF resizes the window to its suggested rectangle; the frame stays the one
         // rekordbox's layout asks for.
         _source.DpiChanged += (_, _) => _source.Dispatcher.BeginInvoke(Reapply);
@@ -42,6 +44,11 @@ internal sealed class OverlayWindow : IDisposable
     }
 
     public IntPtr Handle => _source.Handle;
+
+    public bool IsShown => _isShown;
+
+    /// The physical screen pixel of the overlay's top-left corner, as last placed.
+    public ScreenPoint PlacedOrigin => new(_placed.X, _placed.Y);
 
     /// Shows the overlay over `frame` moved by `offset`, both in physical screen pixels, rounded outwards to whole
     /// pixels so a cover never leaves a sliver of what it covers.

@@ -1,8 +1,10 @@
 using System.Windows;
 using System.Windows.Threading;
+using Earmatch.App.Capture;
 using Earmatch.App.Hotkeys;
 using Earmatch.App.Overlay;
 using Earmatch.App.Panes;
+using Earmatch.App.Practice;
 using Earmatch.App.Rekordbox;
 using Earmatch.App.Tray;
 using Earmatch.Core;
@@ -10,9 +12,10 @@ using Microsoft.Win32;
 
 namespace Earmatch.App;
 
-/// Earmatch for Windows (AppDelegate.swift): the tray icon, the main window, the rekordbox monitor, the overlays and
-/// the hotkeys. Every change of rekordbox, of the settings or of the peek renders the overlays, the window's status and
-/// the tray icon again. The window capture (pixels) comes in a later task (odd/tasks/windows-port.md, T5c).
+/// Earmatch for Windows (AppDelegate.swift): the tray icon, the main window, the rekordbox monitor, the overlays with
+/// the window capture, the mix trainer and the hotkeys. Every change of rekordbox, of the settings or of the peek
+/// renders the overlays, the window's status and the tray icon again; the overlays feed the live decks mirror and the
+/// mix trainer.
 public partial class App : Application
 {
     private const string InstanceName = @"Local\Earmatch.SingleInstance";
@@ -28,7 +31,13 @@ public partial class App : Application
     private RekordboxMonitor? _monitor;
     private HotkeyMonitor? _hotkeys;
     private OverlayController? _overlays;
+    private PracticeController? _practice;
+    private DispatcherTimer? _liveExpiry;
+    private double _liveReceivedAt;
     private bool _isPeeking;
+
+    /// How long the live decks mirror keeps a snapshot without a newer one (MainWindowController.liveSnapshotLifetime).
+    private const double LiveSnapshotLifetime = 0.75;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -37,6 +46,12 @@ public partial class App : Application
         {
             AttachParentConsole();
             Shutdown(DumpUiaCommand.Run());
+            return;
+        }
+        if (Array.IndexOf(e.Args, CaptureFrameCommand.Flag) is var captureFlag and >= 0)
+        {
+            AttachParentConsole();
+            Shutdown(CaptureFrameCommand.Run(e.Args.ElementAtOrDefault(captureFlag + 1) ?? Environment.CurrentDirectory));
             return;
         }
         WindowRenderRequest? request;
@@ -81,7 +96,18 @@ public partial class App : Application
             ShowWindow();
         }, CopyDiagnostics, Quit);
 
-        _overlays = new OverlayController();
+        _overlays = new OverlayController(Dispatcher);
+        _overlays.CaptureStatusChanged += ShowCaptureProblem;
+        _overlays.LiveUpdate += snapshot =>
+        {
+            UpdateLive(snapshot);
+            _practice?.Ingest(snapshot, CaptureClock.Now);
+        };
+        _practice = new PracticeController(new PracticeStore(new PracticeHistoryFile(AppPaths.PracticeFile), TimeZoneInfo.Local,
+            message => System.Diagnostics.Trace.WriteLine($"earmatch: {message}")), Dispatcher);
+        _practice.Changed += () => _model.ApplyPractice(_practice.Overview, _practice.Live);
+        _practice.LoadHistory();
+        _model.LanguageChanged += ShowCaptureProblem;
         _hookThread = new HookThread("Earmatch hooks");
         _monitor = new RekordboxMonitor(Dispatcher, _hookThread);
         _monitor.Changed += _ => Render();
@@ -95,6 +121,8 @@ public partial class App : Application
         store.Changed += OnSettingsChanged;
         SystemEvents.SessionSwitch += OnSessionSwitch;
         _hotkeys.Start();
+        _window.IsVisibleChanged += (_, _) => ClearLiveUnlessShown();
+        _window.StateChanged += (_, _) => ClearLiveUnlessShown();
         _monitor.Start();
         Render();
         ShowWindow();
@@ -116,10 +144,47 @@ public partial class App : Application
         var state = _monitor.State;
         var settings = _store.Settings;
         _overlays?.Update(state, settings, _isPeeking);
+        if (!state.Activation.IsActive) ClearLive();
         _model.Apply(state.Activation, state.Version, state.Layout?.LayoutName);
-        var mirrors = OverlayCovers.Shows(settings, state.Activation, _isPeeking) && state.Layout is not null;
-        _model.ApplyLive(mirrors ? LiveDecksSnapshot.Of(state.Layout!) : LiveDecksSnapshot.Empty);
         _tray?.SetStatus(state.Activation.IsActive && settings.IsEnabled, state.Activation.Message);
+    }
+
+    private void ShowCaptureProblem() => _model?.ApplyCaptureProblem(_overlays?.CaptureMessage);
+
+    private bool IsWindowShown => _window is { IsVisible: true } window && window.WindowState != WindowState.Minimized;
+
+    /// The live decks mirror (MainWindowController.updateLive): shown while the window is, and cleared when no newer
+    /// snapshot came for a moment (the overlays stopped sending).
+    private void UpdateLive(LiveDecksSnapshot snapshot)
+    {
+        if (_model is null || !IsWindowShown) return;
+        _liveReceivedAt = CaptureClock.Now;
+        _model.ApplyLive(snapshot);
+        if (_liveExpiry is not null) return;
+        _liveExpiry = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher) { Interval = TimeSpan.FromSeconds(LiveSnapshotLifetime) };
+        _liveExpiry.Tick += (_, _) =>
+        {
+            var remaining = _liveReceivedAt + LiveSnapshotLifetime - CaptureClock.Now;
+            if (remaining > 0.001)
+            {
+                _liveExpiry!.Interval = TimeSpan.FromSeconds(remaining);
+                return;
+            }
+            ClearLive();
+        };
+        _liveExpiry.Start();
+    }
+
+    private void ClearLive()
+    {
+        _liveExpiry?.Stop();
+        _liveExpiry = null;
+        _model?.ApplyLive(LiveDecksSnapshot.Empty);
+    }
+
+    private void ClearLiveUnlessShown()
+    {
+        if (!IsWindowShown) ClearLive();
     }
 
     private void ShowWindow() => _window?.ShowAndActivate();
@@ -134,17 +199,13 @@ public partial class App : Application
         return ClipboardRetry.TryWrite(() => Clipboard.SetText(report.Text), () => Thread.Sleep(50));
     }
 
-    /// The capture section of the report (OverlayController.diagnostics on macOS), from what UI Automation located; the
-    /// frame figures stay at zero until the window is captured.
+    /// The capture section of the report (OverlayController.diagnostics on macOS): what UI Automation located and how
+    /// the capture keeps up, with the hotkey hook's state.
     private string LayoutDiagnostics(string version)
     {
-        if (_monitor is null) return "";
-        var state = _monitor.State;
-        var decks = (state.Layout?.Decks ?? []).Select(deck => new CaptureDiagnostics.Deck(deck.Number, isLoaded: deck.BPM is not null || deck.Title is not null,
-            reading: "-", beatSpacing: null, phaseInBar: null, beatsPerSecond: null, isMaster: false, headerBPM: deck.BPM,
-            elapsedSeconds: deck.ElapsedSeconds)).ToList();
-        return L10n.English(() => new CaptureDiagnostics(version, SystemInfo.WindowsVersion, state.Version, state.Activation.Message,
-            state.Layout?.LayoutName, "not running", null, state.Layout?.StackedWaveform is not null, 0, 0, 0, 0, 0, 0, 0, 0, null, decks).Text);
+        if (_overlays is null) return "";
+        var text = _overlays.Diagnostics(version, SystemInfo.WindowsVersion).Text;
+        return _hotkeys?.Problem is { } problem ? $"{text}\nHotkeys: {problem}" : text;
     }
 
     private void Quit()
@@ -168,6 +229,7 @@ public partial class App : Application
         _hookThread = null;
         _overlays?.Dispose();
         _overlays = null;
+        ClearLive();
     }
 
     /// One Earmatch at a time: a second launch shows the running one's window and exits. An Earmatch running as

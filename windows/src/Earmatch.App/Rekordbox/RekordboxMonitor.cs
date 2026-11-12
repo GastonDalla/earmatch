@@ -7,10 +7,10 @@ using Earmatch.Core;
 namespace Earmatch.App.Rekordbox;
 
 /// rekordbox as the overlays and the window see it (RekordboxState in RekordboxMonitor.swift). The layout's frames are
-/// physical screen pixels as they were at the last full read of the window; Offset is how far the window moved since,
-/// and Scale its physical pixels per layout unit (DPI / 96).
+/// physical screen pixels as they were at the last full read of the window, whose window rectangle was ReadRect; Offset
+/// is how far the window moved since, and Scale its physical pixels per layout unit (DPI / 96).
 internal sealed record RekordboxState(OverlayActivation Activation, RekordboxLayout? Layout, double Scale, ScreenPoint Offset, int? ProcessId,
-    IntPtr Window, string? Version)
+    IntPtr Window, string? Version, NativeMethods.WindowRect ReadRect = default)
 {
     public static RekordboxState Initial { get; } = new(OverlayActivation.RekordboxNotRunning, null, 1, default, null, IntPtr.Zero, null);
 }
@@ -119,19 +119,21 @@ internal sealed class RekordboxMonitor : IDisposable
         var waiting = new RekordboxState(OverlayActivation.MainWindowNotFound, null, 1, default, process.Id, _window, process.Version);
         if (_window == IntPtr.Zero || !NativeMethods.GetWindowRect(_window, out var rect)) return waiting;
         if (!_backoff.AllowsPoll(now)) return waiting;
-        var isMinimized = NativeMethods.IsIconic(_window);
-        var isFrontmost = NativeMethods.GetForegroundWindow() == _window && !isMinimized;
         try
         {
             var needsFullRead = _live is null || _isFullReadRequested || now - _lastFullRead >= (_reader.IsStale ? StaleReadInterval : _fullReadInterval)
                 || rect.Width != _readRect.Width || rect.Height != _readRect.Height;
             // A minimized window keeps the layout it had: its elements are off screen until it comes back.
-            if (needsFullRead && !(isMinimized && _live is not null)) FullRead(now, rect);
+            if (needsFullRead && !(NativeMethods.IsIconic(_window) && _live is not null)) FullRead(now, rect);
             if (_live is not { } live) return waiting;
             var layout = live.Refresh(_reader.ReadWatched());
+            // The reads above can block for a while (rekordbox answers UI Automation on its own window thread): the window's
+            // place, state and the app in front are sampled after them, so a switch to another app during a read is not lost.
+            if (!NativeMethods.GetWindowRect(_window, out rect)) return waiting;
+            var isFrontmost = NativeMethods.GetForegroundWindow() == _window && !NativeMethods.IsIconic(_window);
             var offset = new ScreenPoint(rect.Left - _readRect.Left, rect.Top - _readRect.Top);
             return new RekordboxState(OverlayActivation.Evaluate(isRunning: true, layout, isFrontmost), layout, live.Snapshot.Scale, offset,
-                process.Id, _window, process.Version);
+                process.Id, _window, process.Version, _readRect);
         }
         catch (Exception exception) when (IsReadFailure(exception))
         {
