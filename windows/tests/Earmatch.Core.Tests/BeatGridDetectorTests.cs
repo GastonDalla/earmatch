@@ -165,4 +165,20 @@ public class BeatGridDetectorTests
         Assert.True(SyncMasterDetector.IsMaster(Physical.Rect(Rect(612, 311, 70, 13)), buffer.WindowsImage(CropOrigin)));
         Assert.False(SyncMasterDetector.IsMaster(Physical.Rect(Rect(1414, 311, 70, 13)), buffer.WindowsImage(CropOrigin)));
     }
+
+    /// A MASTER button outside the frame (the window partly off screen, or a frame that does not match the layout) is
+    /// not read from the frame's edge rows or columns: only its rows and columns inside the frame count.
+    [Fact]
+    public void TheSyncMasterProbeReadsOnlyThePartOfTheButtonInsideTheFrame()
+    {
+        var buffer = new PixelBuffer(200, 40, (20, 20, 20));
+        buffer.Paint(0, 0, 200, 1, (40, 120, 230));
+        buffer.Paint(0, 39, 200, 1, (40, 120, 230));
+        var image = buffer.Image();
+
+        Assert.False(SyncMasterDetector.IsMaster(Rect(10, -30, 70, 13), image));
+        Assert.False(SyncMasterDetector.IsMaster(Rect(10, 25, 70, 13), image));
+        Assert.False(SyncMasterDetector.IsMaster(Rect(150, 5, 70, 13), image));
+        Assert.True(SyncMasterDetector.IsMaster(Rect(10, 0, 70, 13), image));
+    }
 }

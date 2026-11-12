@@ -128,6 +128,23 @@ public class MainWindowState
         Changed?.Invoke();
     }
 
+    /// Shows why the capture of rekordbox's window cannot be used, in the status lines; null when it can.
+    public void ApplyCaptureProblem(string? problem)
+    {
+        if (problem == CaptureProblem) return;
+        CaptureProblem = problem;
+        Changed?.Invoke();
+    }
+
+    /// Shows the mix trainer's history and the transition it is timing.
+    public void ApplyPractice(PracticeOverview overview, PracticeLiveStatus? live)
+    {
+        if (overview == PracticeOverview && live == PracticeLive) return;
+        PracticeOverview = overview;
+        PracticeLive = live;
+        Changed?.Invoke();
+    }
+
     /// Shows the decks Earmatch mirrors from rekordbox; LiveDecksSnapshot.Empty when it mirrors none.
     public void ApplyLive(LiveDecksSnapshot snapshot)
     {

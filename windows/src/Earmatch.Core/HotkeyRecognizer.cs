@@ -32,14 +32,20 @@ public sealed class HotkeyRecognizer
     /// AltGr (Spanish, German, French...). It is not a key the user pressed, so it is ignored.
     public const int AltGrControlScanCode = 0x21D;
 
+    /// An unassigned virtual key (0xE8) the hook types while the shortcut's modifiers are held: with the E swallowed,
+    /// Windows would otherwise see Windows pressed and released alone and open the Start menu, or Alt alone and open
+    /// the focused app's menu bar. The recognizer ignores it.
+    public const int MaskKey = 0xE8;
+
     public readonly record struct Event(int VirtualKey, bool IsDown, int ScanCode = 0)
     {
         public static Event KeyDown(int virtualKey, int scanCode = 0) => new(virtualKey, true, scanCode);
         public static Event KeyUp(int virtualKey, int scanCode = 0) => new(virtualKey, false, scanCode);
     }
 
-    /// Peek is the new peek state when it changed, null otherwise. Swallows says the hook must not pass the key on.
-    public readonly record struct Outcome(bool? Peek, bool TogglesEnabled, bool Swallows = false)
+    /// Peek is the new peek state when it changed, null otherwise. Swallows says the hook must not pass the key on, and
+    /// SendsMaskKey that it must type MaskKey while the modifiers are still held.
+    public readonly record struct Outcome(bool? Peek, bool TogglesEnabled, bool Swallows = false, bool SendsMaskKey = false)
     {
         public static Outcome None => new(null, false);
     }
@@ -64,7 +70,7 @@ public sealed class HotkeyRecognizer
     public Outcome Handle(Event keyEvent)
     {
         var key = keyEvent.VirtualKey;
-        if (IsLockKey(key) || (key == VirtualKey.LeftControl && keyEvent.ScanCode == AltGrControlScanCode)) return Outcome.None;
+        if (key == MaskKey || IsLockKey(key) || (key == VirtualKey.LeftControl && keyEvent.ScanCode == AltGrControlScanCode)) return Outcome.None;
         var isRepeat = keyEvent.IsDown && !_held.Add(key);
         if (!keyEvent.IsDown) _held.Remove(key);
         if (key == VirtualKey.RightAlt)
@@ -84,7 +90,7 @@ public sealed class HotkeyRecognizer
         var outcome = SetPeeking(false);
         if (key != VirtualKey.E || Held() != ToggleModifiers) return outcome;
         _isSwallowingE = true;
-        return outcome with { TogglesEnabled = !isRepeat, Swallows = true };
+        return outcome with { TogglesEnabled = !isRepeat, Swallows = true, SendsMaskKey = !isRepeat };
     }
 
     /// Ends a peek and forgets the held keys, for when the hook may have missed a release (focus or session changes).

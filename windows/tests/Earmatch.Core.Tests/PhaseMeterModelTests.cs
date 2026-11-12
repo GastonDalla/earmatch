@@ -221,4 +221,18 @@ public class PhaseMeterModelTests
         Assert.Equal("24.1", new BarPosition(24, 1).Label);
         Assert.Equal("101.2", new BarPosition(101, 2).Label);
     }
+
+    /// The cue countdown is moved on from the last frame at the deck's tempo like the drawn phase, and like it stops
+    /// once that frame is older than the predictor extrapolates (a stalled capture leaves no counter ticking alone).
+    [Fact]
+    public void TheCueCountdownGoesBlankOnceItsFrameIsTooOld()
+    {
+        var deck = new DeckLayout(1, "Track", 128, null, null, null, new ScreenRect(0, 0, 10, 10), null, null);
+        BarPosition? At(double time) => PhaseMeterCounter.Position(CounterStyle.CueCountdown, deck, phase: 1.5, cueBeatsAhead: 8.5,
+            measuredAt: 10, beatsPerSecond: 2, time);
+
+        Assert.Equal(new BarPosition(2, 1), At(10));
+        Assert.Equal(new BarPosition(1, 4), At(10 + PhasePredictor.MaxExtrapolation - 0.001));
+        Assert.Null(At(10 + PhasePredictor.MaxExtrapolation + 0.01));
+    }
 }

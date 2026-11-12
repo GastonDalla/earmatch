@@ -15,7 +15,7 @@ public class HotkeyRecognizerTests
 
     static readonly HotkeyRecognizer.Outcome PeekStarts = new(Peek: true, TogglesEnabled: false);
     static readonly HotkeyRecognizer.Outcome PeekEnds = new(Peek: false, TogglesEnabled: false);
-    static readonly HotkeyRecognizer.Outcome Toggles = new(Peek: null, TogglesEnabled: true, Swallows: true);
+    static readonly HotkeyRecognizer.Outcome Toggles = new(Peek: null, TogglesEnabled: true, Swallows: true, SendsMaskKey: true);
 
     static HotkeyRecognizer Peeking()
     {
@@ -266,5 +266,40 @@ public class HotkeyRecognizerTests
         recognizer.Reset();
 
         Assert.False(recognizer.Handle(Up(Key.E)).Swallows);
+    }
+
+    /// With the shortcut's E swallowed, Windows would see Win pressed and released alone and open the Start menu (and
+    /// Alt alone would open rekordbox's menu bar): the toggle asks for the unassigned mask key to be typed while the
+    /// modifiers are still held, once per press.
+    [Fact]
+    public void TheToggleMasksTheModifiersRelease()
+    {
+        var recognizer = new HotkeyRecognizer();
+        Press(recognizer, Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows));
+
+        Assert.True(recognizer.Handle(Down(Key.E)).SendsMaskKey);
+        Assert.False(recognizer.Handle(Down(Key.E)).SendsMaskKey);
+        Assert.False(recognizer.Handle(Up(Key.E)).SendsMaskKey);
+    }
+
+    /// The mask key the hook types itself passes through without touching the peek or the held keys.
+    [Fact]
+    public void TheMaskKeyIsIgnored()
+    {
+        var recognizer = Peeking();
+
+        Assert.Equal(HotkeyRecognizer.Outcome.None, recognizer.Handle(Down(HotkeyRecognizer.MaskKey)));
+        Assert.Equal(HotkeyRecognizer.Outcome.None, recognizer.Handle(Up(HotkeyRecognizer.MaskKey)));
+        Assert.True(recognizer.IsPeeking);
+    }
+
+    /// Other keys never ask for the mask key.
+    [Fact]
+    public void OnlyTheToggleSendsTheMaskKey()
+    {
+        var recognizer = new HotkeyRecognizer();
+
+        Assert.All(Press(recognizer, Down(Key.LeftWindows), Down(Key.E), Up(Key.E), Up(Key.LeftWindows), Down(Key.RightAlt), Up(Key.RightAlt)),
+            outcome => Assert.False(outcome.SendsMaskKey));
     }
 }

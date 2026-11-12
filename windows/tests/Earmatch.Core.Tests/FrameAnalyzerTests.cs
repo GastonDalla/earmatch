@@ -201,8 +201,8 @@ public class PhaseMeterCounterTests
     [Fact]
     public void TheCueCountdownMovesOnFromTheLastMeasurementAtTheDecksTempo()
     {
-        Assert.Equal("01.3", PhaseMeterCounter.Position(CounterStyle.CueCountdown, Deck, 2.3, cueBeatsAhead: 10, measuredAt: 2, beatsPerSecond: 2, time: 3.5)?.Label);
-        Assert.Null(PhaseMeterCounter.Position(CounterStyle.CueCountdown, Deck, 2.3, cueBeatsAhead: null, measuredAt: 2, beatsPerSecond: 2, time: 3.5));
-        Assert.Null(PhaseMeterCounter.Position(CounterStyle.CueCountdown, Deck, 2.3, cueBeatsAhead: 1, measuredAt: 2, beatsPerSecond: 2, time: 3.5));
+        Assert.Equal("01.3", PhaseMeterCounter.Position(CounterStyle.CueCountdown, Deck, 2.3, cueBeatsAhead: 7.4, measuredAt: 3.3, beatsPerSecond: 2, time: 3.5)?.Label);
+        Assert.Null(PhaseMeterCounter.Position(CounterStyle.CueCountdown, Deck, 2.3, cueBeatsAhead: null, measuredAt: 3.3, beatsPerSecond: 2, time: 3.5));
+        Assert.Null(PhaseMeterCounter.Position(CounterStyle.CueCountdown, Deck, 2.3, cueBeatsAhead: 0.3, measuredAt: 3.3, beatsPerSecond: 2, time: 3.5));
     }
 }

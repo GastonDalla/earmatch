@@ -162,6 +162,7 @@
     "Made by %@. Opens %@ in your browser": "Made by %@. Opens %@ in your browser",
     "Last mixes": "Last mixes",
     "Times every mix you make by ear": "Times every mix you make by ear",
+    "frame shows %ldx%ld px but the window is %ldx%ld px": "frame shows %ldx%ld px but the window is %ldx%ld px",
     "Waiting for a mix": "Waiting for a mix",
     "Play both decks together. Each mix of 8 seconds or more is timed and saved.": "Play both decks together. Each mix of 8 seconds or more is timed and saved.",
     "No mixes yet": "No mixes yet",

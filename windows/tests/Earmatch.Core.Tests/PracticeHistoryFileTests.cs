@@ -176,4 +176,86 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.Equal("""{"mixes":[],"version":1}""", File.ReadAllText(_file.Path));
         Assert.NotNull(JsonNode.Parse(File.ReadAllText(_file.Path)));
     }
+
+    /// A date the file cannot hold as a date (before year 1 or after 9999) is a corrupt file, kept renamed, not a crash.
+    [Theory]
+    [InlineData(-9e10)]
+    [InlineData(3e11)]
+    public void AFileWithADateOutOfRangeIsKeptRenamed(double seconds)
+    {
+        Directory.CreateDirectory(_directory);
+        var json = $$"""{"mixes":[{"bothPlayingSeconds":60,"endedAt":{{seconds.ToString(System.Globalization.CultureInfo.InvariantCulture)}},"id":"8D3C1F86-0F8E-4B5C-9F59-2C1C1B6E3A10","incomingDeck":2,"outgoingDeck":1,"startedAt":800000000}],"version":1}""";
+        File.WriteAllText(_file.Path, json);
+
+        var loaded = _file.Load(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero));
+
+        Assert.Empty(loaded.History.Mixes);
+        Assert.NotNull(loaded.QuarantinedPath);
+        Assert.Equal(json, File.ReadAllText(loaded.QuarantinedPath));
+        Assert.False(File.Exists(_file.Path));
+    }
+
+    /// A file that cannot be read is kept aside before anything is saved; when it cannot even be moved, saving leaves
+    /// it in place: the history is kept in memory only, and the next launch can still read the file.
+    [Fact]
+    public void AnUnreadableFileThatCannotBeMovedIsNeverOverwritten()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        _file.Save(new PracticeHistory());
+        var original = File.ReadAllBytes(_file.Path);
+        File.SetUnixFileMode(_file.Path, UnixFileMode.None);
+        File.SetUnixFileMode(_directory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        PracticeOverview overview;
+        PracticeStore store;
+        try
+        {
+            store = new PracticeStore(_file, TimeZoneInfo.Utc);
+            store.Load();
+            overview = store.Record(Result(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero)));
+        }
+        finally
+        {
+            File.SetUnixFileMode(_directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            File.SetUnixFileMode(_file.Path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+
+        Assert.Equal(1, overview.MixCount);
+        Assert.NotNull(store.Problem);
+        Assert.Equal(original, File.ReadAllBytes(_file.Path));
+        Assert.Equal(["practice.json"], Contents());
+    }
+
+    /// An unreadable file that can be moved is kept renamed, like a corrupt one, and the history starts fresh.
+    [Fact]
+    public void AnUnreadableFileIsKeptRenamed()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        _file.Save(new PracticeHistory());
+        var original = File.ReadAllBytes(_file.Path);
+        File.SetUnixFileMode(_file.Path, UnixFileMode.None);
+
+        var loaded = _file.Load(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero));
+
+        Assert.Empty(loaded.History.Mixes);
+        Assert.NotNull(loaded.Problem);
+        Assert.Equal("practice.corrupt-20261112T100000Z.json", Path.GetFileName(loaded.QuarantinedPath));
+        Assert.False(loaded.IsFileInTheWay);
+        File.SetUnixFileMode(loaded.QuarantinedPath!, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        Assert.Equal(original, File.ReadAllBytes(loaded.QuarantinedPath!));
+    }
+
+    /// The store saves each recorded mix and reports the history as the window shows it.
+    [Fact]
+    public void TheStoreSavesEveryRecordedMix()
+    {
+        var end = new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero);
+        var store = new PracticeStore(_file, TimeZoneInfo.Utc);
+
+        Assert.Equal(0, store.Load().MixCount);
+        var overview = store.Record(Result(end));
+
+        Assert.Equal(1, overview.MixCount);
+        Assert.Null(store.Problem);
+        Assert.Equal(1, new PracticeStore(_file, TimeZoneInfo.Utc).Load().MixCount);
+    }
 }

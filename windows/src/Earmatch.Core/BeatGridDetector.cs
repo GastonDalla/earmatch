@@ -231,18 +231,19 @@ public static class PlayheadDetector
     }
 }
 
-/// Tells the sync master by the blue border rekordbox draws on its MASTER button.
+/// Tells the sync master by the blue border rekordbox draws on its MASTER button. Only the part of the button inside
+/// the frame is read: a row or column outside it is skipped, never taken from the frame's edge.
 public static class SyncMasterDetector
 {
     public static bool IsMaster(ScreenRect button, PixelImage image)
     {
-        var left = image.Column(button.MinX + image.Points(4));
-        var right = image.Column(button.MaxX - image.Points(4));
+        var left = Math.Max(image.UnclampedColumn(button.MinX + image.Points(4)), 0);
+        var right = Math.Min(image.UnclampedColumn(button.MaxX - image.Points(4)), image.Width);
         if (right <= left) return false;
         var rows = new[] { button.MinY - image.Points(1), button.MinY, button.MinY + image.Points(1), button.MaxY - image.Points(2),
-            button.MaxY - image.Points(1), button.MaxY }.Select(image.Row).Distinct();
+            button.MaxY - image.Points(1), button.MaxY }.Select(image.UnclampedRow).Distinct();
         var best = 0;
-        foreach (var row in rows.Where(row => row < image.Height))
+        foreach (var row in rows.Where(row => row >= 0 && row < image.Height))
         {
             var blue = 0;
             for (var column = left; column < right; column++)

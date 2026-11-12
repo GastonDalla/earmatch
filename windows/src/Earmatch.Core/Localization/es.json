@@ -162,6 +162,7 @@
     "Made by %@. Opens %@ in your browser": "Hecho por %@. Abre %@ en tu navegador",
     "Last mixes": "Últimas mezclas",
     "Times every mix you make by ear": "Cronometra cada mezcla que haces de oído",
+    "frame shows %ldx%ld px but the window is %ldx%ld px": "el fotograma mide %ldx%ld px pero la ventana mide %ldx%ld px",
     "Waiting for a mix": "Esperando una mezcla",
     "Play both decks together. Each mix of 8 seconds or more is timed and saved.": "Reproduce ambos decks a la vez. Cada mezcla de 8 segundos o más se cronometra y se guarda.",
     "No mixes yet": "Aún no hay mezclas",

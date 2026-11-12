@@ -84,6 +84,8 @@ public static class CueCountdown
     internal static List<Run> Runs(int firstColumn, int endColumn, int firstRow, int endRow, PixelImage image, Func<PixelImage.RGB, bool> matches)
     {
         var result = new List<Run>();
+        (firstColumn, endColumn) = (Math.Max(firstColumn, 0), Math.Min(endColumn, image.Width));
+        (firstRow, endRow) = (Math.Max(firstRow, 0), Math.Min(endRow, image.Height));
         if (firstRow >= endRow) return result;
         Run? current = null;
         for (var x = firstColumn; x < endColumn; x++)

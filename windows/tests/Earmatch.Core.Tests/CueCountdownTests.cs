@@ -156,4 +156,20 @@ public class CueCountdownTests
         Assert.Equal([CueMarkerKind.CuePoint, CueMarkerKind.HotCue],
             CueCountdown.Markers(Rect(0, 0, 1200, 140), 0, drawn.WindowsImage()).Select(marker => marker.Kind));
     }
+
+    /// A strip reaching past the frame's edges is scanned only where the frame shows it: a hot cue's pink at the
+    /// frame's top row is not a flag of a strip whose flag band lies above the frame.
+    [Fact]
+    public void TheCueScanReadsOnlyThePartOfTheStripInsideTheFrame()
+    {
+        var buffer = new PixelBuffer(400, 60, (0, 0, 0));
+        buffer.Paint(100, 0, 20, 60, (230, 60, 130));
+        var image = buffer.Image();
+        var above = Rect(0, -40, 200, 34.5);
+        var below = Rect(0, 26, 200, 34.5);
+
+        Assert.Empty(CueCountdown.Markers(above, 0, image));
+        Assert.Empty(CueCountdown.Markers(Rect(150, 0, 200, 30), 0, image));
+        Assert.Null(CueCountdown.BeatsToNextCue(below with { Y = 40 }, 10, 20, image));
+    }
 }
