@@ -14,10 +14,10 @@ public sealed class TrayIcon : IDisposable
     private readonly MainWindowModel _model;
     private readonly Action _open;
     private readonly Action _about;
-    private readonly Action _copyDiagnostics;
+    private readonly Func<bool> _copyDiagnostics;
     private readonly Action _quit;
 
-    public TrayIcon(MainWindowModel model, Action open, Action about, Action copyDiagnostics, Action quit)
+    public TrayIcon(MainWindowModel model, Action open, Action about, Func<bool> copyDiagnostics, Action quit)
     {
         _model = model;
         _open = open;
@@ -44,7 +44,7 @@ public sealed class TrayIcon : IDisposable
     private void Rebuild()
     {
         var items = _menu.Items;
-        items.Clear();
+        DisposeAll(items);
         var settings = _model.Settings;
         items.Add(Note(_model.Activation.Message));
         items.Add(new ToolStripSeparator());
@@ -67,13 +67,37 @@ public sealed class TrayIcon : IDisposable
         items.Add(Item(OptionText.MixTrainerMenuTitle, settings.IsMixTrainerEnabled, (ref OverlaySettings s) => s.IsMixTrainerEnabled = !s.IsMixTrainerEnabled));
         items.Add(new ToolStripSeparator());
         items.Add(Action(MenuText.Open, _open));
-        items.Add(Action(WindowText.CopyDiagnostics, _copyDiagnostics));
+        items.Add(Action(WindowText.CopyDiagnostics, CopyDiagnostics));
         items.Add(Note(MenuText.PeekNote));
         items.Add(new ToolStripSeparator());
         items.Add(Action(MenuText.About, _about));
         items.Add(Action(Credit.MenuLine, SetupPane.OpenProfile));
         items.Add(Note(MenuText.Independence));
         items.Add(Action(WindowText.Quit, _quit));
+    }
+
+    /// The menu is rebuilt each time it opens; the items it replaces, their submenus and the submenus' items are
+    /// disposed so their window handles and fonts do not pile up.
+    private static void DisposeAll(ToolStripItemCollection items)
+    {
+        var removed = items.Cast<ToolStripItem>().ToList();
+        items.Clear();
+        foreach (var item in removed)
+        {
+            if (item is ToolStripDropDownItem { HasDropDownItems: true } parent)
+            {
+                DisposeAll(parent.DropDownItems);
+                parent.DropDown.Dispose();
+            }
+            item.Dispose();
+        }
+    }
+
+    /// The tray has no "Copied" to show, so it speaks up only when the copy failed.
+    private void CopyDiagnostics()
+    {
+        if (_copyDiagnostics()) return;
+        _icon.ShowBalloonTip(5000, "Earmatch", WindowText.CopyFailedNotice, ToolTipIcon.Warning);
     }
 
     private static ToolStripMenuItem Note(string title) => new(title) { Enabled = false };

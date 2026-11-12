@@ -20,6 +20,7 @@ public enum IconKind
     StopFill,
     ArrowUpRight,
     ChartUptrend,
+    Warning,
 }
 
 /// The SF Symbols the macOS window uses, drawn as vector paths on a 24-unit grid (or a Segoe Fluent Icons glyph where
@@ -69,6 +70,7 @@ public sealed class Icon : FrameworkElement
         [IconKind.Eye] = "",
         [IconKind.EyeSlash] = "",
         [IconKind.Clipboard] = "",
+        [IconKind.Warning] = "\uE7BA",
     };
 
     protected override void OnRender(DrawingContext context)

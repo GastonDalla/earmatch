@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using Earmatch.App.Panes;
@@ -68,24 +67,13 @@ public partial class App : Application
 
     private void ShowWindow() => _window?.ShowAndActivate();
 
-    private void CopyDiagnostics()
+    /// Copies the diagnostics report; false when the clipboard stayed busy (another app holds it open).
+    private bool CopyDiagnostics()
     {
-        if (_model is null) return;
+        if (_model is null) return false;
         var report = new DiagnosticsReport(SystemInfo.ShortVersion ?? L10n.English(() => WindowText.DevelopmentBuild), SystemInfo.WindowsVersion,
             SystemInfo.Architecture, _model.RekordboxVersion, _model.Activation, _model.Settings, "");
-        for (var attempt = 0; attempt < 3; attempt++)
-        {
-            try
-            {
-                Clipboard.SetText(report.Text);
-                return;
-            }
-            catch (COMException)
-            {
-                // Another app holds the clipboard; try again in a moment.
-                Thread.Sleep(50);
-            }
-        }
+        return ClipboardRetry.TryWrite(() => Clipboard.SetText(report.Text), () => Thread.Sleep(50));
     }
 
     private void Quit()
@@ -96,26 +84,35 @@ public partial class App : Application
         Shutdown();
     }
 
-    /// One Earmatch at a time: a second launch shows the running one's window and exits.
+    /// One Earmatch at a time: a second launch shows the running one's window and exits. An Earmatch running as
+    /// administrator keeps a normal launch from opening its mutex and its signal; the normal launch then just exits.
     private bool ClaimSingleInstance()
     {
-        _instance = new Mutex(initiallyOwned: true, InstanceName, out var isFirst);
+        bool isFirst;
+        try
+        {
+            _instance = new Mutex(initiallyOwned: true, InstanceName, out isFirst);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
         if (!isFirst)
         {
-            try
-            {
-                using var signal = EventWaitHandle.OpenExisting(ShowSignalName);
-                signal.Set();
-            }
-            catch (WaitHandleCannotBeOpenedException)
-            {
-                // The running instance is still starting; it shows its window anyway.
-            }
+            SignalRunningInstance();
             _instance.Dispose();
             _instance = null;
             return false;
         }
-        _showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSignalName);
+        try
+        {
+            _showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSignalName);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Another Earmatch as administrator still holds the signal: this one runs, and a later launch cannot raise it.
+            return true;
+        }
         var signalHandle = _showSignal;
         var listener = new Thread(() =>
         {
@@ -126,6 +123,23 @@ public partial class App : Application
         }) { IsBackground = true, Name = "Earmatch show signal" };
         listener.Start();
         return true;
+    }
+
+    private static void SignalRunningInstance()
+    {
+        try
+        {
+            using var signal = EventWaitHandle.OpenExisting(ShowSignalName);
+            signal.Set();
+        }
+        catch (WaitHandleCannotBeOpenedException)
+        {
+            // The running instance is still starting; it shows its window anyway.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // The running instance is elevated: Windows does not let this launch signal it.
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

@@ -94,13 +94,16 @@ public sealed class PracticeTraceView : FrameworkElement
     {
         if (_trace is not { } trace) return;
         double width = ActualWidth, height = ActualHeight;
+        if (width <= 0 || height <= 0) return;
         var duration = Math.Max(trace.DurationSeconds, 0.1);
         var matched = trace.MatchedAtSeconds;
         var worst = trace.WorstSample is { } sample ? Math.Abs(sample.ErrorMilliseconds) : 0;
         var scale = matched is null ? 100 : Math.Min(Math.Max(worst * 1.25, PracticeErrorMeter.InPhase * 2), 100);
         var midY = height / 2;
+        // The trace keeps 2 points from the edges; a trace shorter than that draws flat instead of upside down.
+        var reach = Math.Max(0, height / 2 - 2);
         double X(double seconds) => seconds / duration * width;
-        double Y(double milliseconds) => midY - Math.Clamp(milliseconds, -scale, scale) / scale * (height / 2 - 2);
+        double Y(double milliseconds) => midY - Math.Clamp(milliseconds, -scale, scale) / scale * reach;
 
         var bandTop = Y(PracticeErrorMeter.InPhase);
         context.DrawRectangle(BandFill, null, new Rect(0, bandTop, width, Y(-PracticeErrorMeter.InPhase) - bandTop));
@@ -108,7 +111,7 @@ public sealed class PracticeTraceView : FrameworkElement
         if (matched is { } matchedAt)
         {
             var line = X(matchedAt);
-            context.DrawRectangle(BeforeMatch, null, new Rect(0, 0, line, height));
+            context.DrawRectangle(BeforeMatch, null, new Rect(0, 0, Math.Max(0, line), height));
             context.DrawLine(MatchedLine, new Point(line, 0), new Point(line, height));
         }
         context.DrawGeometry(null, BeforePen, Path(trace, matched ?? double.PositiveInfinity, X, Y, width, matchedSide: false));

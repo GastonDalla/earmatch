@@ -35,6 +35,12 @@ public static class WindowText
     public static string CopyDiagnostics => L10n.Text("Copy Diagnostics");
     public static string CopyDiagnosticsHelp => L10n.Text("Copy Diagnostics: copies a plain-text report (versions, status, settings) to attach to a bug report");
     public static string Copied => L10n.Text("Copied");
+    public static string CopyFailed => L10n.Text("Couldn't Copy");
+    public static string CopyFailedNotice => L10n.Text("Couldn't copy the diagnostics: another app is using the clipboard. Try again in a moment.");
+    public static string Minimize => L10n.Text("Minimize");
+    public static string Maximize => L10n.Text("Maximize");
+    public static string Restore => L10n.Text("Restore");
+    public static string Close => L10n.Text("Close");
     public static string Quit => L10n.Text("Quit Earmatch");
     public static string Sections => L10n.Text("Sections");
     public static string Independence => L10n.Text("Independent utility. Not affiliated with AlphaTheta, Pioneer DJ or rekordbox.");

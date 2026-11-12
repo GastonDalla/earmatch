@@ -21,6 +21,8 @@ public abstract class PaneView : Grid
         AutomationProperties.SetHeadingLevel(heading, AutomationHeadingLevel.Level1);
         Header = Ui.Row(heading, null, Spacing.Medium);
         Header.MinHeight = 30;
+        // The header sits in the title band like on macOS; its right end stops short of the caption buttons.
+        Header.Margin = new Thickness(0, 0, CaptionButtons.StripWidth + Spacing.Small - Spacing.Large, 0);
         Children.Add(Header);
     }
 

@@ -31,8 +31,8 @@ public sealed class Sidebar : Grid
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var brand = Brand(model.VersionLabel);
-        // macOS leaves 48 points for the traffic lights over the sidebar; on Windows the title bar sits above the content.
-        brand.Margin = new Thickness(12 + 6, Spacing.Medium, 12, Spacing.Large);
+        // macOS leaves 48 points for the traffic lights over the sidebar; on Windows that band drags the window.
+        brand.Margin = new Thickness(12 + 6, MainWindowFrame.TitleBandHeight, 12, Spacing.Large);
         Children.Add(brand);
 
         foreach (var pane in MainWindowPane.AllCases) _list.Children.Add(MakeRow(pane));

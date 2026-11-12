@@ -83,12 +83,12 @@ public sealed class SetupPane : PaneView
         DispatcherTimer? reset = null;
         var copy = ActionButton.WithIcon(ActionKind.Pill, WindowText.CopyDiagnostics, IconKind.Clipboard, () =>
         {
-            Model.CopyDiagnostics();
+            var copied = Model.CopyDiagnostics();
             if (copyLabel is null || copyIcon is null) return;
-            copyLabel.Text = WindowText.Copied;
-            copyIcon.Kind = IconKind.Checkmark;
+            copyLabel.Text = copied ? WindowText.Copied : WindowText.CopyFailed;
+            copyIcon.Kind = copied ? IconKind.Checkmark : IconKind.Warning;
             reset?.Stop();
-            reset = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.6) };
+            reset = new DispatcherTimer { Interval = TimeSpan.FromSeconds(copied ? 1.6 : 3) };
             reset.Tick += (_, _) =>
             {
                 reset.Stop();

@@ -5,9 +5,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Drawing;
 
-/// The beats each deck's playhead is at, for the waveform preview.
-public readonly record struct DeckPhases(double One, double Two);
-
 /// The animated sample rekordbox session of the previews (PreviewClock.swift): the master at 128 BPM and deck 1 nudged
 /// out of phase and back every six seconds.
 public readonly struct PreviewClock
@@ -89,25 +86,28 @@ public sealed class WaveformSketch : FrameworkElement
         {
             case WaveformMode.Normal:
             {
-                DrawStrip(context, new Rect(0, 0, width, height / 2 - 1), _phases.One, WindowTheme.Deck);
-                DrawStrip(context, new Rect(0, height / 2 + 1, width, height / 2 - 1), _phases.Two, WindowTheme.DeckTwo);
+                DrawStrip(context, Box(0, 0, width, height / 2 - 1), _phases.One, WindowTheme.Deck);
+                DrawStrip(context, Box(0, height / 2 + 1, width, height / 2 - 1), _phases.Two, WindowTheme.DeckTwo);
                 Playhead(context, width / 2, 0, height);
                 break;
             }
             case WaveformMode.Split:
             {
                 const double gap = 6;
-                var left = new Rect(0, 0, (width - gap) / 2, height);
+                var left = Box(0, 0, (width - gap) / 2, height);
                 var right = new Rect(left.Right + gap, 0, left.Width, height);
                 DrawStrip(context, left, _phases.One, WindowTheme.Deck);
                 DrawStrip(context, right, _phases.Two, WindowTheme.DeckTwo);
                 Playhead(context, left.X + left.Width / 2, 0, height);
                 Playhead(context, right.X + right.Width / 2, 0, height);
-                context.DrawRectangle(Divider, null, new Rect(left.Right + gap / 2 - 0.5, 4, 1, height - 8));
+                context.DrawRectangle(Divider, null, Box(left.Right + gap / 2 - 0.5, 4, 1, height - 8));
                 break;
             }
         }
     }
+
+    /// A rectangle that is empty instead of throwing while the control is smaller than its gaps (during a resize).
+    private static Rect Box(double x, double y, double width, double height) => new(x, y, Math.Max(0, width), Math.Max(0, height));
 
     private static void DrawStrip(DrawingContext context, Rect rect, double beats, Brush color)
     {
