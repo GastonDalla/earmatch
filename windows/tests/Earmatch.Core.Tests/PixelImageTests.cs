@@ -4,7 +4,6 @@ namespace Earmatch.Core.Tests;
 
 public class PixelImageTests
 {
-    // Two pixels per row, one padding byte block per row: (10,20,30,255) (40,50,60,255) | padding
     static readonly byte[] Bytes =
     [
         10, 20, 30, 255, 40, 50, 60, 255, 0, 0, 0, 0,

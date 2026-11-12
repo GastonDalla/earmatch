@@ -2,8 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// RGBA pixels to paint or load from a PNG fixture (PixelFixture.swift on macOS). The fixtures are rekordbox frames at
-/// 2 pixels per point.
 sealed class PixelBuffer
 {
     public PixelBuffer(int width, int height, (byte R, byte G, byte B) fill = default)
@@ -51,16 +49,13 @@ sealed class PixelBuffer
         }
     }
 
-    /// The pixels in macOS points: 2 pixels per screen unit, one screen unit per rekordbox point.
     public PixelImage Image(ScreenPoint origin = default, double scale = 2) =>
         new(Bytes, Width, Height, Width * 4, PixelImage.PixelLayout.Rgba, scale, origin);
 
-    /// The same pixels as rekordbox for Windows at 200% gives them: screen units are physical pixels, two per point.
     public PixelImage WindowsImage(ScreenPoint pointOrigin = default) =>
         new(Bytes, Width, Height, Width * 4, PixelImage.PixelLayout.Rgba, scale: 1, Physical.Point(pointOrigin), layoutScale: 2);
 }
 
-/// Converts macOS point geometry to the physical pixels rekordbox for Windows uses at 200%.
 static class Physical
 {
     public const double Scale = 2;

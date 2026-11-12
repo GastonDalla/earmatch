@@ -220,9 +220,6 @@ public class PhaseMeterTrackerTests
         Assert.Null(tracker.BeatsPerSecond);
     }
 
-    /// rekordbox for Windows at 200% reads the spacing in physical pixels (60 for 30 points). The tracker told the layout
-    /// scale keeps the macOS stillness tolerance (a quarter of a point in beats), so a stopped deck whose reading wobbles
-    /// by less than that measures zero on both.
     [Fact]
     public void PhysicalPixelSpacingsKeepThePointTolerances()
     {

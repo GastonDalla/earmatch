@@ -116,7 +116,6 @@ public class WindowRenderShotTests
     [Fact]
     public void TheWindowFitsA1366By768Laptop()
     {
-        // 1366x768 is the smallest common Windows laptop screen; the taskbar takes 48 px.
         var usable = new WindowSize(1366, 768 - 48);
         Assert.True(MainWindowMetrics.DefaultSize.Width <= usable.Width);
         Assert.True(MainWindowMetrics.DefaultSize.Height <= usable.Height);

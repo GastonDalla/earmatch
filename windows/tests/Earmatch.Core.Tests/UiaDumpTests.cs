@@ -4,8 +4,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// The fixture format of windows/tools/dump-uia.ps1, which the live UI Automation read and `Earmatch --dump-uia` share:
-/// the nodes of rekordbox's windows, the snapshot the locator reads from them, and the JSON written back.
 public class UiaDumpTests
 {
     const string TwoDeckHorizontal = "uia-7.2.19-perf-2deck-horizontal.json";

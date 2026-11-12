@@ -3,7 +3,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// Copy Diagnostics says "Copied" only when the clipboard took the report.
 public class ClipboardRetryTests
 {
     [Fact]

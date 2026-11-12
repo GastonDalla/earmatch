@@ -2,8 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// The main window's state without WPF: the settings it reads and writes through the store, the pane and language it
-/// remembers, and the live decks it mirrors.
 public sealed class MainWindowStateTests : IDisposable
 {
     readonly string _folder = Path.Combine(Path.GetTempPath(), "earmatch-window-" + Guid.NewGuid().ToString("N"));
@@ -95,7 +93,6 @@ public sealed class MainWindowStateTests : IDisposable
         var changes = 0;
         state.Changed += () => changes++;
 
-        // The tray or a hotkey changes the store; the window reads it when its own thread runs the posted work.
         store.Update((ref OverlaySettings settings) => settings.IsBlindModeEnabled = !settings.IsBlindModeEnabled);
 
         Assert.Equal(before, state.Settings);
@@ -271,7 +268,6 @@ public sealed class MainWindowStateTests : IDisposable
         Assert.False(state.IsMirroringDecks);
     }
 
-    /// A capture problem reaches the status lines (OverlayController.captureMessage on macOS), once per change.
     [Fact]
     public void ACaptureProblemShowsInTheStatusOncePerChange()
     {
@@ -289,7 +285,6 @@ public sealed class MainWindowStateTests : IDisposable
         Assert.Equal(2, changes);
     }
 
-    /// The Practice pane follows the trainer: its history and the transition being timed.
     [Fact]
     public void ThePracticeStateFollowsTheTrainer()
     {

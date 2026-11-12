@@ -2,7 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// Windows has no permissions to ask for, so the macOS cases that open Setup for a missing permission are gone.
 public class MainWindowPaneTests
 {
     [Fact]
@@ -71,7 +70,6 @@ public class MainWindowPaneTests
     }
 }
 
-/// Windows has no permissions, so the macOS needsPermission state is gone.
 public class MainWindowStatusTests
 {
     [Fact]

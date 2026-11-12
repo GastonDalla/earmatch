@@ -3,7 +3,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// Runs code under a marker lookup ("⟦key⟧") or a Spanish culture, the way the Swift tests override L10n.
 static class Localized
 {
     public static readonly L10n.Lookup Marker = key => $"⟦{key}⟧";
@@ -25,7 +24,6 @@ static class Localized
         }
     }
 
-    /// The text with every marked part removed: empty or punctuation only when everything went through the lookup.
     public static string Unmarked(string text)
     {
         var depth = 0;

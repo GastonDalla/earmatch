@@ -288,7 +288,6 @@ public class PracticeSessionTests
     }
 }
 
-/// A deck's position in beats and the tempo it reports, over time.
 sealed record Motion(Func<double, double> Beats, Func<double, double> Bpm)
 {
     public static Motion Steady(double bpm, double offset = 0) => new(time => bpm / 60 * time + offset, _ => bpm);
@@ -313,7 +312,6 @@ sealed record DeckScript(int Number, Motion Motion)
     public Func<double, bool> PhaseKnown { get; init; } = _ => true;
 }
 
-/// Feeds a session the decks' snapshots at 30 per second, then closes it with a long gap.
 sealed record MixScript(double Duration, IReadOnlyList<DeckScript> Decks)
 {
     public double Rate { get; init; } = 30;
@@ -353,7 +351,6 @@ sealed record MixScript(double Duration, IReadOnlyList<DeckScript> Decks)
     }
 }
 
-/// The SplitMix64 generator, for reproducible jitter.
 sealed class SplitMix(ulong seed)
 {
     private ulong _state = seed;

@@ -77,7 +77,6 @@ public class BPMGlyphMaskTests
         Assert.Equal(jogFrame, BPMGlyphMask.Cover(BPMLimit.OneDecimal, jogFrame, blank.Image()));
     }
 
-    /// rekordbox for Windows at 200%: the same digits in physical pixels give the doubled covers.
     [Theory]
     [InlineData("deck1")]
     [InlineData("deck2")]

@@ -3,8 +3,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// Where Earmatch for Windows covers rekordbox without reading its pixels (OverlayController.swift's masks and covers):
-/// the jog BPM under the BPM limit, the pitch and header BPM in blind mode, and both waveforms in Hide Both.
 public class OverlayCoversTests
 {
     const string TwoDeckHorizontal = "uia-7.2.19-perf-2deck-horizontal.json";

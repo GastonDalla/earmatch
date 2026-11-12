@@ -3,8 +3,6 @@ using Key = Earmatch.Core.HotkeyRecognizer.VirtualKey;
 
 namespace Earmatch.Core.Tests;
 
-/// The macOS HotkeyRecognizerTests, adapted to the key-down and key-up events of a Windows low-level keyboard hook:
-/// Right Alt stands for Right Option, Windows for Command.
 public class HotkeyRecognizerTests
 {
     const int A = 0x41;
@@ -268,9 +266,6 @@ public class HotkeyRecognizerTests
         Assert.False(recognizer.Handle(Up(Key.E)).Swallows);
     }
 
-    /// With the shortcut's E swallowed, Windows would see Win pressed and released alone and open the Start menu (and
-    /// Alt alone would open rekordbox's menu bar): the toggle asks for the unassigned mask key to be typed while the
-    /// modifiers are still held, once per press.
     [Fact]
     public void TheToggleMasksTheModifiersRelease()
     {
@@ -282,7 +277,6 @@ public class HotkeyRecognizerTests
         Assert.False(recognizer.Handle(Up(Key.E)).SendsMaskKey);
     }
 
-    /// The mask key the hook types itself passes through without touching the peek or the held keys.
     [Fact]
     public void TheMaskKeyIsIgnored()
     {
@@ -293,7 +287,6 @@ public class HotkeyRecognizerTests
         Assert.True(recognizer.IsPeeking);
     }
 
-    /// Other keys never ask for the mask key.
     [Fact]
     public void OnlyTheToggleSendsTheMaskKey()
     {

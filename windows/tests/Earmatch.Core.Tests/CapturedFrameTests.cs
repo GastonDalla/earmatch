@@ -2,8 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// The captured frames on their way from the capture thread to the overlays: their pooled pixels, their place in the
-/// layout's coordinates, and the hand-off that keeps only the newest one.
 public class CapturedFrameTests
 {
     static CapturedFrame Frame(PixelPool pool, double time, int width = 4, int height = 3, ScreenPoint origin = default) =>
@@ -73,8 +71,6 @@ public class CapturedFrameTests
         Assert.Equal(64, pool.Rent(64).Length);
     }
 
-    /// A frame copied smaller than the buffer it was rented for (the window shrank) holds only the pixels copied; it may
-    /// not claim more pixels than its buffer holds.
     [Fact]
     public void AFrameHoldsOnlyThePixelsItsBufferCanHold()
     {
@@ -102,8 +98,6 @@ public class CapturedFrameTests
         Assert.Equal(0, frame.PixelRect(Rect(2000, 2000, 20, 10)).Width);
     }
 
-    /// The frame's pixel (0, 0) is the top-left corner of the window's visible bounds; when the window moved since the
-    /// layout was read, the frame moves back with it so it lines up with the layout.
     [Fact]
     public void AFrameIsPlacedAtTheVisibleBoundsWhereTheWindowWasRead()
     {

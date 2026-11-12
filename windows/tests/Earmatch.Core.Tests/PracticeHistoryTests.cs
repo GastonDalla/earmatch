@@ -95,7 +95,6 @@ public class PracticeHistoryTests
     public void DaysFollowTheLocalCalendar()
     {
         var madrid = TimeZoneInfo.CreateCustomTimeZone("UTC+1", TimeSpan.FromHours(1), "UTC+1", "UTC+1");
-        // 23:30 UTC is already the next day one hour east of UTC.
         var days = PracticeProgress.Days([Mix(FirstDay.AddSeconds(Day - 1_800))], madrid);
         Assert.Equal(FirstDay.AddSeconds(Day - 3_600), Assert.Single(days).Day);
     }

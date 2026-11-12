@@ -73,7 +73,6 @@ public class StatusTextOptionsTests
         Assert.Equal("CDJ-3000 Phase meter", PhaseMeterType.Cdj3000PhaseMeter.Title);
     }
 
-    /// English keeps the macOS limit of 60 characters; the Spanish texts of the macOS catalog run up to 65.
     [Theory]
     [InlineData("en", 60)]
     [InlineData("es", 65)]

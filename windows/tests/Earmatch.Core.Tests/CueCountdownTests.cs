@@ -137,8 +137,6 @@ public class CueCountdownTests
         Assert.Equal(10, CueCountdown.BeatsAhead(10, measuredAt: 2, beatsPerSecond: 0, time: 9));
     }
 
-    /// rekordbox for Windows at 200%: the same frames in physical pixels find the cues at the doubled positions and count
-    /// the same beats.
     [Fact]
     public void PhysicalPixelCoordinatesFindTheSameCues()
     {
@@ -157,8 +155,6 @@ public class CueCountdownTests
             CueCountdown.Markers(Rect(0, 0, 1200, 140), 0, drawn.WindowsImage()).Select(marker => marker.Kind));
     }
 
-    /// A strip reaching past the frame's edges is scanned only where the frame shows it: a hot cue's pink at the
-    /// frame's top row is not a flag of a strip whose flag band lies above the frame.
     [Fact]
     public void TheCueScanReadsOnlyThePartOfTheStripInsideTheFrame()
     {

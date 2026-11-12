@@ -3,9 +3,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// The phase meters between captured frames (the meter part of OverlayController.swift): each frame anchors the
-/// decks' predictors, the board draws them at each refresh, and a few frames that do not show the window as the
-/// layout describes it are ridden out.
 public class PhaseMeterBoardTests
 {
     static DeckLayout Deck(int number, bool loaded = true, double? elapsed = 10) =>
@@ -98,8 +95,6 @@ public class PhaseMeterBoardTests
         Assert.Null(board.Display(1));
     }
 
-    /// A frame ridden out does not show the window as the layout describes it, so what was read from it is not a
-    /// measurement: the meters keep moving on from the last good frame.
     [Fact]
     public void AFrameRiddenOutLeavesThePredictorsAlone()
     {
@@ -117,8 +112,6 @@ public class PhaseMeterBoardTests
         Assert.Equal(0.5, row.Fraction!.Value, 2);
     }
 
-    /// While tracing, each frame measures how far the meters drawn at its capture time were from the phase it reads
-    /// (measureMeterError in OverlayController.swift): 0.02 beats at 2 beats a second is 10 ms.
     [Fact]
     public void WhileTracingEachFrameMeasuresTheMeterError()
     {

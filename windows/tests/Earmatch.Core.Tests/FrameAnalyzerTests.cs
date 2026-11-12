@@ -3,7 +3,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// The per-frame reading of every deck (the pure part of FrameAnalyzer.swift), on the macOS 2-deck frames in points.
 public class FrameAnalyzerTests
 {
     static readonly ScreenPoint CropOrigin = new(0, 136);
@@ -128,8 +127,6 @@ public class FrameAnalyzerTests
         Assert.Equal(PhaseTrackerStatus.Lost, afterReset.Phase.Status);
     }
 
-    /// The 4-deck vertical column's playhead (235) is half a point past the centre fallback (234.5): once found, it stays
-    /// where it was while a frame does not show it.
     [Fact]
     public void AStripWhosePlayheadDisappearsKeepsTheLastOneFound()
     {
@@ -154,8 +151,6 @@ public class FrameAnalyzerTests
             new FrameAnalyzer().Analyze(hidden.Image(origin), [deck], Everything, isMapped: true, time: 0)[1].Grid);
     }
 
-    /// rekordbox for Windows at 200%: the same frame with the decks in physical pixels reads the doubled grid, the same
-    /// phase and sync master.
     [Fact]
     public void PhysicalPixelCoordinatesReadTheSameDecks()
     {
@@ -184,7 +179,6 @@ public class FrameAnalyzerTests
     }
 }
 
-/// The counter under each meter (OverlayController.counter on macOS).
 public class PhaseMeterCounterTests
 {
     static readonly DeckLayout Deck = new(1, "Track", 124, null, null, null, Rect(0, 0, 70, 13), null, null, elapsedSeconds: 10.8);

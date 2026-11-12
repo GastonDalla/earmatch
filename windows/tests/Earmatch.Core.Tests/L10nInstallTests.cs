@@ -6,8 +6,6 @@ namespace Earmatch.Core.Tests;
 [CollectionDefinition(nameof(L10nInstallCollection), DisableParallelization = true)]
 public class L10nInstallCollection;
 
-/// Installing a language changes it for the whole process, so this runs alone, like the macOS test that runs in its
-/// own process.
 [Collection(nameof(L10nInstallCollection))]
 public class L10nInstallTests
 {
