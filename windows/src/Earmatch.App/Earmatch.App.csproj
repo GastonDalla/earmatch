@@ -4,12 +4,31 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- WinForms only for the tray icon (NotifyIcon); its global usings would clash with WPF's types. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <!-- Lets the app build on macOS for checks; it only runs on Windows. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>Earmatch.App</RootNamespace>
     <AssemblyName>Earmatch</AssemblyName>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <Version>0.1.2</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- WFO0003 asks WinForms apps to set DPI in code; this is a WPF app, which takes Per-Monitor V2 from app.manifest. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\AppIcon.png" />
+    <Resource Include="Assets\AppIcon.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Earmatch.Core\Earmatch.Core.csproj" />
