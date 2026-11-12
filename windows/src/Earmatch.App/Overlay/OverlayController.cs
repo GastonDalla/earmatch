@@ -20,7 +20,7 @@ internal sealed class OverlayController : IDisposable
     private readonly WindowCapture _capture;
     private readonly FrameReader _reader = new();
     private readonly FrameHandoff _handoff = new();
-    private readonly PhaseMeterBoard _board = new();
+    private readonly PhaseMeterBoard _board;
     private readonly RefreshDriver _refresh = new();
     private RekordboxState _state = RekordboxState.Initial;
     private OverlaySettings _settings = new();
@@ -43,6 +43,7 @@ internal sealed class OverlayController : IDisposable
     public OverlayController(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
+        _board = new PhaseMeterBoard(_reader.Stats);
         _capture = new WindowCapture(dispatcher);
         _capture.FrameArrived = raw =>
         {

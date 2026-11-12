@@ -67,6 +67,8 @@ internal static partial class NativeMethods
 
         public readonly int Width => Right - Left;
         public readonly int Height => Bottom - Top;
+
+        public readonly Earmatch.Core.ScreenRect Screen => new(Left, Top, Width, Height);
     }
 
     [StructLayout(LayoutKind.Sequential)]

@@ -144,8 +144,9 @@ internal sealed unsafe class Direct3D : IDisposable
     }
 
     /// Copies the top-left `width` x `height` pixels of a captured frame's surface (BGRA) into `buffer`, `stride` bytes
-    /// a row, through a staging texture the CPU can read.
-    public void Copy(IDirect3DSurface surface, int width, int height, byte[] buffer, int stride)
+    /// a row, through a staging texture the CPU can read. A surface smaller than that is copied whole: the size copied is
+    /// returned, and only those pixels of `buffer` were written.
+    public (int Width, int Height) Copy(IDirect3DSurface surface, int width, int height, byte[] buffer, int stride)
     {
         IntPtr access = IntPtr.Zero, texture = IntPtr.Zero;
         try
@@ -157,8 +158,9 @@ internal sealed unsafe class Direct3D : IDisposable
 
             Texture2DDescription description;
             ((delegate* unmanaged[Stdcall]<IntPtr, Texture2DDescription*, void>)(*(void***)texture)[10])(texture, &description);
-            var copyWidth = (uint)Math.Min(width, (int)description.Width);
-            var copyHeight = (uint)Math.Min(height, (int)description.Height);
+            var copyWidth = Math.Min(description.Width, (uint)Math.Max(width, 0));
+            var copyHeight = Math.Min(description.Height, (uint)Math.Max(height, 0));
+            if (copyWidth == 0 || copyHeight == 0) return (0, 0);
             EnsureStaging(copyWidth, copyHeight);
 
             var box = new Box { Right = copyWidth, Bottom = copyHeight, Back = 1 };
@@ -182,6 +184,7 @@ internal sealed unsafe class Direct3D : IDisposable
             {
                 ((delegate* unmanaged[Stdcall]<IntPtr, IntPtr, uint, void>)(*(void***)_context)[15])(_context, _staging, 0);
             }
+            return ((int)copyWidth, (int)copyHeight);
         }
         finally
         {

@@ -7,10 +7,9 @@ namespace Earmatch.App.Capture;
 internal sealed record FrameReaderInput(IReadOnlyList<DeckLayout> Decks, NativeMethods.WindowRect ReadRect, double LayoutScale, FrameAnalysisOptions Options);
 
 /// Reads each captured frame on the capture thread (FrameAnalyzer.swift's analyze): places the frame in the layout's
-/// coordinates, checks it shows the window the layout was read from, runs Earmatch.Core's FrameAnalyzer and records the
-/// frame in the stats. Windows.Graphics.Capture captures a window's visible bounds (DWMWA_EXTENDED_FRAME_BOUNDS: the
-/// window without its invisible resize borders, title bar included), so the frame's pixel (0, 0) is at those bounds'
-/// top-left corner; checked in the VM against the decks UI Automation locates (`Earmatch --capture-frame`).
+/// coordinates (FramePlacement: pixel (0, 0) at the window's visible bounds, checked in the VM against the decks UI
+/// Automation locates with `Earmatch --capture-frame`), checks it shows the window the layout was read from, runs
+/// Earmatch.Core's FrameAnalyzer and records the frame in the stats.
 internal sealed class FrameReader
 {
     private readonly object _gate = new();
@@ -36,15 +35,12 @@ internal sealed class FrameReader
             raw.Pixels.Release();
             return null;
         }
-        var bounds = raw.Bounds.Width > 0 ? raw.Bounds : raw.WindowRect;
-        var moved = new ScreenPoint(raw.WindowRect.Left - input.ReadRect.Left, raw.WindowRect.Top - input.ReadRect.Top);
-        var origin = new ScreenPoint(bounds.Left - moved.X, bounds.Top - moved.Y);
-        var expected = new ScreenSize(input.ReadRect.Width - (raw.WindowRect.Width - bounds.Width), input.ReadRect.Height - (raw.WindowRect.Height - bounds.Height));
+        var placement = FramePlacement.Of(raw.Bounds.Screen, raw.WindowRect.Screen, input.ReadRect.Screen);
         var pixels = raw.Pixels;
-        var problem = FrameMappingProblem.Check(pixels.Width, pixels.Height, expected);
-        var image = new PixelImage(pixels.Bytes, pixels.Width, pixels.Height, pixels.Stride, PixelImage.PixelLayout.Bgra, 1, origin, input.LayoutScale);
+        var problem = FrameMappingProblem.Check(pixels.Width, pixels.Height, placement.ExpectedSize);
+        var image = pixels.Image(placement.Origin, input.LayoutScale);
         var decks = _analyzer.Analyze(image, input.Decks, input.Options, problem is null, raw.Time);
         if (Stats.Record(CaptureClock.Now - started, raw.Time, decks) is { } trace) Console.Error.WriteLine(trace);
-        return new CapturedFrame(pixels, origin, new FrameAnalysis(decks, problem, raw.Time), raw.Generation);
+        return new CapturedFrame(pixels, placement.Origin, new FrameAnalysis(decks, problem, raw.Time), raw.Generation);
     }
 }

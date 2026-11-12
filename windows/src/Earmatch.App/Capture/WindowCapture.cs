@@ -51,8 +51,9 @@ internal static class CaptureClock
 /// a free-threaded Direct3D 11 frame pool delivers each new frame on a worker thread, where its pixels are copied to
 /// the CPU (BGRA) for the analyser; the yellow capture border is turned off where Windows allows it, and the cursor is
 /// left out. It runs only while a feature needs pixels, follows the window it is given, waits while the window is
-/// minimized or hidden, and retries a failed start on RetrySchedule's delays. It only reads the window's pixels.
-/// Follow, Stop and the status are used on the window's thread.
+/// minimized or hidden, and retries a failed start on RetrySchedule's delays. A failure drops the Direct3D device too,
+/// so a device Windows removed or reset (a driver update, a GPU reset, DXGI_ERROR_DEVICE_REMOVED) is created anew on the
+/// retry. It only reads the window's pixels. Follow, Stop and the status are used on the window's thread.
 internal sealed class WindowCapture : IDisposable
 {
     private readonly Dispatcher _dispatcher;
@@ -151,14 +152,15 @@ internal sealed class WindowCapture : IDisposable
         try
         {
             if (!GraphicsCaptureSession.IsSupported()) throw new NotSupportedException("Windows.Graphics.Capture is not available");
-            _direct3D ??= Direct3D.Create();
+            Direct3D direct3D;
+            lock (_frameGate) direct3D = _direct3D ??= Direct3D.Create();
             var item = Direct3D.ItemForWindow(_wanted);
             item.Closed += (_, _) => _dispatcher.BeginInvoke(() =>
             {
                 if (generation == Generation && _wanted != IntPtr.Zero) Fail(L10n.Text("rekordbox window not found"));
             });
             var size = item.Size;
-            var pool = Direct3D11CaptureFramePool.CreateFreeThreaded(_direct3D.Device, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, size);
+            var pool = Direct3D11CaptureFramePool.CreateFreeThreaded(direct3D.Device, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, size);
             var session = pool.CreateCaptureSession(item);
             lock (_frameGate)
             {
@@ -176,7 +178,7 @@ internal sealed class WindowCapture : IDisposable
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
-            TearDown();
+            TearDown(dropDevice: true);
             Fail(error.Message);
         }
     }
@@ -218,9 +220,15 @@ internal sealed class WindowCapture : IDisposable
                 NativeMethods.GetWindowRect(_wanted, out var windowRect);
                 var stride = width * 4;
                 var bytes = _pixels.Rent(stride * height);
-                direct3D.Copy(frame.Surface, width, height, bytes, stride);
-                raw = new RawFrame(new FramePixels(_pixels, bytes, width, height, stride), frame.SystemRelativeTime.TotalSeconds, bounds, windowRect,
-                    _deliveringGeneration);
+                var copied = direct3D.Copy(frame.Surface, width, height, bytes, stride);
+                if (copied.Width <= 0 || copied.Height <= 0)
+                {
+                    _pixels.Return(bytes);
+                    return;
+                }
+                // Only the pixels copied are the frame's: the rest of the pooled buffer holds an earlier frame.
+                raw = new RawFrame(new FramePixels(_pixels, bytes, copied.Width, copied.Height, stride), frame.SystemRelativeTime.TotalSeconds, bounds,
+                    windowRect, _deliveringGeneration);
                 if (content.Width != _poolSize.Width || content.Height != _poolSize.Height)
                 {
                     _poolSize = content;
@@ -236,7 +244,7 @@ internal sealed class WindowCapture : IDisposable
             {
                 if (generation == Generation && Status.IsRunning)
                 {
-                    TearDown();
+                    TearDown(dropDevice: true);
                     Fail(message);
                 }
             });
@@ -246,7 +254,8 @@ internal sealed class WindowCapture : IDisposable
         else raw.Pixels.Release();
     }
 
-    private void TearDown()
+    /// Stops the capture session; `dropDevice` also lets the Direct3D device go, for a fresh one at the next start.
+    private void TearDown(bool dropDevice = false)
     {
         _retryTimer?.Stop();
         Direct3D11CaptureFramePool? pool;
@@ -263,6 +272,16 @@ internal sealed class WindowCapture : IDisposable
         if (pool is not null) pool.FrameArrived -= OnFrameArrived;
         session?.Dispose();
         pool?.Dispose();
+        if (dropDevice) DropDevice();
+    }
+
+    private void DropDevice()
+    {
+        lock (_frameGate)
+        {
+            _direct3D?.Dispose();
+            _direct3D = null;
+        }
     }
 
     private void Fail(string reason) => Retry(RetrySchedule.Reason.Failure, new CaptureStatus(CaptureStatusKind.Failed, reason));
@@ -296,10 +315,6 @@ internal sealed class WindowCapture : IDisposable
     public void Dispose()
     {
         Stop();
-        lock (_frameGate)
-        {
-            _direct3D?.Dispose();
-            _direct3D = null;
-        }
+        DropDevice();
     }
 }

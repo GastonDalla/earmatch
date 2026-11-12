@@ -98,6 +98,60 @@ public class PhaseMeterBoardTests
         Assert.Null(board.Display(1));
     }
 
+    /// A frame ridden out does not show the window as the layout describes it, so what was read from it is not a
+    /// measurement: the meters keep moving on from the last good frame.
+    [Fact]
+    public void AFrameRiddenOutLeavesThePredictorsAlone()
+    {
+        var board = new PhaseMeterBoard();
+        var layout = Layout(Deck(1));
+        board.Accept(Frame(1, new() { [1] = Reading(1.0) }), layout, out _);
+
+        Assert.False(board.Accept(Frame(1.1, new() { [1] = Reading(null) }, new FrameMappingProblem(800, 600, 1600, 1200)), layout, out _));
+        Assert.False(board.Accept(Frame(1.2, new() { [1] = Reading(3.0) }, new FrameMappingProblem(800, 600, 1600, 1200)), layout, out _));
+        board.Compute(layout, Settings, 1);
+        board.Compute(layout, Settings, 1.25);
+
+        var row = board.Display(1)!.Rows[0];
+        Assert.Equal(1, row.BeatInBar);
+        Assert.Equal(0.5, row.Fraction!.Value, 2);
+    }
+
+    /// While tracing, each frame measures how far the meters drawn at its capture time were from the phase it reads
+    /// (measureMeterError in OverlayController.swift): 0.02 beats at 2 beats a second is 10 ms.
+    [Fact]
+    public void WhileTracingEachFrameMeasuresTheMeterError()
+    {
+        var stats = new FrameStats(isTracing: true);
+        var board = new PhaseMeterBoard(stats);
+        var layout = Layout(Deck(1));
+        stats.Record(0.001, 0, new Dictionary<int, DeckFrameReading>());
+        board.Accept(Frame(1, new() { [1] = Reading(1.0) }), layout, out _);
+        board.Compute(layout, Settings, 1);
+        board.Compute(layout, Settings, 1.25);
+
+        board.Accept(Frame(1.25, new() { [1] = Reading(1.52) }), layout, out _);
+        board.Accept(Frame(1.3, new() { [1] = Reading(1.6, status: PhaseTrackerStatus.Held) }), layout, out _);
+        stats.Record(0.001, 1, new Dictionary<int, DeckFrameReading>());
+
+        Assert.Equal(10, stats.Current.PredictionErrorMilliseconds!.Value, 3);
+    }
+
+    [Fact]
+    public void WithoutTracingNoMeterErrorIsMeasured()
+    {
+        var stats = new FrameStats();
+        var board = new PhaseMeterBoard(stats);
+        var layout = Layout(Deck(1));
+        stats.Record(0.001, 0, new Dictionary<int, DeckFrameReading>());
+        board.Accept(Frame(1, new() { [1] = Reading(1.0) }), layout, out _);
+        board.Compute(layout, Settings, 1.25);
+        board.Accept(Frame(1.25, new() { [1] = Reading(1.52) }), layout, out _);
+        stats.Record(0.001, 1, new Dictionary<int, DeckFrameReading>());
+
+        Assert.Null(stats.Current.PredictionErrorMilliseconds);
+    }
+
     [Fact]
     public void ResettingForgetsTheFramesAndSaysWhetherAProblemCleared()
     {

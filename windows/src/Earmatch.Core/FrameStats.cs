@@ -22,6 +22,9 @@ public sealed class FrameStats
         public double RepeatedFramesPerSecond { get; init; }
         public double AverageRefreshMicroseconds { get; init; }
         public double MaxRefreshMicroseconds { get; init; }
+
+        /// How far the meters drawn were from where the next frames measured the decks, on average; measured only while
+        /// tracing (as on macOS), none without a measurement.
         public double? PredictionErrorMilliseconds { get; init; }
     }
 
@@ -45,6 +48,8 @@ public sealed class FrameStats
     private int _refreshes;
     private double _totalRefreshWork;
     private double _maxRefreshWork;
+    private double _totalPredictionError;
+    private int _predictionSamples;
     private readonly Dictionary<int, int> _heldFrames = [];
     private readonly Dictionary<int, int> _lostFrames = [];
     private Snapshot _last = new();
@@ -54,6 +59,9 @@ public sealed class FrameStats
     {
         _isTracing = isTracing;
     }
+
+    /// Whether tracing is on: the trace lines are written and the meter error is measured.
+    public bool IsTracing => _isTracing;
 
     public Snapshot Current
     {
@@ -112,6 +120,7 @@ public sealed class FrameStats
                 RefreshesPerSecond = _refreshes / elapsed,
                 AverageRefreshMicroseconds = _refreshes > 0 ? _totalRefreshWork / _refreshes * 1_000_000 : 0,
                 MaxRefreshMicroseconds = _maxRefreshWork * 1_000_000,
+                PredictionErrorMilliseconds = _predictionSamples > 0 ? _totalPredictionError / _predictionSamples * 1000 : null,
             };
             var trace = _isTracing ? TraceLine(decks) : null;
             _windowStart = frameTime;
@@ -126,6 +135,8 @@ public sealed class FrameStats
             _repeatedFrames = 0;
             _refreshes = 0;
             _totalRefreshWork = _maxRefreshWork = 0;
+            _totalPredictionError = 0;
+            _predictionSamples = 0;
             _heldFrames.Clear();
             _lostFrames.Clear();
             return trace;
@@ -171,6 +182,16 @@ public sealed class FrameStats
         }
     }
 
+    /// A frame measured a deck `seconds` away from where its meter was drawn at that frame's capture time.
+    public void RecordPredictionError(double seconds)
+    {
+        lock (_gate)
+        {
+            _totalPredictionError += Math.Abs(seconds);
+            _predictionSamples++;
+        }
+    }
+
     private string TraceLine(IReadOnlyDictionary<int, DeckFrameReading> decks)
     {
         static string F(string format, double value) => value.ToString(format, CultureInfo.InvariantCulture);
@@ -183,11 +204,12 @@ public sealed class FrameStats
                 + $"lost={_lostFrames.GetValueOrDefault(number)}";
         }));
         var last = _last;
+        var prediction = last.PredictionErrorMilliseconds is { } error ? $"{F("F1", error)} ms" : "-";
         return $"earmatch: {F("F1", last.FramesPerSecond)} fps (interval sd {F("F2", last.CaptureJitterMilliseconds)} ms), analysis avg "
             + $"{F("F2", last.AverageProcessingMilliseconds)} ms max {F("F2", last.MaxProcessingMilliseconds)} ms, capture-to-commit "
             + $"{F("F1", last.AverageCommitMilliseconds)} ms, capture-to-screen {F("F1", last.AverageEarliestLatencyMilliseconds)}.."
             + $"{F("F1", last.AverageLatencyMilliseconds)} ms (max {F("F1", last.MaxLatencyMilliseconds)}), refreshes {F("F0", last.RefreshesPerSecond)}/s "
             + $"(no new frame {F("F0", last.RepeatedFramesPerSecond)}/s) work avg {F("F0", last.AverageRefreshMicroseconds)} us max "
-            + $"{F("F0", last.MaxRefreshMicroseconds)} us; {decksText}";
+            + $"{F("F0", last.MaxRefreshMicroseconds)} us, meter error {prediction}; {decksText}";
     }
 }

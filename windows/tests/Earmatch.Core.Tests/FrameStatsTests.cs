@@ -75,4 +75,20 @@ public class FrameStatsTests
         Assert.Equal(0, stats.Current.AverageLatencyMilliseconds);
         Assert.Equal(1, stats.Current.FramesPerSecond, 6);
     }
+
+    /// The meter error (measured only while tracing, as on macOS) is the average distance between where the meters were
+    /// drawn and where the next frames measured the decks; none without a measurement.
+    [Fact]
+    public void TheMeterErrorIsTheAverageOfTheMeasuredDistances()
+    {
+        var stats = new FrameStats(isTracing: true);
+        stats.Record(0.001, 0, NoDecks);
+        stats.RecordPredictionError(-0.002);
+        stats.RecordPredictionError(0.004);
+        stats.Record(0.001, 1, NoDecks);
+
+        Assert.Equal(3, stats.Current.PredictionErrorMilliseconds!.Value, 6);
+        stats.Record(0.001, 2, NoDecks);
+        Assert.Null(stats.Current.PredictionErrorMilliseconds);
+    }
 }

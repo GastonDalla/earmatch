@@ -195,53 +195,83 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.False(File.Exists(_file.Path));
     }
 
-    /// A file that cannot be read is kept aside before anything is saved; when it cannot even be moved, saving leaves
-    /// it in place: the history is kept in memory only, and the next launch can still read the file.
-    [Fact]
-    public void AnUnreadableFileThatCannotBeMovedIsNeverOverwritten()
+    /// Holds the history file so it cannot be moved or deleted while it can still be read: Windows refuses to rename a
+    /// file another handle has open without delete sharing; elsewhere a folder without write permission does it.
+    IDisposable KeepInPlace()
     {
-        if (OperatingSystem.IsWindows()) return;
-        _file.Save(new PracticeHistory());
-        var original = File.ReadAllBytes(_file.Path);
-        File.SetUnixFileMode(_file.Path, UnixFileMode.None);
+        if (OperatingSystem.IsWindows()) return new FileStream(_file.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
         File.SetUnixFileMode(_directory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
-        PracticeOverview overview;
-        PracticeStore store;
-        try
-        {
-            store = new PracticeStore(_file, TimeZoneInfo.Utc);
-            store.Load();
-            overview = store.Record(Result(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero)));
-        }
-        finally
-        {
-            File.SetUnixFileMode(_directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-            File.SetUnixFileMode(_file.Path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
-        }
-
-        Assert.Equal(1, overview.MixCount);
-        Assert.NotNull(store.Problem);
-        Assert.Equal(original, File.ReadAllBytes(_file.Path));
-        Assert.Equal(["practice.json"], Contents());
+        return new Restore(() => File.SetUnixFileMode(_directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute));
     }
 
-    /// An unreadable file that can be moved is kept renamed, like a corrupt one, and the history starts fresh.
-    [Fact]
-    public void AnUnreadableFileIsKeptRenamed()
+    sealed class Restore(Action restore) : IDisposable
     {
-        if (OperatingSystem.IsWindows()) return;
-        _file.Save(new PracticeHistory());
-        var original = File.ReadAllBytes(_file.Path);
-        File.SetUnixFileMode(_file.Path, UnixFileMode.None);
+        public void Dispose() => restore();
+    }
 
-        var loaded = _file.Load(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero));
+    /// Opens the history file with no sharing, so reading it fails with a sharing violation (an I/O error, not corruption).
+    FileStream Lock() => new(_file.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+    byte[] SaveOneMix()
+    {
+        var history = new PracticeHistory();
+        history.Record(Result(new DateTimeOffset(2026, 11, 11, 10, 0, 0, TimeSpan.Zero)));
+        _file.Save(history);
+        return File.ReadAllBytes(_file.Path);
+    }
+
+    /// A file that cannot be read right now (another program holds it) may be perfectly good: it is left where it is,
+    /// not renamed as corrupt, and reported in the way so nothing is saved over it.
+    [Fact]
+    public void AFileThatCannotBeReadIsLeftInPlace()
+    {
+        var original = SaveOneMix();
+
+        LoadedPracticeHistory loaded;
+        using (Lock()) loaded = _file.Load(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero));
 
         Assert.Empty(loaded.History.Mixes);
-        Assert.NotNull(loaded.Problem);
-        Assert.Equal("practice.corrupt-20261112T100000Z.json", Path.GetFileName(loaded.QuarantinedPath));
-        Assert.False(loaded.IsFileInTheWay);
-        File.SetUnixFileMode(loaded.QuarantinedPath!, UnixFileMode.UserRead | UnixFileMode.UserWrite);
-        Assert.Equal(original, File.ReadAllBytes(loaded.QuarantinedPath!));
+        Assert.StartsWith("unreadable: ", loaded.Problem);
+        Assert.Null(loaded.QuarantinedPath);
+        Assert.True(loaded.IsFileInTheWay);
+        Assert.Equal(["practice.json"], Contents());
+        Assert.Equal(original, File.ReadAllBytes(_file.Path));
+    }
+
+    /// Once the store could not read the file, it keeps the mixes of this session in memory and never saves over the
+    /// file, even after the file can be read again: the next launch still finds every earlier mix.
+    [Fact]
+    public void TheStoreNeverSavesOverAFileItCouldNotRead()
+    {
+        var original = SaveOneMix();
+        var store = new PracticeStore(_file, TimeZoneInfo.Utc);
+        using (Lock()) store.Load();
+
+        var overview = store.Record(Result(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero)));
+
+        Assert.Equal(1, overview.MixCount);
+        Assert.StartsWith("unreadable: ", store.Problem);
+        Assert.Equal(original, File.ReadAllBytes(_file.Path));
+        Assert.Equal(["practice.json"], Contents());
+        Assert.Equal(1, new PracticeStore(_file, TimeZoneInfo.Utc).Load().MixCount);
+    }
+
+    /// A corrupt file that cannot be moved aside is left in place and never overwritten, even once it could be moved.
+    [Fact]
+    public void ACorruptFileThatCannotBeMovedIsNeverOverwritten()
+    {
+        Directory.CreateDirectory(_directory);
+        var garbage = Encoding.UTF8.GetBytes("{\"version\":1,\"mixes\":[{\"broken\"");
+        File.WriteAllBytes(_file.Path, garbage);
+        var store = new PracticeStore(_file, TimeZoneInfo.Utc);
+        using (KeepInPlace()) store.Load();
+
+        var overview = store.Record(Result(new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero)));
+
+        Assert.Equal(1, overview.MixCount);
+        Assert.Contains("not renamed: ", store.Problem);
+        Assert.Equal(garbage, File.ReadAllBytes(_file.Path));
+        Assert.Equal(["practice.json"], Contents());
     }
 
     /// The store saves each recorded mix and reports the history as the window shows it.

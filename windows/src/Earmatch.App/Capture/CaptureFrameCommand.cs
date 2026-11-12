@@ -86,8 +86,8 @@ internal static class CaptureFrameCommand
         };
         foreach (var (name, rect) in new[] { ("visible bounds", frame.Bounds), ("window rect", frame.WindowRect), ("client", client) })
         {
-            var origin = new ScreenPoint(rect.Left - (frame.WindowRect.Left - readRect.Left), rect.Top - (frame.WindowRect.Top - readRect.Top));
-            var image = new PixelImage(pixels.Bytes, pixels.Width, pixels.Height, pixels.Stride, PixelImage.PixelLayout.Bgra, 1, origin, layout.Scale);
+            var origin = FramePlacement.OriginOf(rect.Screen, frame.WindowRect.Screen, readRect.Screen);
+            var image = pixels.Image(origin, layout.Scale);
             var readings = new FrameAnalyzer().Analyze(image, layout.Decks, new FrameAnalysisOptions(true, true), isMapped: true, frame.Time);
             lines.Add($"origin at {name} ({origin.X}, {origin.Y}):");
             foreach (var deck in layout.Decks)

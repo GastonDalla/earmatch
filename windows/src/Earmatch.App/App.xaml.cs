@@ -39,6 +39,9 @@ public partial class App : Application
     /// How long the live decks mirror keeps a snapshot without a newer one (MainWindowController.liveSnapshotLifetime).
     private const double LiveSnapshotLifetime = 0.75;
 
+    /// How long quitting waits for the practice history's last saves.
+    private static readonly TimeSpan PracticeFlushTimeout = TimeSpan.FromSeconds(2);
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -293,6 +296,9 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         StopMonitoring();
+        // A mix finished just before quitting may still be on its way to the file.
+        if (_practice?.Flush(PracticeFlushTimeout) == false)
+            System.Diagnostics.Trace.WriteLine("earmatch: the practice history was still being saved when Earmatch quit");
         _tray?.Dispose();
         _instance?.Dispose();
         base.OnExit(e);

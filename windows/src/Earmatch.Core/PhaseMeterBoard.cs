@@ -24,11 +24,14 @@ public sealed record FrameAnalysis(IReadOnlyDictionary<int, DeckFrameReading> De
 /// The phase meters between captured frames (the meter part of OverlayController.swift). Each frame anchors every
 /// deck's PhasePredictor and names the sync master; at each screen refresh Compute draws the predicted phases into a
 /// PhaseMeterDisplay per loaded deck, with its bar counter or cue countdown. A few frames that do not match the window
-/// (a resize in progress) are ridden out on the last good one. Used on the window's thread.
+/// (a resize in progress) are ridden out on the last good one. While its FrameStats trace, it keeps the phases it drew
+/// and measures each frame against them (the meter error of the diagnostics). Used on the window's thread.
 public sealed class PhaseMeterBoard
 {
     public const int UnmappedFramesTolerated = 6;
 
+    private readonly FrameStats? _tracedStats;
+    private readonly Dictionary<int, DrawnHistory> _drawn = [];
     private readonly Dictionary<int, PhasePredictor> _predictors = [];
     private readonly Dictionary<int, PhaseMeterDisplay?> _displays = [];
     private List<PhaseMeterDeckInput> _inputs = [];
@@ -38,6 +41,12 @@ public sealed class PhaseMeterBoard
     private bool _isStale = true;
     private int _unmappedFrames;
 
+    /// `stats` receive the meter error while they trace.
+    public PhaseMeterBoard(FrameStats? stats = null)
+    {
+        _tracedStats = stats is { IsTracing: true } ? stats : null;
+    }
+
     public FrameAnalysis? Latest { get; private set; }
 
     /// The deck whose MASTER button the latest frame shows lit.
@@ -46,20 +55,22 @@ public sealed class PhaseMeterBoard
     /// Whether the latest frame matched the window, so its readings can be drawn.
     public bool HasFrame => Latest is { MappingProblem: null };
 
-    /// Takes a new frame: the predictors follow its phases, and unless it is one of the few unmapped frames ridden out
-    /// it becomes the latest (true). `problemChanged` says its mapping problem differs from the latest frame's.
+    /// Takes a new frame: unless it is one of the few unmapped frames ridden out (false, and the predictors keep
+    /// following the last good frame), the predictors follow its phases and it becomes the latest (true).
+    /// `problemChanged` says its mapping problem differs from the latest frame's.
     public bool Accept(FrameAnalysis frame, RekordboxLayout layout, out bool problemChanged)
     {
         problemChanged = false;
-        foreach (var (number, deck) in frame.Decks)
-        {
-            if (!_predictors.TryGetValue(number, out var predictor)) _predictors[number] = predictor = new PhasePredictor();
-            predictor.Update(new PhaseAnchor(frame.Time, deck.Phase.PhaseInBar, deck.BeatsPerSecond, deck.Phase.Status == PhaseTrackerStatus.Live));
-        }
+        if (_tracedStats is not null) MeasureMeterError(frame, _tracedStats);
         if (frame.MappingProblem is not null && Latest is { MappingProblem: null } && _unmappedFrames < UnmappedFramesTolerated)
         {
             _unmappedFrames++;
             return false;
+        }
+        foreach (var (number, deck) in frame.Decks)
+        {
+            if (!_predictors.TryGetValue(number, out var predictor)) _predictors[number] = predictor = new PhasePredictor();
+            predictor.Update(new PhaseAnchor(frame.Time, deck.Phase.PhaseInBar, deck.BeatsPerSecond, deck.Phase.Status == PhaseTrackerStatus.Live));
         }
         _unmappedFrames = frame.MappingProblem is null ? 0 : _unmappedFrames;
         problemChanged = frame.MappingProblem != Latest?.MappingProblem;
@@ -77,6 +88,7 @@ public sealed class PhaseMeterBoard
         Master = null;
         _unmappedFrames = 0;
         _predictors.Clear();
+        _drawn.Clear();
         _displays.Clear();
         Invalidate();
         return problemCleared;
@@ -99,6 +111,11 @@ public sealed class PhaseMeterBoard
         {
             var predictor = _predictors.GetValueOrDefault(deck.Number);
             var phase = hasFrame ? predictor?.Phase(time) : null;
+            if (_tracedStats is not null && phase is { } drawn)
+            {
+                if (!_drawn.TryGetValue(deck.Number, out var history)) _drawn[deck.Number] = history = new DrawnHistory();
+                history.Append(time, drawn);
+            }
             _inputs.Add(new PhaseMeterDeckInput(deck.Number, phase, Counter(deck, phase, hasFrame, settings, predictor, time)));
         }
         if (!_isStale && _inputs.SequenceEqual(_previousInputs) && Master == _previousMaster && hasFrame == _previousHadFrame) return false;
@@ -140,4 +157,48 @@ public sealed class PhaseMeterBoard
     }
 
     public static bool IsLoaded(DeckLayout deck) => deck.BPM is not null || deck.Title is not null;
+
+    /// How far each deck measured live in the frame is from the phase drawn at its capture time, in seconds at its tempo
+    /// (measureMeterError in OverlayController.swift).
+    private void MeasureMeterError(FrameAnalysis frame, FrameStats stats)
+    {
+        foreach (var (number, deck) in frame.Decks)
+        {
+            if (deck.Phase.Status != PhaseTrackerStatus.Live || deck.Phase.PhaseInBar is not { } measured || deck.BeatsPerSecond is not { } rate
+                || Math.Abs(rate) <= 0.5 || !_drawn.TryGetValue(number, out var history) || history.Phase(frame.Time, rate) is not { } drawn)
+                continue;
+            var difference = (measured - drawn + 2) % 4;
+            var beats = (difference < 0 ? difference + 4 : difference) - 2;
+            stats.RecordPredictionError(beats / rate);
+        }
+    }
+
+    /// The last phases drawn for a deck, with their screen times (DrawnHistory in OverlayController.swift).
+    private sealed class DrawnHistory
+    {
+        private const int Count = 16;
+        private const double MaxDistance = 0.0084;
+        private readonly double[] _times = Enumerable.Repeat(double.NegativeInfinity, Count).ToArray();
+        private readonly double[] _phases = new double[Count];
+        private int _next;
+
+        public void Append(double time, double phase)
+        {
+            _times[_next] = time;
+            _phases[_next] = phase;
+            _next = (_next + 1) % Count;
+        }
+
+        /// The phase drawn closest to `time`, moved on to it at the tempo; none when no refresh was that close.
+        public double? Phase(double time, double beatsPerSecond)
+        {
+            var best = 0;
+            for (var index = 1; index < Count; index++)
+            {
+                if (Math.Abs(_times[index] - time) < Math.Abs(_times[best] - time)) best = index;
+            }
+            if (!(Math.Abs(_times[best] - time) <= MaxDistance)) return null;
+            return _phases[best] + beatsPerSecond * (time - _times[best]);
+        }
+    }
 }
