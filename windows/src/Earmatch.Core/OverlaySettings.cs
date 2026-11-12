@@ -31,7 +31,6 @@ public enum CounterStyle
     BarPosition,
 }
 
-// Static extension members compile to static methods of their class, so each enum's AllCases lives in its own class.
 public static class BPMLimitMembers
 {
     extension(BPMLimit)
@@ -66,9 +65,6 @@ public static class CounterStyleMembers
     }
 }
 
-/// The user's overlay settings. A value type like the Swift struct: copies are independent.
-/// Saved as JSON with the macOS keys and raw values; reading is lenient like the Swift decoder: a missing, unknown or
-/// mistyped value falls back to its default without touching the other settings.
 [JsonConverter(typeof(OverlaySettingsJsonConverter))]
 public record struct OverlaySettings
 {
@@ -112,7 +108,6 @@ public record struct OverlaySettings
     }
 }
 
-/// The raw values of the option enums: the Swift case names ("oneDecimal", "cdj2000NXS2").
 public static class EnumRawValue
 {
     public static string Of<T>(T value) where T : struct, Enum

@@ -5,9 +5,6 @@ using WinRT;
 
 namespace Earmatch.App.Capture;
 
-/// The Direct3D 11 device Windows.Graphics.Capture renders the frames on, and the CPU copy of a frame's texture. The
-/// few COM calls are made through their vtable slots (d3d11.h order), so no interop package is needed. A device is used
-/// from one thread at a time (its immediate context is not thread-safe): the capture serializes its frames.
 internal sealed unsafe class Direct3D : IDisposable
 {
     private const int DriverTypeHardware = 1;
@@ -88,10 +85,8 @@ internal sealed unsafe class Direct3D : IDisposable
         Device = winRTDevice;
     }
 
-    /// The device as Windows.Graphics.Capture takes it.
     public IDirect3DDevice Device { get; }
 
-    /// A hardware device, or WARP (Windows' software rasterizer) where there is no usable GPU.
     public static Direct3D Create()
     {
         var result = D3D11CreateDevice(IntPtr.Zero, DriverTypeHardware, IntPtr.Zero, CreateDeviceBgraSupport, IntPtr.Zero, 0, SdkVersion, out var device,
@@ -122,7 +117,6 @@ internal sealed unsafe class Direct3D : IDisposable
         }
     }
 
-    /// The capture item of a top-level window (IGraphicsCaptureItemInterop::CreateForWindow).
     public static GraphicsCaptureItem ItemForWindow(IntPtr window)
     {
         const string className = "Windows.Graphics.Capture.GraphicsCaptureItem";
@@ -143,9 +137,6 @@ internal sealed unsafe class Direct3D : IDisposable
         }
     }
 
-    /// Copies the top-left `width` x `height` pixels of a captured frame's surface (BGRA) into `buffer`, `stride` bytes
-    /// a row, through a staging texture the CPU can read. A surface smaller than that is copied whole: the size copied is
-    /// returned, and only those pixels of `buffer` were written.
     public (int Width, int Height) Copy(IDirect3DSurface surface, int width, int height, byte[] buffer, int stride)
     {
         IntPtr access = IntPtr.Zero, texture = IntPtr.Zero;

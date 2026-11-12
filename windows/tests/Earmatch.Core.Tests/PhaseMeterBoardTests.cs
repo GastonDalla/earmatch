@@ -3,9 +3,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// The phase meters between captured frames (the meter part of OverlayController.swift): each frame anchors the
-/// decks' predictors, the board draws them at each refresh, and a few frames that do not show the window as the
-/// layout describes it are ridden out.
 public class PhaseMeterBoardTests
 {
     static DeckLayout Deck(int number, bool loaded = true, double? elapsed = 10) =>
@@ -20,6 +17,25 @@ public class PhaseMeterBoardTests
     static FrameAnalysis Frame(double time, Dictionary<int, DeckFrameReading> decks, FrameMappingProblem? problem = null) => new(decks, problem, time);
 
     static readonly OverlaySettings Settings = new() { IsPhaseMeterEnabled = true, PhaseMeterType = PhaseMeterType.Line };
+
+    [Theory]
+    [InlineData(1000, 600)]
+    [InlineData(1002, 598)]
+    [InlineData(998, 602)]
+    public void AFrameAPixelOrTwoOffTheWindowBeingResizedStillMapsOntoIt(int frameWidth, int frameHeight)
+    {
+        Assert.Equal(2, FrameMappingProblem.ResizeSlackInPixels);
+        Assert.Null(FrameMappingProblem.Check(frameWidth, frameHeight, new ScreenSize(1000, 600)));
+    }
+
+    [Theory]
+    [InlineData(1003, 600)]
+    [InlineData(1000, 597)]
+    public void AFrameMoreThanTwoPixelsOffTheWindowIsAMappingProblem(int frameWidth, int frameHeight)
+    {
+        var problem = FrameMappingProblem.Check(frameWidth, frameHeight, new ScreenSize(1000, 600));
+        Assert.Equal(new FrameMappingProblem(frameWidth, frameHeight, 1000, 600), problem);
+    }
 
     [Fact]
     public void TheSyncMasterIsTheDeckWhoseMasterButtonIsLit()
@@ -86,7 +102,7 @@ public class PhaseMeterBoardTests
         var problem = new FrameMappingProblem(800, 600, 1600, 1200);
         board.Accept(Frame(1, new() { [1] = Reading(1.0) }), layout, out _);
 
-        for (var frame = 0; frame < PhaseMeterBoard.UnmappedFramesTolerated; frame++)
+        for (var frame = 0; frame < PhaseMeterBoard.MismatchedFramesRiddenOutWhileResizing; frame++)
         {
             Assert.False(board.Accept(Frame(1.1 + frame * 0.01, new() { [1] = Reading(1.0) }, problem), layout, out _));
             Assert.True(board.HasFrame);
@@ -98,8 +114,6 @@ public class PhaseMeterBoardTests
         Assert.Null(board.Display(1));
     }
 
-    /// A frame ridden out does not show the window as the layout describes it, so what was read from it is not a
-    /// measurement: the meters keep moving on from the last good frame.
     [Fact]
     public void AFrameRiddenOutLeavesThePredictorsAlone()
     {
@@ -117,8 +131,6 @@ public class PhaseMeterBoardTests
         Assert.Equal(0.5, row.Fraction!.Value, 2);
     }
 
-    /// While tracing, each frame measures how far the meters drawn at its capture time were from the phase it reads
-    /// (measureMeterError in OverlayController.swift): 0.02 beats at 2 beats a second is 10 ms.
     [Fact]
     public void WhileTracingEachFrameMeasuresTheMeterError()
     {

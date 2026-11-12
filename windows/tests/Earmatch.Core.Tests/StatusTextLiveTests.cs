@@ -2,7 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// Windows needs no Screen Recording grant, so the macOS "Allow Screen Recording" case is gone.
 public class StatusTextLiveTests
 {
     static StatusContext Context(OverlayActivation? activation = null, OverlaySettings? settings = null, string? captureProblem = null) =>

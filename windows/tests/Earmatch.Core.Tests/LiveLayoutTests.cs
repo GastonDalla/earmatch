@@ -3,8 +3,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// What the rekordbox monitor keeps between full reads of the window (LiveWindowReader in RekordboxMonitor.swift): the
-/// located layout, refreshed from the header BPMs and the elapsed and remaining times it re-reads on every poll.
 public class LiveLayoutTests
 {
     const string TwoDeckHorizontal = "uia-7.2.19-perf-2deck-horizontal.json";
@@ -140,7 +138,6 @@ public class LiveLayoutTests
     [Fact]
     public void AReadWhileAPopupMenuIsOpenIsTransient()
     {
-        // While one of rekordbox's popup menus is open, its window shows UI Automation only its title bar.
         Assert.True(LiveLayout.IsTransientRead(Layout("uia-7.2.19-perf-menu-open.json")));
     }
 

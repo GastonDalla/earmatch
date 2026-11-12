@@ -94,4 +94,40 @@ public sealed class SettingsStoreTests : IDisposable
         store.SetValue(AppLanguageChoice.StorageKey, null);
         Assert.Null(new SettingsStore(FilePath).Value(AppLanguageChoice.StorageKey));
     }
+
+    [Fact]
+    public void GroupedValuesSurviveARestartNextToThePane()
+    {
+        var store = new SettingsStore(FilePath);
+        store.SetValue(MainWindowPane.StorageKey, "setup");
+        store.SetValue(WindowPlacement.StorageKey, "0,0,1920x1080@96", "100 80 1040 700");
+        store.SetValue(WindowPlacement.StorageKey, "0,0,2560x1440@144", "10 20 1560 1050 maximized");
+
+        var reopened = new SettingsStore(FilePath);
+        Assert.Equal("setup", reopened.Value(MainWindowPane.StorageKey));
+        Assert.Equal("100 80 1040 700", reopened.Value(WindowPlacement.StorageKey, "0,0,1920x1080@96"));
+        Assert.Equal("10 20 1560 1050 maximized", reopened.Value(WindowPlacement.StorageKey, "0,0,2560x1440@144"));
+        Assert.Null(reopened.Value(WindowPlacement.StorageKey, "0,0,1280x800@96"));
+    }
+
+    [Fact]
+    public void ClearingAGroupedValueKeepsTheOthers()
+    {
+        var store = new SettingsStore(FilePath);
+        store.SetValue(WindowPlacement.StorageKey, "a", "1 2 3 4");
+        store.SetValue(WindowPlacement.StorageKey, "b", "5 6 7 8");
+        store.SetValue(WindowPlacement.StorageKey, "a", null);
+
+        var reopened = new SettingsStore(FilePath);
+        Assert.Null(reopened.Value(WindowPlacement.StorageKey, "a"));
+        Assert.Equal("5 6 7 8", reopened.Value(WindowPlacement.StorageKey, "b"));
+    }
+
+    [Fact]
+    public void AGroupedValueIsNotReadFromAPlainValue()
+    {
+        var store = new SettingsStore(FilePath);
+        store.SetValue(WindowPlacement.StorageKey, "plain");
+        Assert.Null(store.Value(WindowPlacement.StorageKey, "plain"));
+    }
 }

@@ -145,8 +145,6 @@ public class BeatGridDetectorTests
         Assert.Equal(4.0, BeatGridDetector.BeatsPerBar);
     }
 
-    /// rekordbox for Windows at 200% hands over the same pixels with screen units in physical pixels: every position
-    /// and spacing doubles, the phase stays.
     [Fact]
     public void PhysicalPixelCoordinatesReadTheSameGrid()
     {
@@ -166,8 +164,6 @@ public class BeatGridDetectorTests
         Assert.False(SyncMasterDetector.IsMaster(Physical.Rect(Rect(1414, 311, 70, 13)), buffer.WindowsImage(CropOrigin)));
     }
 
-    /// A MASTER button outside the frame (the window partly off screen, or a frame that does not match the layout) is
-    /// not read from the frame's edge rows or columns: only its rows and columns inside the frame count.
     [Fact]
     public void TheSyncMasterProbeReadsOnlyThePartOfTheButtonInsideTheFrame()
     {

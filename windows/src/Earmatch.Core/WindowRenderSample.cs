@@ -2,7 +2,6 @@ using System.Globalization;
 
 namespace Earmatch.Core;
 
-/// The sample rekordbox session the window renders show: the same decks, status and practice history as macOS.
 public static class WindowRenderSample
 {
     public const string RekordboxVersion = "7.2.4";
@@ -47,7 +46,6 @@ public static class WindowRenderSample
         OutgoingDeck: 2, IncomingDeck: 1, ElapsedSeconds: 46, BothPlayingSeconds: 46, TempoDifferenceBPM: 0.01, SecondsToMatch: 11,
         PhaseErrorMilliseconds: 6, MeanPhaseErrorMilliseconds: 9);
 
-    /// Two weeks of mixes whose phase error falls from about 40 ms to about 10 ms, the last ones a few minutes before now.
     public static PracticeOverview PracticeOverview(DateTimeOffset now, TimeZoneInfo zone)
     {
         (int DaysAgo, double[] Errors)[] dailyErrors =

@@ -3,8 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace Earmatch.Core;
 
-/// A read-only list that compares by its elements, like a Swift array inside a struct, so records holding lists keep
-/// value equality.
 [CollectionBuilder(typeof(ValueList), nameof(ValueList.Create))]
 public sealed class ValueList<T> : IReadOnlyList<T>, IEquatable<ValueList<T>>
 {

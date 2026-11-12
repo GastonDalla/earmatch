@@ -2,18 +2,13 @@ namespace Earmatch.Core;
 
 public enum PhaseTrackerStatus
 {
-    /// The frame's reading is shown.
     Live,
-    /// The reading was missing or doubtful: the last good one, moved on at the measured tempo.
     Held,
-    /// No good reading for a while: the meter shows no grid.
     Lost,
 }
 
 public readonly record struct PhaseEstimate(double? PhaseInBar, double? BeatSpacing, PhaseTrackerStatus Status);
 
-/// Smooths a deck's beat grid readings frame by frame: a missed or wild frame is held at the measured tempo, a jump
-/// (a seek, a zoom change) is believed once three frames agree on it, and the tempo is measured from the phases.
 public sealed class PhaseTracker
 {
     public const double HoldDuration = 0.25;
@@ -23,16 +18,14 @@ public sealed class PhaseTracker
 
     private readonly record struct Sample(double Time, double Phase, double Spacing);
 
-    private readonly double _layoutScale;
+    private readonly double _screenUnitsPerPoint;
     private readonly BeatRateEstimator _rate = new();
     private Sample? _good;
     private (Sample Sample, int Count)? _candidate;
 
-    /// The layout scale is the screen units per point of the readings' beat spacing (PixelImage.LayoutScale): the tempo
-    /// measurement tolerates a quarter of a point of marker movement, as on macOS.
-    public PhaseTracker(double layoutScale = 1)
+    public PhaseTracker(double screenUnitsPerPoint = 1)
     {
-        _layoutScale = layoutScale;
+        _screenUnitsPerPoint = screenUnitsPerPoint;
     }
 
     public double? BeatsPerSecond => _rate.BeatsPerSecond;
@@ -71,7 +64,7 @@ public sealed class PhaseTracker
 
     private PhaseEstimate Accept(Sample sample)
     {
-        _rate.Add(sample.Time, sample.Phase, quantum: 1 / Math.Max(sample.Spacing / _layoutScale, 1));
+        _rate.Add(sample.Time, sample.Phase, quantum: 1 / Math.Max(sample.Spacing / _screenUnitsPerPoint, 1));
         _good = sample;
         return new PhaseEstimate(sample.Phase, sample.Spacing, PhaseTrackerStatus.Live);
     }
@@ -89,12 +82,9 @@ public sealed class PhaseTracker
     private double PredictedPhase(Sample sample, double time) =>
         Numbers.PositiveModulo(sample.Phase + (BeatsPerSecond ?? 0) * (time - sample.Time), BeatGridDetector.BeatsPerBar);
 
-    /// A phase difference wrapped to the nearest equivalent, from -2 to 2 beats.
     internal static double CircularBeats(double difference) => Numbers.PositiveModulo(difference + 2, BeatGridDetector.BeatsPerBar) - 2;
 }
 
-/// Measures a deck's tempo in beats per second from the phases of the last 150 ms: the median slope between pairs of
-/// readings, so one pixel-rounded or wrong reading barely moves it, and zero as soon as the phase stops moving.
 internal sealed class BeatRateEstimator
 {
     internal const double Window = 0.15;
@@ -143,7 +133,6 @@ internal sealed class BeatRateEstimator
         BeatsPerSecond = MedianSlope() ?? BeatsPerSecond;
     }
 
-    /// The first of the newest samples that all sit within the tolerance, once at least three of them span long enough.
     private int? StillSince(double tolerance, double quantum)
     {
         if (_samples.Count == 0) return null;

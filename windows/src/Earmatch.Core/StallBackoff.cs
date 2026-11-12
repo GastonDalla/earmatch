@@ -1,6 +1,5 @@
 namespace Earmatch.Core;
 
-/// After a stalled read of rekordbox, waits a while before polling again.
 public sealed class StallBackoff(TimeSpan duration)
 {
     private DateTime? _resumeAt;

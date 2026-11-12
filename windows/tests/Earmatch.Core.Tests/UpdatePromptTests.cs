@@ -50,4 +50,20 @@ public class UpdatePromptTests
     {
         Assert.True(UpdatePrompt.AsksNow(UpdateTrigger.User, secondsSinceLaunch, rekordboxIsFrontmost));
     }
+
+    [Theory]
+    [InlineData(UpdateTrigger.Launch)]
+    [InlineData(UpdateTrigger.Daily)]
+    public void ASkippedVersionIsLeftAloneByTheAutomaticChecks(UpdateTrigger trigger)
+    {
+        Assert.True(UpdatePrompt.IsSkipped(trigger, "0.1.3", "0.1.3"));
+        Assert.False(UpdatePrompt.IsSkipped(trigger, "0.1.4", "0.1.3"));
+        Assert.False(UpdatePrompt.IsSkipped(trigger, "0.1.3", null));
+    }
+
+    [Fact]
+    public void TheUsersOwnCheckShowsASkippedVersion()
+    {
+        Assert.False(UpdatePrompt.IsSkipped(UpdateTrigger.User, "0.1.3", "0.1.3"));
+    }
 }

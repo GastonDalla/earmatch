@@ -2,9 +2,6 @@ using System.Globalization;
 
 namespace Earmatch.Core;
 
-/// The capture section of the diagnostics report, always in English with invariant numbers. Windows has no
-/// Accessibility or Screen Recording grants, so the macOS permission line is gone; layout frames are physical pixels,
-/// so beat spacing reads px/beat.
 public sealed record CaptureDiagnostics
 {
     public sealed record Deck

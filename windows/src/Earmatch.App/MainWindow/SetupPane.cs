@@ -10,8 +10,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The Setup pane (SetupPane.swift): language, hotkeys and the About card, with Check for Updates… in installed copies.
-/// Windows needs no permissions, so the macOS permissions card is gone.
 public sealed class SetupPane : PaneView
 {
     private readonly SegmentedPicker<AppLanguageChoice> _language;
@@ -41,8 +39,6 @@ public sealed class SetupPane : PaneView
         RefreshUpdates();
     }
 
-    /// The update button follows the menus' item: hidden in development builds, Update Available… when an update
-    /// waits, and dimmed while it downloads.
     private void RefreshUpdates()
     {
         if (_updates is null || _updatesLabel is null) return;
@@ -137,7 +133,6 @@ public sealed class SetupPane : PaneView
         return card;
     }
 
-    /// The credit link and the independence line.
     public static FrameworkElement CreditLines()
     {
         var (before, after) = Credit.Parts;
@@ -162,7 +157,6 @@ public sealed class SetupPane : PaneView
         }
         catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            // No browser to open; the link stays in the tooltip.
         }
     }
 

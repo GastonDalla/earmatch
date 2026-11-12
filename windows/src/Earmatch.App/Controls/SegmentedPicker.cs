@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -9,9 +10,7 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Controls;
 
-/// The segmented picker of the macOS window: a dark well with one lime pill on the selected option. Labels that fit
-/// share the row equally (SegmentWidths); Left and Right step through the options.
-public sealed class SegmentedPicker<T> : FrameworkElement
+public sealed class SegmentedPicker<T> : FrameworkElement, ISegmentedOptions
 {
     private const double Inset = Spacing.Tight;
     private const double Gap = Spacing.Tight;
@@ -169,8 +168,24 @@ public sealed class SegmentedPicker<T> : FrameworkElement
         var value = _options[index].Value;
         if (EqualityComparer<T>.Default.Equals(value, _selected)) return;
         Selected = value;
+        if (UIElementAutomationPeer.FromElement(this) is SegmentedPickerAutomationPeer peer) peer.RaiseSelected(index);
         SelectionChanged?.Invoke(value);
     }
+
+    int ISegmentedOptions.OptionCount => _options.Count;
+
+    int ISegmentedOptions.SelectedOptionIndex => SelectedIndex;
+
+    string ISegmentedOptions.OptionLabel(int index) => _options[index].Label;
+
+    string ISegmentedOptions.OptionHelp(int index) => _explanation(_options[index].Value);
+
+    Rect ISegmentedOptions.OptionBounds(int index) =>
+        index < _widths.Length ? new Rect(SegmentX(index), Inset, _widths[index], SegmentHeight) : Rect.Empty;
+
+    void ISegmentedOptions.SelectOption(int index) => Select(index);
+
+    protected override AutomationPeer OnCreateAutomationPeer() => new SegmentedPickerAutomationPeer(this);
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {

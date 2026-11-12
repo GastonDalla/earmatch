@@ -1,19 +1,13 @@
 namespace Earmatch.Core;
 
-/// The beats each deck's playhead is at, for the waveform preview.
 public readonly record struct DeckPhases(double One, double Two);
 
-/// What the main window shows and changes (MainWindowModel.swift with LiveDecksModel and the practice controller's
-/// state), without WPF so it can be tested: the app's MainWindowModel adds the dispatcher, the language catalog and the
-/// app's actions. The app applies rekordbox's activation (Apply) and the decks it mirrors (ApplyLive).
 public class MainWindowState
 {
     private readonly SettingsStore? _store;
     private LiveDecksSnapshot? _snapshot;
     private OverlaySettings _settings;
 
-    /// A window backed by the settings file. The store may announce a change from another thread (the tray, a hotkey),
-    /// so `post` runs the window's side of it on the window's own thread.
     public MainWindowState(SettingsStore store, Action<Action> post)
     {
         _store = store;
@@ -23,7 +17,6 @@ public class MainWindowState
         store.Changed += (_, _) => post(() => Show(store.Settings));
     }
 
-    /// The model of a window render: the sample session, fixed at `now`.
     public MainWindowState(OverlaySettings sample, MainWindowPane pane, StatusContext context, LiveDecksSnapshot decks,
         PracticeOverview overview, PracticeLiveStatus? practiceLive, DateTimeOffset now)
     {
@@ -60,7 +53,6 @@ public class MainWindowState
     public PracticeLiveStatus? PracticeLive { get; private set; }
     public bool IsMixing => PracticeLive is not null;
 
-    /// The updater's state for the Setup pane's update button; off until the app starts its updater, and in renders.
     public UpdateState Updates { get; private set; } = UpdateState.Off("not started");
 
     public StatusContext Status => new(Activation, _settings, RekordboxVersion, CaptureProblem, LayoutName);
@@ -73,7 +65,6 @@ public class MainWindowState
 
     public bool IsMirroringDecks => StatusText.IsMirroringDecks(Status, _snapshot);
 
-    /// The meter the phase meter card mirrors: a deck that follows a master, else any deck with a meter.
     public PhaseMeterDisplay? PreviewMeter =>
         Decks.FirstOrDefault(deck => deck.Meter?.MasterPlayer is not null)?.Meter ?? Decks.FirstOrDefault(deck => deck.Meter is not null)?.Meter;
 
@@ -131,7 +122,6 @@ public class MainWindowState
         Changed?.Invoke();
     }
 
-    /// Shows why the capture of rekordbox's window cannot be used, in the status lines; null when it can.
     public void ApplyCaptureProblem(string? problem)
     {
         if (problem == CaptureProblem) return;
@@ -139,7 +129,6 @@ public class MainWindowState
         Changed?.Invoke();
     }
 
-    /// Shows the mix trainer's history and the transition it is timing.
     public void ApplyPractice(PracticeOverview overview, PracticeLiveStatus? live)
     {
         if (overview == PracticeOverview && live == PracticeLive) return;
@@ -148,7 +137,6 @@ public class MainWindowState
         Changed?.Invoke();
     }
 
-    /// Shows the updater's state: whether the Setup pane offers Check for Updates… and what it says.
     public void ApplyUpdates(UpdateState updates)
     {
         if (updates == Updates) return;
@@ -156,7 +144,6 @@ public class MainWindowState
         Changed?.Invoke();
     }
 
-    /// Shows the decks Earmatch mirrors from rekordbox; LiveDecksSnapshot.Empty when it mirrors none.
     public void ApplyLive(LiveDecksSnapshot snapshot)
     {
         if (snapshot == _snapshot) return;
@@ -164,8 +151,6 @@ public class MainWindowState
         Changed?.Invoke();
     }
 
-    /// Called before LanguageChanged rebuilds the window, so the rebuilt window reads the chosen language's texts.
-    /// A render keeps the language it started with.
     protected virtual void OnLanguageSelected(AppLanguageChoice choice)
     {
     }

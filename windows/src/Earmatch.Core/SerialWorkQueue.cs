@@ -1,8 +1,5 @@
 namespace Earmatch.Core;
 
-/// Runs work off the caller's thread, one item after another in the order queued (the practice history's saves, like
-/// the PracticeStore actor on macOS). An item that throws is reported and the next ones still run. Flush waits, a
-/// bounded time, for what is queued: quitting gives a finished mix the time to reach the file. Safe from any thread.
 public sealed class SerialWorkQueue
 {
     private readonly object _gate = new();
@@ -32,7 +29,6 @@ public sealed class SerialWorkQueue
         }
     }
 
-    /// Waits until everything queued so far has run, or `timeout` passed; true when it all ran.
     public bool Flush(TimeSpan timeout)
     {
         Task tail;

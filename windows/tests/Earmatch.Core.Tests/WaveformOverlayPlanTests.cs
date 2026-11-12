@@ -3,8 +3,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// The macOS plans on the Windows fixtures (2 physical pixels per point): the meter band is the macOS 380 x 34 points
-/// band in pixels, and the dividers are 2 points (4 pixels) wide.
 public class WaveformOverlayPlanTests
 {
     static readonly ScreenSize Band = new(760, 68);
@@ -132,7 +130,6 @@ public class WaveformOverlayPlanTests
         Assert.Equal(new Dictionary<int, ScreenRect> { [1] = Rect(6, 252, 760, 68), [2] = Rect(1282, 252, 760, 68) }, plan.SideMeters);
     }
 
-    /// The divider and the band height keep their size in points: at 100% the plan is the 200% plan halved.
     [Fact]
     public void AtOneHundredPercentThePlanIsHalved()
     {

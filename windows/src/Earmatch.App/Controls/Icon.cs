@@ -23,8 +23,6 @@ public enum IconKind
     Warning,
 }
 
-/// The SF Symbols the macOS window uses, drawn as vector paths on a 24-unit grid (or a Segoe Fluent Icons glyph where
-/// Windows has a close match).
 public sealed class Icon : FrameworkElement
 {
     private Brush _brush;
@@ -83,7 +81,6 @@ public sealed class Icon : FrameworkElement
         }
         var scale = IconSize / 24;
         context.PushTransform(new ScaleTransform(scale, scale));
-        // Weight is the stroke width on screen, in DIPs.
         var pen = RoundPen(_brush, Weight / scale);
         switch (_kind)
         {

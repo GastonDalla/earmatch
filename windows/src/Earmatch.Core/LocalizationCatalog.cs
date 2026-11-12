@@ -3,10 +3,6 @@ using System.Text.Json;
 
 namespace Earmatch.Core;
 
-/// The translations of one language, embedded as Localization/<language>.json:
-/// { "strings": { "English key": "translation" }, "plurals": { "English key": { "one": "...", "other": "..." } } }.
-/// Keys and printf specifiers are the macOS app's (Support/<language>.lproj); a plural entry holds the whole text per
-/// form instead of a .stringsdict variable.
 public sealed class LocalizationCatalog
 {
     public static IReadOnlyList<string> Languages { get; } = ["en", "es"];
@@ -22,14 +18,11 @@ public sealed class LocalizationCatalog
 
     public string Language { get; }
 
-    /// The culture numbers are formatted in.
     public CultureInfo Culture { get; }
 
     public IReadOnlyDictionary<string, string> Strings { get; }
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Plurals { get; }
 
-    /// The catalog for the user's display language: Spanish for any Spanish culture, English otherwise. Numbers follow
-    /// that culture (es-AR keeps its own separators).
     public static LocalizationCatalog ForCulture(CultureInfo uiCulture)
     {
         var language = Languages.Contains(uiCulture.TwoLetterISOLanguageName) ? uiCulture.TwoLetterISOLanguageName : "en";
@@ -39,7 +32,7 @@ public sealed class LocalizationCatalog
 
     public static LocalizationCatalog Load(string language) => Load(language, CultureInfo.GetCultureInfo(language));
 
-    private static LocalizationCatalog Load(string language, CultureInfo culture)
+    public static LocalizationCatalog Load(string language, CultureInfo culture)
     {
         var name = $"Earmatch.Core.Localization.{language}.json";
         using var stream = typeof(LocalizationCatalog).Assembly.GetManifestResourceStream(name)
@@ -72,7 +65,6 @@ public sealed class LocalizationCatalog
 
     public string Text(string key) => Strings.TryGetValue(key, out var text) ? text : key;
 
-    /// The template of the plural form for the count (CLDR "one" for 1 in English and Spanish, "other" otherwise).
     public string? PluralTemplate(string key, int count)
     {
         if (!Plurals.TryGetValue(key, out var forms)) return null;

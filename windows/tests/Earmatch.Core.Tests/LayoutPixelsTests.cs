@@ -3,8 +3,6 @@ using static Earmatch.Core.Tests.Fixture;
 
 namespace Earmatch.Core.Tests;
 
-/// The macOS pixel fixtures read with the decks the macOS locator finds in the matching ax-*.json snapshots (their frames
-/// are the ones DeckLayoutsTests.swift asserts), in macOS points.
 public class LayoutPixelsTests
 {
     sealed record Frame(string File, ScreenPoint Origin, IReadOnlyDictionary<int, WaveformStrip> Strips);
@@ -192,7 +190,6 @@ public class LayoutPixelsTests
         Assert.True(Math.Abs(reading.BeatSpacing - 30) < 0.1);
     }
 
-    /// The MASTER buttons of the four decks (DeckLayoutsTests.swift); deck 2 is the sync master in both fixtures.
     [Theory]
     [InlineData("horizontal", 361, 559)]
     [InlineData("vertical", 168, 384)]
@@ -227,8 +224,6 @@ public class LayoutPixelsTests
         Assert.True(noDecimals.MinX > found.IntegerDigits[2].MaxX && noDecimals.MinX <= found.Point.MinX);
     }
 
-    /// The same frames in physical pixels at 200%, as rekordbox for Windows reports them: the playheads and grids land
-    /// on the doubled positions.
     [Fact]
     public void PhysicalPixelCoordinatesFindTheSamePlayheadsAndGrids()
     {

@@ -3,8 +3,6 @@ using Key = Earmatch.Core.HotkeyRecognizer.VirtualKey;
 
 namespace Earmatch.Core.Tests;
 
-/// The macOS HotkeyRecognizerTests, adapted to the key-down and key-up events of a Windows low-level keyboard hook:
-/// Right Alt stands for Right Option, Windows for Command.
 public class HotkeyRecognizerTests
 {
     const int A = 0x41;
@@ -97,11 +95,11 @@ public class HotkeyRecognizerTests
     {
         var recognizer = new HotkeyRecognizer();
 
-        var outcomes = Press(recognizer, Down(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Down(Key.RightAlt));
+        var outcomes = Press(recognizer, Down(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode), Down(Key.RightAlt));
 
         Assert.Equal([HotkeyRecognizer.Outcome.None, PeekStarts], outcomes);
         Assert.Equal([PeekEnds, HotkeyRecognizer.Outcome.None],
-            Press(recognizer, Up(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode)));
+            Press(recognizer, Up(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode)));
     }
 
     [Fact]
@@ -243,7 +241,7 @@ public class HotkeyRecognizerTests
         HotkeyRecognizer.Event[][] presses =
         [
             [Down(Key.RightAlt), Up(Key.RightAlt)],
-            [Down(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Down(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrControlScanCode), Up(Key.RightAlt)],
+            [Down(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode), Down(Key.RightAlt), Up(Key.LeftControl, HotkeyRecognizer.AltGrFakeLeftControlScanCode), Up(Key.RightAlt)],
             [Down(Key.LeftWindows), Down(Key.E), Up(Key.E), Up(Key.LeftWindows)],
             [Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.E), Up(Key.E)],
             [Down(Key.LeftShift), Down(Key.LeftControl), Down(Key.LeftAlt), Down(Key.LeftWindows), Down(Key.E), Up(Key.E)],
@@ -268,9 +266,6 @@ public class HotkeyRecognizerTests
         Assert.False(recognizer.Handle(Up(Key.E)).Swallows);
     }
 
-    /// With the shortcut's E swallowed, Windows would see Win pressed and released alone and open the Start menu (and
-    /// Alt alone would open rekordbox's menu bar): the toggle asks for the unassigned mask key to be typed while the
-    /// modifiers are still held, once per press.
     [Fact]
     public void TheToggleMasksTheModifiersRelease()
     {
@@ -282,7 +277,6 @@ public class HotkeyRecognizerTests
         Assert.False(recognizer.Handle(Up(Key.E)).SendsMaskKey);
     }
 
-    /// The mask key the hook types itself passes through without touching the peek or the held keys.
     [Fact]
     public void TheMaskKeyIsIgnored()
     {
@@ -293,7 +287,6 @@ public class HotkeyRecognizerTests
         Assert.True(recognizer.IsPeeking);
     }
 
-    /// Other keys never ask for the mask key.
     [Fact]
     public void OnlyTheToggleSendsTheMaskKey()
     {

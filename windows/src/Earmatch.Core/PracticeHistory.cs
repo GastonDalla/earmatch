@@ -1,6 +1,5 @@
 namespace Earmatch.Core;
 
-/// The saved mixes, oldest first, and the trace of the newest one.
 public sealed class PracticeHistory
 {
     public const int Capacity = 200;
@@ -31,7 +30,6 @@ public static class PracticeProgress
 {
     public const int DayLimit = 14;
 
-    /// The median phase error and tempo match of each day with mixes, oldest first; days follow the time zone.
     public static ValueList<PracticeDay> Days(IReadOnlyList<PracticeMix> mixes, TimeZoneInfo zone, int limit = DayLimit) =>
         mixes.GroupBy(mix => StartOfDay(mix.EndedAt, zone))
             .OrderBy(group => group.Key)
@@ -41,7 +39,6 @@ public static class PracticeProgress
                 Median(group.Select(mix => mix.SecondsToMatch))))
             .ToValueList();
 
-    /// Midnight of the day the moment falls on in the time zone.
     public static DateTimeOffset StartOfDay(DateTimeOffset moment, TimeZoneInfo zone)
     {
         var local = TimeZoneInfo.ConvertTime(moment, zone).DateTime.Date;

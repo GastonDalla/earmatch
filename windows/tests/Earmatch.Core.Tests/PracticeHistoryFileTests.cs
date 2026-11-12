@@ -110,8 +110,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.Equal("still not json", File.ReadAllText(second!));
     }
 
-    /// The file keeps the macOS format (PracticeHistoryFile.swift, Swift's JSONEncoder with sorted keys): dates in
-    /// seconds since 2001-01-01, upper-case UUIDs, trace samples as "t" and "e", and no keys for missing values.
     [Fact]
     public void TheFileKeepsTheMacOSFormat()
     {
@@ -177,7 +175,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.NotNull(JsonNode.Parse(File.ReadAllText(_file.Path)));
     }
 
-    /// A date the file cannot hold as a date (before year 1 or after 9999) is a corrupt file, kept renamed, not a crash.
     [Theory]
     [InlineData(-9e10)]
     [InlineData(3e11)]
@@ -195,8 +192,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.False(File.Exists(_file.Path));
     }
 
-    /// Holds the history file so it cannot be moved or deleted while it can still be read: Windows refuses to rename a
-    /// file another handle has open without delete sharing; elsewhere a folder without write permission does it.
     IDisposable KeepInPlace()
     {
         if (OperatingSystem.IsWindows()) return new FileStream(_file.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -209,7 +204,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         public void Dispose() => restore();
     }
 
-    /// Opens the history file with no sharing, so reading it fails with a sharing violation (an I/O error, not corruption).
     FileStream Lock() => new(_file.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
     byte[] SaveOneMix()
@@ -220,8 +214,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         return File.ReadAllBytes(_file.Path);
     }
 
-    /// A file that cannot be read right now (another program holds it) may be perfectly good: it is left where it is,
-    /// not renamed as corrupt, and reported in the way so nothing is saved over it.
     [Fact]
     public void AFileThatCannotBeReadIsLeftInPlace()
     {
@@ -238,8 +230,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.Equal(original, File.ReadAllBytes(_file.Path));
     }
 
-    /// Once the store could not read the file, it keeps the mixes of this session in memory and never saves over the
-    /// file, even after the file can be read again: the next launch still finds every earlier mix.
     [Fact]
     public void TheStoreNeverSavesOverAFileItCouldNotRead()
     {
@@ -256,7 +246,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.Equal(1, new PracticeStore(_file, TimeZoneInfo.Utc).Load().MixCount);
     }
 
-    /// A corrupt file that cannot be moved aside is left in place and never overwritten, even once it could be moved.
     [Fact]
     public void ACorruptFileThatCannotBeMovedIsNeverOverwritten()
     {
@@ -274,7 +263,6 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.Equal(["practice.json"], Contents());
     }
 
-    /// The store saves each recorded mix and reports the history as the window shows it.
     [Fact]
     public void TheStoreSavesEveryRecordedMix()
     {
@@ -287,5 +275,21 @@ public sealed class PracticeHistoryFileTests : IDisposable
         Assert.Equal(1, overview.MixCount);
         Assert.Null(store.Problem);
         Assert.Equal(1, new PracticeStore(_file, TimeZoneInfo.Utc).Load().MixCount);
+    }
+
+    [Fact]
+    public async Task TheStoreSavesMixesRecordedFromManyThreadsOneAfterAnother()
+    {
+        const int mixes = 24;
+        var start = new DateTimeOffset(2026, 11, 12, 10, 0, 0, TimeSpan.Zero);
+        var store = new PracticeStore(_file, TimeZoneInfo.Utc);
+
+        var counts = await Task.WhenAll(Enumerable.Range(0, mixes)
+            .Select(index => Task.Run(() => store.Record(Result(start.AddMinutes(index))).MixCount)));
+
+        Assert.Equal(Enumerable.Range(1, mixes), counts.Order());
+        Assert.Null(store.Problem);
+        Assert.Equal(mixes, new PracticeStore(_file, TimeZoneInfo.Utc).Load().MixCount);
+        Assert.Equal(["practice.json"], Contents());
     }
 }

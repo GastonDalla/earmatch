@@ -2,7 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// Captures at 110 fps reach the meters drawn at 120 Hz, 6 ms later, through the tracker and the predictor.
 sealed class MeterSession
 {
     public const double FrameInterval = 1.0 / 110;
@@ -46,7 +45,6 @@ sealed class MeterSession
 
     public static double Difference(double a, double b) => Wrapped(a - b + 2) - 2;
 
-    /// The phase as a marker position rounds it: to half a point at 2 pixels per point.
     public static double Quantized(double phase)
     {
         const double quantum = 0.5 / Spacing;

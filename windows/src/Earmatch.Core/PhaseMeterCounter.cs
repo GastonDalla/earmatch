@@ -1,12 +1,7 @@
 namespace Earmatch.Core;
 
-/// The counter under a deck's phase meter (OverlayController.counter on macOS).
 public static class PhaseMeterCounter
 {
-    /// Bar position: the bar and beat rekordbox prints, from the deck's elapsed time and BPM, corrected by the drawn phase.
-    /// Cue countdown: the beats to the next cue the last frame measured (none without a frame or a cue ahead), moved on
-    /// at the deck's tempo from when that frame was taken to the time drawn, and none once that frame is older than the
-    /// phase predictor extrapolates (PhasePredictor.MaxExtrapolation), so a stalled capture leaves no counter running.
     public static BarPosition? Position(CounterStyle style, DeckLayout deck, double? phase, double? cueBeatsAhead, double measuredAt,
         double beatsPerSecond, double time)
     {

@@ -5,8 +5,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Drawing;
 
-/// The animated sample rekordbox session of the previews (PreviewClock.swift): the master at 128 BPM and deck 1 nudged
-/// out of phase and back every six seconds.
 public readonly struct PreviewClock
 {
     public const double Bpm = 128;
@@ -48,8 +46,6 @@ public readonly struct PreviewClock
     }
 }
 
-/// The waveform card's preview (WaveformPreview.swift): rekordbox's two stacked waveforms, split into halves with a
-/// playhead each, or hidden.
 public sealed class WaveformSketch : FrameworkElement
 {
     private const double PointsPerBeat = 26;
@@ -106,7 +102,6 @@ public sealed class WaveformSketch : FrameworkElement
         }
     }
 
-    /// A rectangle that is empty instead of throwing while the control is smaller than its gaps (during a resize).
     private static Rect Box(double x, double y, double width, double height) => new(x, y, Math.Max(0, width), Math.Max(0, height));
 
     private static void DrawStrip(DrawingContext context, Rect rect, double beats, Brush color)

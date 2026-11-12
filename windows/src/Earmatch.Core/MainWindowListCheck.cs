@@ -1,8 +1,5 @@
 namespace Earmatch.Core;
 
-/// Decides from the titles of rekordbox's top-level windows whether its main window was closed. Platform-neutral: on
-/// Windows the titles come from rekordbox's top-level windows (the main one is titled "rekordbox"); an empty list is
-/// only believed when a second read confirms it, and a failed read (null) is unknown.
 public sealed class MainWindowListCheck
 {
     public const string MainWindowTitle = "rekordbox";

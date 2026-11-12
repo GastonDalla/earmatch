@@ -186,6 +186,16 @@ public class RekordboxLayoutTests
     }
 
     [Fact]
+    public void TheWaveformIsFoundFromTheZoomResetButtonBecauseWindowsHasNoCaptureOrMatchingButton()
+    {
+        var snapshot = Snapshot(TwoDeckHorizontal);
+        Assert.DoesNotContain(snapshot.Elements, element => element.Name is "Capture" or "Matching");
+
+        Assert.NotNull(RekordboxLayout.Locate(snapshot).StackedWaveform);
+        Assert.Null(RekordboxLayout.Locate(snapshot.Removing(element => element.Name == "RST")).StackedWaveform);
+    }
+
+    [Fact]
     public void TheTrafficLightMasterButtonOfTheBrowserIsNotADeck()
     {
         var snapshot = Snapshot("uia-7.2.19-perf-4deck-vertical.json");
@@ -208,7 +218,7 @@ public class RekordboxLayoutTests
 
         Assert.Equal(Rect(0, 44, 2048, 1356), snapshot.WindowFrame);
         Assert.Equal(396, snapshot.Elements.Count);
-        Assert.Equal(Scale, snapshot.Scale);
+        Assert.Equal(VmDisplayAt200Percent, snapshot.Scale);
         var mode = Assert.Single(snapshot.Elements, element => element.HelpText?.StartsWith("Change EXPORT/PERFORMANCE/EDIT mode") == true);
         Assert.Equal(UiaControlType.ComboBox, mode.ControlType);
         Assert.Equal("PERFORMANCE", mode.Value);

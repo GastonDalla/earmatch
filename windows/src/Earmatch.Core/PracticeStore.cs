@@ -1,9 +1,5 @@
 namespace Earmatch.Core;
 
-/// The practice history behind the Practice pane (PracticeStore.swift): loaded once from the history file, recorded
-/// mix by mix and saved after each one, and summarized for the window. A file that could not be read, or is corrupt
-/// and could not be moved aside, is never overwritten: the history then lives in memory until Earmatch quits. Safe to
-/// call from any thread; the app records off the window's thread.
 public sealed class PracticeStore
 {
     private readonly object _gate = new();
@@ -20,7 +16,6 @@ public sealed class PracticeStore
         _log = log;
     }
 
-    /// Why the history file could not be used or saved, if it could not.
     public string? Problem
     {
         get

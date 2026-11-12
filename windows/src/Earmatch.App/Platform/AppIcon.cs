@@ -3,7 +3,6 @@ using System.Windows.Media.Imaging;
 
 namespace Earmatch.App;
 
-/// The app icon (the macOS AppIcon.icns, converted), for the sidebar, the About card, the window and the tray.
 public static class AppIcon
 {
     private static BitmapImage? _large;

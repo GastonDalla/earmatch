@@ -3,7 +3,6 @@ using System.Xml.Linq;
 
 namespace Earmatch.Core.Tests;
 
-/// Earmatch for Windows and for macOS ship as one release (v<version> on GitHub), so they carry one version.
 public class AppVersionTests
 {
     static string RepositoryRoot([CallerFilePath] string path = "") =>

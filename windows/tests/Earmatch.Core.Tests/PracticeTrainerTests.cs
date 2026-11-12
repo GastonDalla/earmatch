@@ -2,8 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// The mix trainer fed from the live decks (PracticeController.swift): the transition being timed is shown at most 15
-/// times a second, at once when it starts, ends or its tempos match, and a finished mix is handed over to be saved.
 public class PracticeTrainerTests
 {
     static LiveDecksSnapshot Playing(double time, double bpm2 = 128) => new(

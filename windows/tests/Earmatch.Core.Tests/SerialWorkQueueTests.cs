@@ -2,8 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// The queue the practice history is saved on: work runs off the caller's thread, one item after another in the order
-/// queued, and quitting waits a bounded time for what is still queued (a finished mix must reach the file).
 public class SerialWorkQueueTests
 {
     [Fact]

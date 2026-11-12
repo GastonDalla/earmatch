@@ -4,8 +4,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// Checks the English and Spanish catalogs against every L10n call in the Windows sources, like the macOS
-/// LocalizationCatalogTests does against Localizable.strings.
 public partial class LocalizationCatalogTests
 {
     public static readonly TheoryData<string> Languages = new("en", "es");

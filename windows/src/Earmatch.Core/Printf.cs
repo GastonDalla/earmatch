@@ -4,9 +4,6 @@ using System.Text.RegularExpressions;
 
 namespace Earmatch.Core;
 
-/// The subset of printf/String(format:) the catalogs use: %@ and %s (objects), %d %i %u %ld %lu (integers),
-/// %f %.Nf (doubles), %x %X, %c, %%, positional %n$ arguments, and the - 0 + space flags with a width.
-/// Numbers use the given culture's digits and separators without grouping, like String(format:locale:).
 internal static partial class Printf
 {
     [GeneratedRegex("""%(?:(\d+)\$)?([-+ #0']*)(\d+)?(?:\.(\d+))?(hh|h|ll|l|q|z|t|j|L)?([@dDiuUxXoOfFeEgGcCsSpaA%])""")]

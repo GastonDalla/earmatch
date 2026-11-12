@@ -2,8 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.Core.Tests;
 
-/// The capture's figures for the diagnostics and the live decks line (FrameStats in FrameAnalyzer.swift), measured
-/// over windows of one second of frames.
 public class FrameStatsTests
 {
     static readonly IReadOnlyDictionary<int, DeckFrameReading> NoDecks = new Dictionary<int, DeckFrameReading>();
@@ -76,8 +74,6 @@ public class FrameStatsTests
         Assert.Equal(1, stats.Current.FramesPerSecond, 6);
     }
 
-    /// The meter error (measured only while tracing, as on macOS) is the average distance between where the meters were
-    /// drawn and where the next frames measured the decks; none without a measurement.
     [Fact]
     public void TheMeterErrorIsTheAverageOfTheMeasuredDistances()
     {

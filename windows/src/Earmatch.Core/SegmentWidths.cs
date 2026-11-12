@@ -1,7 +1,5 @@
 namespace Earmatch.Core;
 
-/// The widths of a segmented picker's segments: equal when every label fits, otherwise long labels keep their width
-/// and the rest share what is left; when nothing fits, every segment shrinks in proportion.
 public static class SegmentWidths
 {
     public static double[] Distribute(IReadOnlyList<double> ideal, double available)

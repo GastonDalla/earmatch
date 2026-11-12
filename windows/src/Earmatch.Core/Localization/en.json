@@ -81,7 +81,7 @@
     "English": "English",
     "Español": "Español",
     "System": "System",
-    "Follows the Windows display language": "Follows the Windows display language",
+    "Follows the language order in Windows Settings": "Follows the language order in Windows Settings",
     "The window and the menus switch right away": "The window and the menus switch right away",
     "Reading the decks…": "Reading the decks…",
     "Live · %.0f fps · %.1f ms": "Live · %.0f fps · %.1f ms",
@@ -204,16 +204,55 @@
     "Check for Updates…": "Check for Updates…",
     "Update Available…": "Update Available…",
     "Downloading Update…": "Downloading Update…",
-    "Earmatch %@ is available (you have %@).": "Earmatch %@ is available (you have %@).",
-    "Install it now? Earmatch quits and opens again to finish.": "Install it now? Earmatch quits and opens again to finish.",
     "You have the latest version of Earmatch (%@).": "You have the latest version of Earmatch (%@).",
     "Couldn't check for updates: %@": "Couldn't check for updates: %@",
-    "Couldn't download the update: %@": "Couldn't download the update: %@"
+    "Couldn't download the update: %@": "Couldn't download the update: %@",
+    "no track loaded": "no track loaded",
+    "Sync Master": "Sync Master",
+    "Deck %ld": "Deck %ld",
+    "beat %ld of 4": "beat %ld of 4",
+    "%@ bars": "%@ bars",
+    "out of phase with deck %ld": "out of phase with deck %ld",
+    "Mixing deck %ld into deck %ld for %@": "Mixing deck %ld into deck %ld for %@",
+    "tempos matched after %@": "tempos matched after %@",
+    "tempos %@ apart": "tempos %@ apart",
+    "phase error %@": "phase error %@",
+    "Last mix, %@, %@ long": "Last mix, %@, %@ long",
+    "tempos never matched": "tempos never matched",
+    "drift %@": "drift %@",
+    "average phase error %@": "average phase error %@",
+    "worst %@": "worst %@",
+    "Phase error of the last transition, %@ long": "Phase error of the last transition, %@ long",
+    "tempos matched at %@": "tempos matched at %@",
+    "worst %@ at %@": "worst %@ at %@",
+    "in phase": "in phase",
+    "%@ ahead": "%@ ahead",
+    "%@ behind": "%@ behind",
+    "%@ and %@": "%@, %@",
+    "toggle switch": "toggle switch",
+    "Version %@": "Version %@",
+    "Software Update": "Software Update",
+    "A new version of Earmatch is available!": "A new version of Earmatch is available!",
+    "Earmatch %@ is now available—you have %@. Would you like to download it now?": "Earmatch %@ is now available—you have %@. Would you like to download it now?",
+    "Release Notes:": "Release Notes:",
+    "Skip This Version": "Skip This Version",
+    "Remind Me Later": "Remind Me Later",
+    "Install Update": "Install Update",
+    "Cancel": "Cancel",
+    "Earmatch quits and opens again to finish.": "Earmatch quits and opens again to finish."
   },
   "plurals": {
     "Waiting for both decks · %ld mixes saved": {
       "one": "Waiting for both decks · %ld mix saved",
       "other": "Waiting for both decks · %ld mixes saved"
+    },
+    "%ld minutes": {
+      "one": "%ld minute",
+      "other": "%ld minutes"
+    },
+    "%ld seconds": {
+      "one": "%ld second",
+      "other": "%ld seconds"
     }
   }
 }

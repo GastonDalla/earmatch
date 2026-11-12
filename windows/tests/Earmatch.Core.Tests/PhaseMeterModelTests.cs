@@ -222,8 +222,6 @@ public class PhaseMeterModelTests
         Assert.Equal("101.2", new BarPosition(101, 2).Label);
     }
 
-    /// The cue countdown is moved on from the last frame at the deck's tempo like the drawn phase, and like it stops
-    /// once that frame is older than the predictor extrapolates (a stalled capture leaves no counter ticking alone).
     [Fact]
     public void TheCueCountdownGoesBlankOnceItsFrameIsTooOld()
     {

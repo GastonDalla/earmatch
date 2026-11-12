@@ -1,12 +1,10 @@
 namespace Earmatch.Core;
 
-/// When to look for the rekordbox window or restart the capture again after a failure.
 public sealed class RetrySchedule
 {
     public enum Reason
     {
         Failure,
-        /// Kept from macOS for a capture the system refuses (on Windows: access denied, e.g. an elevated rekordbox).
         PermissionDenied,
         WindowOffScreen,
     }

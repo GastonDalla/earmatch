@@ -7,7 +7,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The Overlay pane (OverlayPane.swift): BPM precision, waveform and phase meter cards with animated previews.
 public sealed class OverlayPane : PaneView
 {
     private readonly Grid _columns;
@@ -139,7 +138,6 @@ public sealed class OverlayPane : PaneView
     }
 }
 
-/// The BPM the jog shows under the current limit, with the covered digits in a lime-bordered box.
 public sealed class BPMSampleView : Border
 {
     private readonly TextBlock _visible = Ui.Text("", new TypeStyle(15, FontWeights.SemiBold, IsMono: true), WindowTheme.PrimaryText);
@@ -150,7 +148,6 @@ public sealed class BPMSampleView : Border
 
     public BPMSampleView()
     {
-        // The stroke is drawn over the box like SwiftUI's strokeBorder, so it takes no room.
         _covered.Margin = new Thickness(1, 0, 1, 0);
         var box = new Grid();
         box.Children.Add(new Border { Background = WindowTheme.Black, CornerRadius = new CornerRadius(3) });

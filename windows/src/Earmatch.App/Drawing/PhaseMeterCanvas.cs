@@ -7,8 +7,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Drawing;
 
-/// Draws a PhaseMeterDisplay the way the players do (PhaseMeterCanvas.swift): boxes, rulers with beat ticks, the
-/// master's waveform band, the bar counters and the master player's number.
 public sealed class PhaseMeterCanvas : FrameworkElement
 {
     private const double RowPitch = 18;

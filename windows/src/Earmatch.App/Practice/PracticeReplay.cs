@@ -8,8 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Practice;
 
-/// The replay of the last transition (PracticeReplayView.swift): its phase error over time, played back on demand,
-/// otherwise pointing at the worst moment after the tempos matched.
 public sealed class PracticeReplay : Border
 {
     private readonly PracticeTrace _trace;
@@ -21,6 +19,8 @@ public sealed class PracticeReplay : Border
     private readonly TextBlock _buttonLabel;
     private readonly Icon _buttonIcon;
     private DateTimeOffset? _playbackStart;
+    private double? _cursor;
+    private double? _error;
 
     public PracticeReplay(PracticeTrace trace, double traceHeight)
     {
@@ -44,7 +44,11 @@ public sealed class PracticeReplay : Border
         var footer = PracticePane.Footer(PracticeText.Duration(0), "", PracticeText.Duration(trace.DurationSeconds));
         _caption = (TextBlock)footer.Children[1];
         var well = Ui.Surface(Ui.VStack(Spacing.Small, meterRow, _traceView, footer), 10, WindowTheme.Well, WindowTheme.Hairline, new Thickness(12 - 1));
-        Child = Ui.VStack(Spacing.Small, Ui.Row(PracticePane.Label(PracticeStrings.Replay), _button), well);
+        var spoken = new SpokenGroup(well, () => PracticeSpeech.Replay(_trace))
+        {
+            DescribeValue = () => _cursor is { } seconds ? PracticeSpeech.ReplayValue(seconds, _error) : "",
+        };
+        Child = Ui.VStack(Spacing.Small, Ui.Row(PracticePane.Label(PracticeStrings.Replay), _button), spoken);
         Show(DateTimeOffset.Now);
         Loaded += (_, _) => CompositionTarget.Rendering += OnFrame;
         Unloaded += (_, _) => CompositionTarget.Rendering -= OnFrame;
@@ -79,6 +83,8 @@ public sealed class PracticeReplay : Border
             ? Math.Clamp((now - start).TotalSeconds / PlaybackSeconds, 0, 1) * _trace.DurationSeconds
             : _trace.WorstSample?.Seconds;
         var error = cursor is { } seconds ? _trace.ErrorMilliseconds(seconds) : null;
+        _cursor = cursor;
+        _error = error;
         var isMatched = cursor is { } at && _trace.MatchedAtSeconds is { } matched && at >= matched;
         _meter.Show(error, isDimmed: !isMatched);
         _value.Text = error is { } shown ? PracticeText.Milliseconds(shown, signed: true) : PracticeText.NoValue;

@@ -8,10 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The main window. Closing it hides it, like the macOS window: Earmatch keeps running in the tray until Quit.
-/// WindowChrome takes the title bar away so the content reaches the top edge as on macOS; the top band drags the
-/// window (double-click maximizes, right-click opens the system menu) and the caption buttons are drawn by WPF, with
-/// the maximize button reported to Windows as HTMAXBUTTON so Windows 11 still shows Snap Layouts over it.
 public sealed class EarmatchWindow : Window
 {
     private readonly MainWindowModel _model;
@@ -37,10 +33,8 @@ public sealed class EarmatchWindow : Window
         var resize = SystemParameters.WindowResizeBorderThickness;
         _chrome = new WindowChrome
         {
-            // WindowChrome counts the caption from below the top resize border.
             CaptionHeight = Math.Max(0, MainWindowFrame.TitleBandHeight - resize.Top),
             ResizeBorderThickness = resize,
-            // A sliver of DWM frame keeps the shadow and the rounded corners; WPF's opaque background covers it.
             GlassFrameThickness = new Thickness(0, 0, 0, 1),
             CornerRadius = new CornerRadius(0),
             UseAeroCaptionButtons = false,
@@ -65,12 +59,11 @@ public sealed class EarmatchWindow : Window
         if (!IsVisible) Show();
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Activate();
+        if (!IsKeyboardFocusWithin || ReferenceEquals(Keyboard.FocusedElement, this)) _frame.View.Sidebar.FocusList();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
-        // WindowChrome adds its message hook while SourceInitialized is raised. HwndSource runs the newest hook first,
-        // so this one sees WM_NCHITTEST before WindowChrome answers it.
         base.OnSourceInitialized(e);
         if (PresentationSource.FromVisual(this) is HwndSource source) source.AddHook(OnMessage);
         NativeMethods.StyleFrame(this, WindowTheme.SidebarColor);
@@ -124,7 +117,6 @@ public sealed class EarmatchWindow : Window
         else SystemCommands.MaximizeWindow(this);
     }
 
-    /// Keeps a maximized window's content on the monitor (Windows hangs the frame past its edges) and shows Restore.
     private void FitFrame()
     {
         var isMaximized = WindowState == WindowState.Maximized;
@@ -144,14 +136,12 @@ public sealed class EarmatchWindow : Window
                 }
                 break;
             case NativeMethods.WmNcMouseMove when wParam == NativeMethods.HtMaxButton:
-                // Left to DefWindowProc, which opens the Snap Layouts flyout after a moment over the button.
                 NativeMethods.TrackNonClientLeave(hwnd);
                 break;
             case NativeMethods.WmNcMouseLeave:
                 ShowMaximize(isOver: false, isPressing: false);
                 break;
             case NativeMethods.WmNcLButtonDown or NativeMethods.WmNcLButtonDblClk when wParam == NativeMethods.HtMaxButton:
-                // Handled here: DefWindowProc would draw and track a classic caption button over ours.
                 ShowMaximize(isOver: true, isPressing: true);
                 handled = true;
                 break;
@@ -168,9 +158,6 @@ public sealed class EarmatchWindow : Window
         return IntPtr.Zero;
     }
 
-    /// What the caption buttons are for Windows: the top resize border over them while the window is restored, the
-    /// maximize button as HTMAXBUTTON; null leaves the point to WindowChrome (minimize and close answer HTCLIENT and
-    /// take WPF's mouse input like any button).
     private IntPtr? CaptionHitTest(Point screen)
     {
         var captions = _frame.Captions;

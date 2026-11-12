@@ -119,4 +119,42 @@ public class UpdateStateTests
         var state = Installed.Checked(CheckedAt, "0.1.3");
         Assert.Equal(state.DiagnosticsLine, Spanish(() => state.DiagnosticsLine));
     }
+
+    [Fact]
+    public void ASkippedVersionLeavesCheckForUpdatesInTheMenusAndIsNamedInTheDiagnostics()
+    {
+        var state = Installed.Checked(CheckedAt, "0.1.3").Skipped();
+        Assert.Equal(UpdatePhase.Skipped, state.Phase);
+        Assert.False(state.HasUpdate);
+        Assert.True(state.IsMenuItemEnabled);
+        Assert.Equal("Check for Updates…", state.MenuTitle);
+        Assert.EndsWith("; 0.1.3 available, skipped (checked 2026-11-12 10:30 -03:00)", state.DiagnosticsLine);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("The operation was canceled.")]
+    [InlineData("Unable to read data from the transport connection.")]
+    public void ADownloadCancelledOrClosedByTheUserIsPutOffNeverInstalledNorRetried(string? problem)
+    {
+        var state = Installed.Checked(CheckedAt, "0.1.3").Downloading().AfterDownload(wasCancelled: true, problem);
+        Assert.Equal(UpdatePhase.Postponed, state.Phase);
+        Assert.Null(state.Problem);
+        Assert.True(state.HasUpdate);
+    }
+
+    [Fact]
+    public void ADownloadThatFailedWithoutTheUserIsReportedSoItCanBeTriedAgain()
+    {
+        var state = Installed.Checked(CheckedAt, "0.1.3").Downloading().AfterDownload(wasCancelled: false, "The remote server returned 404.");
+        Assert.Equal(UpdatePhase.Failed, state.Phase);
+        Assert.Equal("The remote server returned 404.", state.Problem);
+    }
+
+    [Fact]
+    public void AFinishedDownloadNobodyCancelledRestartsEarmatchToInstall()
+    {
+        var state = Installed.Checked(CheckedAt, "0.1.3").Downloading().AfterDownload(wasCancelled: false, problem: null);
+        Assert.Equal(UpdatePhase.Restarting, state.Phase);
+    }
 }

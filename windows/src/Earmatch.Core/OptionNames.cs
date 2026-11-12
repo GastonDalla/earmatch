@@ -1,7 +1,5 @@
 namespace Earmatch.Core;
 
-/// The short names (menus) and titles (main window, status cards) of the options. On macOS these live in
-/// StatusTextDiagnostics.swift; StatusText needs the meter titles, so they are ported here for the diagnostics to reuse.
 public static class OptionNames
 {
     extension(BPMLimit limit)

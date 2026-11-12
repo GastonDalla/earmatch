@@ -7,8 +7,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The window's content (MainWindowView.swift): the sidebar, a hairline and the selected pane. A language change
-/// rebuilds everything, like the macOS view's id(language).
 public sealed class MainWindowView : Grid
 {
     private readonly MainWindowModel _model;
@@ -47,7 +45,6 @@ public sealed class MainWindowView : Grid
 
     private void Build()
     {
-        // A language picked with the keyboard keeps the keyboard on the picker after the rebuild.
         var keepsFocus = _pane?.IsKeyboardFocusWithin == true;
         Children.Clear();
         _sidebar = new Sidebar(_model);

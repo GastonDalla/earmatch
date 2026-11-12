@@ -1,20 +1,23 @@
-# Dumps the UI Automation tree of rekordbox's windows to JSON: the fixture format of Earmatch for Windows' layout tests
-# (tests/Earmatch.Core.Tests/Fixtures/uia-*.json). Run it in Windows with rekordbox open in the layout to capture.
-# Usage: powershell.exe -NoProfile -ExecutionPolicy Bypass -File dump-uia.ps1 -Out C:\path\uia.json [-MaxNodes 20000] [-FullHelp] [-Fixture]
-#
-# Nodes follow UI Automation's raw view: `parent` and `depth` are what the TreeWalker reports, which JUCE keeps
-# flat in places (most browser controls hang directly under the window's content). `helpText` keeps only its
-# first line, the title the layout locator matches (for example "Deck BPM display:"); -FullHelp keeps it whole.
-# `scale` is the rekordbox window's DPI / 96 (GetDpiForWindow), the factor between macOS points and these pixels.
-# -Fixture keeps only the fields Earmatch.Core reads (index, parent, depth, controlType, name, helpText, value, frame),
-# which is how tests/Earmatch.Core.Tests/Fixtures/uia-*.json are captured.
 param(
-    [Parameter(Mandatory = $true)][string]$Out,
+    [string]$Out,
     [int]$MaxNodes = 20000,
     [string]$ProcessName = "rekordbox",
     [switch]$FullHelp,
-    [switch]$Fixture
+    [switch]$Fixture,
+    [switch]$Help
 )
+$usage = @'
+Dumps the UI Automation tree of rekordbox's windows to JSON, the fixture format of Earmatch for Windows' layout tests (tests/Earmatch.Core.Tests/Fixtures/uia-*.json). Run it in Windows with rekordbox open in the layout to capture.
+
+Usage: powershell.exe -NoProfile -ExecutionPolicy Bypass -File dump-uia.ps1 -Out C:\path\uia.json [-MaxNodes 20000] [-FullHelp] [-Fixture]
+
+Nodes follow UI Automation's raw view: parent and depth are what the TreeWalker reports, which JUCE keeps flat in places.
+helpText keeps only its first line, the title the layout locator matches; -FullHelp keeps it whole.
+scale is the rekordbox window's DPI / 96, the factor between macOS points and these pixels.
+-Fixture keeps only the fields Earmatch.Core reads (index, parent, depth, controlType, name, helpText, value, frame), which is how the fixtures are captured.
+'@
+if ($Help) { Write-Output $usage; exit 0 }
+if (-not $Out) { Write-Error $usage; exit 2 }
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes

@@ -17,17 +17,12 @@ public enum CaptionButtonKind
     Close,
 }
 
-/// A Windows 11 caption button: 46×32, a Segoe Fluent Icons glyph (Segoe MDL2 Assets on Windows 10) on a background
-/// that lights up on hover and press, red under Close. Like the system's caption buttons it never takes the keyboard
-/// focus (Alt+Space, Win+arrows and Alt+F4 work as in any window); screen readers see a named button they can invoke.
 public sealed class CaptionButton : Button
 {
     public const double ButtonWidth = 46;
     public const double ButtonHeight = 32;
     private const double GlyphSize = 10;
 
-    // The WinUI title bar's dark theme: SubtleFillColorSecondary/Tertiary under the glyph, TextFillColorPrimary,
-    // Secondary and Disabled for the glyph, #C42B1C under Close.
     private static readonly Color CloseRed = Color.FromRgb(0xC4, 0x2B, 0x1C);
     private static readonly Brush HoverFill = WindowTheme.Solid(Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF));
     private static readonly Brush PressedFill = WindowTheme.Solid(Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF));
@@ -38,7 +33,6 @@ public sealed class CaptionButton : Button
     private static readonly Brush InactiveGlyph = WindowTheme.Solid(Color.FromArgb(0x5D, 0xFF, 0xFF, 0xFF));
     private static readonly Brush ClosePressedGlyph = WindowTheme.White(0.7);
 
-    /// No visual tree: the button draws itself in OnRender.
     private static readonly ControlTemplate Drawn = new(typeof(CaptionButton));
 
     private CaptionButtonKind _kind;
@@ -78,8 +72,6 @@ public sealed class CaptionButton : Button
         }
     }
 
-    /// The window sets these for the maximize button, whose mouse input arrives as non-client messages that WPF does
-    /// not turn into IsMouseOver and IsPressed.
     public void ShowNonClientState(bool isHot, bool isHeld)
     {
         if (_isHot == isHot && _isHeld == isHeld) return;
@@ -88,7 +80,6 @@ public sealed class CaptionButton : Button
         InvalidateVisual();
     }
 
-    /// The name and tooltip in the window's current language.
     public void Relabel()
     {
         var name = _kind switch
@@ -135,7 +126,6 @@ public sealed class CaptionButton : Button
             (false, true, false) => HoverFill,
             _ => Brushes.Transparent,
         };
-        // Transparent still takes the mouse, so the whole 46×32 box is the button.
         context.DrawRectangle(fill, null, bounds);
 
         var ink = (isPressed, isHot, isClose) switch
@@ -148,7 +138,6 @@ public sealed class CaptionButton : Button
         };
         var dpi = VisualTreeHelper.GetDpi(this);
         var glyph = Ui.Formatted(GlyphFor(_kind), AppFonts.Icons, GlyphSize, FontWeights.Normal, ink, dpi.PixelsPerDip);
-        // Centre the glyph's ink, not its line box, and snap it to whole pixels so its 1-pixel strokes stay sharp.
         var inkBounds = glyph.BuildGeometry(new Point(0, 0)).Bounds;
         if (inkBounds.IsEmpty) return;
         var x = Snap((ActualWidth - inkBounds.Width) / 2 - inkBounds.X, dpi.DpiScaleX);
@@ -167,7 +156,6 @@ public sealed class CaptionButton : Button
     };
 }
 
-/// Minimize, maximize (restore while maximized) and close at the top right of the window, where Windows puts them.
 public sealed class CaptionButtons : StackPanel
 {
     public const double StripWidth = 3 * CaptionButton.ButtonWidth;

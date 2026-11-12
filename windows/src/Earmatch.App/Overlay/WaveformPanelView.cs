@@ -8,9 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Overlay;
 
-/// The split or hidden waveform over rekordbox's stacked waveform (WaveformOverlayView.swift): a black pane per deck
-/// with its phase meter on top and, in Split, the middle of the deck's own waveform below it, copied from the captured
-/// frame so each deck has its own playhead; dividers between the panes. Laid out in DIPs from the plan's pixels.
 internal sealed class WaveformPanelView : Canvas
 {
     private readonly Dictionary<int, DeckPane> _panes = [];
@@ -28,7 +25,6 @@ internal sealed class WaveformPanelView : Canvas
         RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.NearestNeighbor);
     }
 
-    /// Lays the panes out for a plan; `scale` is the physical pixels per DIP.
     public void Configure(WaveformOverlayPlan plan, IReadOnlyDictionary<int, ScreenRect> strips, double scale)
     {
         if (Equals(plan, _plan) && scale == _scale && strips.Count == _strips.Count && strips.All(entry => _strips.TryGetValue(entry.Key, out var strip) && strip == entry.Value))
@@ -72,7 +68,6 @@ internal sealed class WaveformPanelView : Canvas
         }
     }
 
-    /// Shows a new frame: each pane's waveform and, for the CDJ-3000 waveform, the master's waveform in the bands.
     public void ShowFrame(CapturedFrame? frame, int? master)
     {
         if (_plan is not { } plan) return;
@@ -112,7 +107,6 @@ internal sealed class WaveformPanelView : Canvas
         element.Height = frame.Height / _scale;
     }
 
-    /// One deck's pane (DeckPane in WaveformOverlayView.swift).
     private sealed class DeckPane : Grid
     {
         private readonly Image _waveform = new() { Stretch = Stretch.Fill, Visibility = Visibility.Collapsed };
@@ -173,7 +167,6 @@ internal sealed class WaveformPanelView : Canvas
     }
 }
 
-/// Copies a rectangle of a captured frame into a bitmap WPF can draw, reusing the bitmap while its size holds.
 internal sealed class PixelCopy
 {
     private WriteableBitmap? _bitmap;

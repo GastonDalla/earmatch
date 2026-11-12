@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 
 namespace Earmatch.App;
 
-/// The Win32 calls of the window capture, the refresh clock and the hotkeys' mask key.
 internal static partial class NativeMethods
 {
     private const int DwmwaExtendedFrameBounds = 9;
@@ -17,16 +16,18 @@ internal static partial class NativeMethods
         public uint Denominator;
     }
 
-    /// DWM_TIMING_INFO (dwmapi.h, packed to 1 byte, 292 bytes): the fields read here, then the rest as bytes.
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    private unsafe struct CompositionTimingInfo
+    private unsafe struct DwmTimingInfo
     {
+        public const int PackedSizeInDwmapiH = 292;
+        private const int SizeUpToQpcVBlank = sizeof(uint) + 2 * sizeof(uint) + sizeof(ulong) + 2 * sizeof(uint) + sizeof(ulong);
+
         public uint Size;
         public UnsignedRatio RateRefresh;
         public ulong QpcRefreshPeriod;
         public UnsignedRatio RateCompose;
         public ulong QpcVBlank;
-        public fixed byte Rest[256];
+        public fixed byte FieldsAfterQpcVBlankNotRead[PackedSizeInDwmapiH - SizeUpToQpcVBlank];
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -39,7 +40,6 @@ internal static partial class NativeMethods
         public UIntPtr ExtraInfo;
     }
 
-    /// INPUT with its union sized for the largest member (MOUSEINPUT), as SendInput checks cbSize.
     [StructLayout(LayoutKind.Explicit)]
     private struct Input
     {
@@ -63,7 +63,7 @@ internal static partial class NativeMethods
     private static partial int DwmGetWindowAttribute(IntPtr window, int attribute, out WindowRect value, int size);
 
     [LibraryImport("dwmapi.dll")]
-    private static partial int DwmGetCompositionTimingInfo(IntPtr window, ref CompositionTimingInfo info);
+    private static partial int DwmGetCompositionTimingInfo(IntPtr window, ref DwmTimingInfo info);
 
     [LibraryImport("user32.dll", SetLastError = true)]
     private static partial uint SendInput(uint count, Input[] inputs, int size);
@@ -76,12 +76,9 @@ internal static partial class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool IsShown(IntPtr window);
 
-    /// The window's visible bounds without its invisible resize borders (DWMWA_EXTENDED_FRAME_BOUNDS), in physical
-    /// pixels: what Windows.Graphics.Capture captures of a window.
     public static bool ExtendedFrameBounds(IntPtr window, out WindowRect rect) =>
         DwmGetWindowAttribute(window, DwmwaExtendedFrameBounds, out rect, Marshal.SizeOf<WindowRect>()) >= 0;
 
-    /// The client area in physical screen pixels.
     public static bool ClientBounds(IntPtr window, out WindowRect rect)
     {
         rect = default;
@@ -92,17 +89,15 @@ internal static partial class NativeMethods
         return true;
     }
 
-    /// The desktop composition's last vertical blank and refresh period, in performance counter ticks.
     public static bool CompositionTiming(out long vblank, out long period)
     {
-        var info = new CompositionTimingInfo { Size = 292 };
+        var info = new DwmTimingInfo { Size = DwmTimingInfo.PackedSizeInDwmapiH };
         var ok = DwmGetCompositionTimingInfo(IntPtr.Zero, ref info) >= 0 && info.QpcRefreshPeriod > 0;
         vblank = ok ? (long)info.QpcVBlank : 0;
         period = ok ? (long)info.QpcRefreshPeriod : 0;
         return ok;
     }
 
-    /// Types a key (down and up) as if from the keyboard; false when Windows refused it (another app's UIPI level).
     public static bool TypeKey(ushort virtualKey)
     {
         var inputs = new[]

@@ -5,8 +5,6 @@ using Earmatch.App.Theme;
 
 namespace Earmatch.App.Controls;
 
-/// The accent ring around the control the keyboard is on. WPF shows a FocusVisualStyle only after keyboard
-/// navigation, which matches the macOS window's ring that appears only while navigating with the keyboard.
 public static class FocusRing
 {
     private static readonly Dictionary<double, Style> Styles = [];

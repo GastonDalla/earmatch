@@ -2,7 +2,6 @@ using System.Globalization;
 
 namespace Earmatch.Core;
 
-/// A deck's position in its bar as rekordbox prints it near the playhead: "06.3" is bar 6, beat 3.
 public readonly record struct BarPosition(int Bar, int Beat)
 {
     public string Label => Printf.Format("%02d.%d", CultureInfo.InvariantCulture, [Bar, Beat]);
@@ -66,11 +65,8 @@ public sealed record PhaseMeterDisplay(
     public bool ShowsMasterWaveform => Style == PhaseMeterType.Cdj3000Waveform && MasterPlayer is not null;
 }
 
-/// What a deck's phase meter shows: the sync master's row above the deck's own, as the players draw it.
 public static class PhaseMeterModel
 {
-    /// The bar length as an int for the boxes and the downbeat ticks. Private on purpose: nothing outside the model needs
-    /// it, and the public bar length is BeatGridDetector.BeatsPerBar.
     private const int BeatsPerBar = (int)BeatGridDetector.BeatsPerBar;
     public const double LineSpan = 4.0;
     public const double Cdj3000Span = 4.8;

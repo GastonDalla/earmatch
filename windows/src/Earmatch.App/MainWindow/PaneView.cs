@@ -6,8 +6,6 @@ using Earmatch.App.Theme;
 
 namespace Earmatch.App.Panes;
 
-/// A pane of the main window: its title (with an optional accessory on the right) above its content
-/// (PaneScaffold.swift). Refresh brings every control up to date with the model.
 public abstract class PaneView : Grid
 {
     protected PaneView(MainWindowModel model, string title)
@@ -21,7 +19,6 @@ public abstract class PaneView : Grid
         AutomationProperties.SetHeadingLevel(heading, AutomationHeadingLevel.Level1);
         Header = Ui.Row(heading, null, Spacing.Medium);
         Header.MinHeight = 30;
-        // The header sits in the title band like on macOS; its right end stops short of the caption buttons.
         Header.Margin = new Thickness(0, 0, CaptionButtons.StripWidth + Spacing.Small - Spacing.Large, 0);
         Children.Add(Header);
     }
@@ -49,12 +46,10 @@ public abstract class PaneView : Grid
 
     public abstract void Refresh();
 
-    /// Called on every frame while the pane is shown, for the animated previews.
     public virtual void Tick(DateTimeOffset now)
     {
     }
 
-    /// Two equal columns 12 apart, each a stack of cards (PaneColumns.swift).
     protected static Grid Columns(UIElement leading, UIElement trailing)
     {
         var grid = new Grid();

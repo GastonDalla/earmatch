@@ -6,7 +6,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Overlay;
 
-/// The overlay colours (OverlayColor in LayerHostView.swift).
 internal static class OverlayColors
 {
     public static readonly Brush MasterOrange = Frozen(240, 140, 40);
@@ -40,9 +39,6 @@ internal static class OverlayColors
     }
 }
 
-/// A deck's phase meter over rekordbox (PhaseMeterLayer.swift), drawn in points (DIPs) with the macOS geometry: the
-/// boxes or rulers with their beat ticks, the bar counters, the master player's badge, the now line and, for the
-/// CDJ-3000 waveform in Split, the master's waveform band. It redraws only when what it shows changes.
 internal sealed class MeterView : FrameworkElement
 {
     public const double CompactWidth = 380;
@@ -56,19 +52,14 @@ internal sealed class MeterView : FrameworkElement
     private PhaseMeterDisplay? _display;
     private ImageSource? _bandImage;
 
-    /// Where the rows sit, as a share of the height (0.45 in a pane, 0.5 in a band).
     public double RowsCenter { get; init; } = 0.45;
 
-    /// How far the now line reaches below the meter, over the pane's waveform.
     public double PlayheadExtension { get; set; }
 
-    /// Whether the CDJ-3000 waveform style draws the master's waveform band (Split only).
     public bool AllowsMasterWaveform { get; set; }
 
-    /// The meter's area inside the view; the now line may reach below it. Null: the whole view.
     public Rect? MeterBounds { get; set; }
 
-    /// A rounded background behind the meter (the bands and side meters), or null.
     public Brush? Plate { get; init; }
 
     public PhaseMeterDisplay? Display
@@ -82,7 +73,6 @@ internal sealed class MeterView : FrameworkElement
         }
     }
 
-    /// The master's waveform for the band, set by the pane from the captured frame.
     public ImageSource? BandImage
     {
         get => _bandImage;
@@ -94,12 +84,10 @@ internal sealed class MeterView : FrameworkElement
         }
     }
 
-    /// The band the master's waveform is drawn in, in this view's DIPs, when the display has one.
     public Rect? BandRect => _display is { Rows.Count: > 0 } display && UsesBand(display)
         ? Geometry.For(display.Style, Bounds, RowsCenter, Math.Min(display.Rows.Count, 2), usesBand: true).Band
         : null;
 
-    /// Whether the band is shown but still waits for its first image.
     public bool IsWaitingForMasterWaveform => BandRect is not null && _display?.ShowsMasterWaveform == true && _bandImage is null;
 
     private Rect Bounds => MeterBounds ?? new Rect(0, 0, ActualWidth, ActualHeight);
@@ -247,7 +235,6 @@ internal sealed class MeterView : FrameworkElement
     private static Rect Inset(Rect rect, double amount) =>
         new(rect.X + amount, rect.Y + amount, Math.Max(0, rect.Width - 2 * amount), Math.Max(0, rect.Height - 2 * amount));
 
-    /// MeterGeometry in PhaseMeterLayer.swift.
     private readonly record struct Geometry(PhaseMeterType Style, double CenterX, double MeterWidth, double Pitch, double FirstRowY,
         double TickLength, Rect? Band, bool LabelIsLeft, Point LabelPoint)
     {

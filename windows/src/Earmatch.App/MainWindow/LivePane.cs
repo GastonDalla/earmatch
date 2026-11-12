@@ -8,7 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The Live pane (LivePane.swift): the on/off switch, the booth presets, the live decks mirror and the hotkeys.
 public sealed class LivePane : PaneView
 {
     private readonly ConnectionChip _connection = new();
@@ -80,7 +79,6 @@ public sealed class LivePane : PaneView
     }
 }
 
-/// The pill at the top right of the Live pane with rekordbox's connection.
 public sealed class ConnectionChip : Border
 {
     private readonly System.Windows.Shapes.Ellipse _dot = new() { Width = 8, Height = 8 };
@@ -109,13 +107,13 @@ public sealed class ConnectionChip : Border
     }
 }
 
-/// The live decks mirror (LiveDecksPanel.swift): each deck's title and phase meter while rekordbox is mirrored.
 public sealed class LiveDecksPanel : Border
 {
     private readonly MainWindowModel _model;
     private readonly ContentControl _body = new() { Focusable = false };
     private readonly CardStatusRow _status = new(new StatusLine(StatusTone.Waiting, ""));
     private readonly Dictionary<int, (PhaseMeterCanvas Canvas, Border Screen)> _meters = [];
+    private readonly Dictionary<int, LiveDeckSnapshot> _latest = [];
     private string _layoutKey = "";
 
     public LiveDecksPanel(MainWindowModel model)
@@ -141,6 +139,7 @@ public sealed class LiveDecksPanel : Border
         }
         foreach (var deck in decks)
         {
+            _latest[deck.Number] = deck;
             if (_meters.TryGetValue(deck.Number, out var meter)) meter.Canvas.Display = deck.Meter;
         }
     }
@@ -191,9 +190,9 @@ public sealed class LiveDecksPanel : Border
         UIElement inside = !showsMeter ? Caption(WindowText.MeterOff) : deck.Meter is null ? Caption(WindowText.ReadingGrid) : canvas;
         var screen = new Border { Height = 60, Background = WindowTheme.Black, CornerRadius = new CornerRadius(6), Child = inside };
         if (showsMeter) _meters[deck.Number] = (canvas, screen);
-        var row = Ui.VStack(Spacing.Small, header, screen);
-        AutomationProperties.SetName(row, $"{deck.Number}, {deck.Title ?? WindowText.NoTrack}");
-        return row;
+        var number = deck.Number;
+        return new SpokenGroup(Ui.VStack(Spacing.Small, header, screen),
+            () => MeterSpeech.DeckRow(_latest.GetValueOrDefault(number, deck), _model.Settings.IsPhaseMeterEnabled));
     }
 
     private static TextBlock Caption(string text)

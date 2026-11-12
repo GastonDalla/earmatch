@@ -3,13 +3,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Hotkeys;
 
-/// Earmatch's hotkeys (HotkeyMonitor.swift): a low-level keyboard hook on the hook thread feeds every key-down and
-/// key-up to the HotkeyRecognizer and passes each one on to the apps, rekordbox included; only the E of
-/// Ctrl+Alt+Win+E is kept from them, so Windows does not open File Explorer for Win+E; right after it the hook types the
-/// unassigned mask key (HotkeyRecognizer.MaskKey) while the modifiers are still held, so releasing Win does not open the
-/// Start menu (nor Alt rekordbox's menu bar). The peek and the toggle are raised on the window's dispatcher. Windows needs
-/// no permission for the hook; when it refuses to install it, Problem says why (the diagnostics report it) and the hook
-/// is tried again on the next Start.
 internal sealed class HotkeyMonitor : IDisposable
 {
     private readonly HookThread _thread;
@@ -25,13 +18,10 @@ internal sealed class HotkeyMonitor : IDisposable
         _procedure = OnKey;
     }
 
-    /// Raised on the dispatcher with the new peek state.
     public event Action<bool>? PeekChanged;
 
-    /// Raised on the dispatcher when Ctrl+Alt+Win+E is pressed.
     public event Action? ToggleEnabled;
 
-    /// Why the keyboard hook is not installed, or null while it is.
     public string? Problem { get; private set; }
 
     public void Start() => _thread.Post(() =>
@@ -50,8 +40,6 @@ internal sealed class HotkeyMonitor : IDisposable
         }
     });
 
-    /// Ends a peek and forgets the held keys, when the hook may have missed a release (the secure desktop of a lock or
-    /// a UAC prompt keeps keys from every hook).
     public void Reset() => _thread.Post(() => Apply(_recognizer.Reset()));
 
     private unsafe IntPtr OnKey(int code, IntPtr wParam, IntPtr lParam)
@@ -75,7 +63,6 @@ internal sealed class HotkeyMonitor : IDisposable
     {
         if (outcome.Peek is { } peek) _dispatcher.BeginInvoke(() => PeekChanged?.Invoke(peek));
         if (outcome.TogglesEnabled) _dispatcher.BeginInvoke(() => ToggleEnabled?.Invoke());
-        // Typed after the hook returns (its own events come back through it), while the shortcut's keys are still held.
         if (outcome.SendsMaskKey) _thread.Post(() => NativeMethods.TypeKey(HotkeyRecognizer.MaskKey));
     }
 

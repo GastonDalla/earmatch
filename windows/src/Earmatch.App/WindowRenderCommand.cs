@@ -7,9 +7,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App;
 
-/// `Earmatch --render-window <dir>` (WindowRenderCommand.swift): renders every WindowRenderShot of the sample
-/// session to PNG at twice the window's size, so it can be compared with the macOS renders, and exits. It draws the
-/// window's own frame, caption buttons included, as macOS renders sketch the traffic lights.
 public static class WindowRenderCommand
 {
     public static int Run(WindowRenderRequest request)

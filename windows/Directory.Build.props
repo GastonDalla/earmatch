@@ -6,8 +6,6 @@
     <WarningsAsErrors>nullable</WarningsAsErrors>
     <Company>GastonDalla</Company>
     <Product>Earmatch</Product>
-    <!-- One release carries the macOS and the Windows app: keep this equal to CFBundleShortVersionString in
-         Support/Info.plist (AppVersionTests and windows/scripts/release-windows.sh check it). -->
     <Version>0.1.2</Version>
   </PropertyGroup>
 </Project>

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -7,7 +8,6 @@ using Earmatch.App.Theme;
 
 namespace Earmatch.App.Controls;
 
-/// The lime switch of the macOS window: 46×26, a white knob, toggled by a click, Space or Enter.
 public sealed class AccentSwitch : FrameworkElement
 {
     private static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(nameof(Progress), typeof(double), typeof(AccentSwitch),
@@ -43,7 +43,9 @@ public sealed class AccentSwitch : FrameworkElement
     private void SetOn(bool value, bool animated)
     {
         if (_isOn == value && animated) return;
+        var wasOn = _isOn;
         _isOn = value;
+        if (wasOn != value && UIElementAutomationPeer.FromElement(this) is AccentSwitchAutomationPeer peer) peer.RaiseToggled(wasOn, value);
         var target = value ? 1.0 : 0.0;
         if (animated && !WindowTheme.ReduceMotion)
         {
@@ -61,6 +63,10 @@ public sealed class AccentSwitch : FrameworkElement
         SetOn(!_isOn, animated: true);
         Toggled?.Invoke(_isOn);
     }
+
+    internal void ToggleByUser() => Toggle();
+
+    protected override AutomationPeer OnCreateAutomationPeer() => new AccentSwitchAutomationPeer(this);
 
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {

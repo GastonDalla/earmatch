@@ -6,7 +6,6 @@ using Earmatch.App.Theme;
 
 namespace Earmatch.App.Controls;
 
-/// Small factories for the views the panes are built from.
 public static class Ui
 {
     public static TextBlock Text(string text, TypeStyle style, Brush foreground, bool wraps = false)
@@ -42,7 +41,6 @@ public static class Ui
         return stack;
     }
 
-    /// A row with a leading part, flexible space and a trailing part.
     public static Grid Row(UIElement leading, UIElement? trailing, double minimumGap = Spacing.Small, VerticalAlignment alignment = VerticalAlignment.Center)
     {
         var grid = new Grid();
@@ -84,7 +82,6 @@ public static class Ui
         new(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, new Typeface(family, FontStyles.Normal, weight, FontStretches.Normal),
             size, brush, pixelsPerDip);
 
-    /// Draws text centred vertically on y, with its leading, centre or trailing edge on x.
     public static void DrawText(DrawingContext context, FormattedText text, double x, double y, TextAnchor anchor)
     {
         var left = anchor switch
@@ -104,7 +101,6 @@ public enum TextAnchor
     Trailing,
 }
 
-/// Text drawn with extra space between letters (SwiftUI's tracking), which TextBlock cannot do.
 public sealed class TrackedText : FrameworkElement
 {
     private readonly List<FormattedText> _glyphs = [];

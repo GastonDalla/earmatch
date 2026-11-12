@@ -12,10 +12,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Capture;
 
-/// `Earmatch --capture-frame <folder>`: captures one frame of rekordbox's main window the way the overlays do, saves
-/// it as frame.png with frame.txt beside it (the window, visible and client rectangles, the frame's size, and what the
-/// analyser reads with the frame placed at the visible rectangle, where Windows.Graphics.Capture puts it), and exits:
-/// 0 with a frame, 1 without. It checks the capture origin against the decks UI Automation locates.
 internal static class CaptureFrameCommand
 {
     public const string Flag = "--capture-frame";

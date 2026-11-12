@@ -3,8 +3,6 @@ using System.IO.Compression;
 
 namespace Earmatch.Core.Tests;
 
-/// Decodes the 8-bit, non-interlaced RGB and RGBA PNG fixtures into RGBA bytes, with the base library only. Colour
-/// profiles are ignored, as the macOS tests draw each image in its own colour space: the bytes are the stored values.
 static class Png
 {
     static readonly byte[] Signature = [137, 80, 78, 71, 13, 10, 26, 10];

@@ -2,8 +2,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App;
 
-/// The main window's and the tray menu's texts. Keys are the macOS English texts; where macOS names its keys
-/// (⌘, ⌥, Command, Option) Windows has its own key with the Windows shortcuts.
 public static class WindowText
 {
     public const string ToggleKeys = "Ctrl+Alt+Win+E";
@@ -45,6 +43,7 @@ public static class WindowText
     public static string Sections => L10n.Text("Sections");
     public static string Independence => L10n.Text("Independent utility. Not affiliated with AlphaTheta, Pioneer DJ or rekordbox.");
     public static string DevelopmentBuild => L10n.Text("development build");
+    public static string ToggleSwitch => L10n.Text("toggle switch");
 
     public static string Sample(string visible) => L10n.Format("Sample: BPM reads %@", visible);
     public static string Status(string title) => L10n.Format("Status: %@", title);
@@ -68,13 +67,11 @@ public static class WindowText
     public static string WaveformSplitPreview => L10n.Text("Preview: each deck's waveform in its own half with its own playhead");
     public static string WaveformHiddenPreview => L10n.Text("Preview: both waveforms hidden");
 
-    /// Joins the shortcut's keys with word joiners so a wrapped line never splits "Ctrl+Alt+Win+E".
     public static string KeepTogether(string text) => text.Replace(ToggleKeys, string.Join("\u2060+\u2060", ToggleKeys.Split('+')), StringComparison.Ordinal);
 
     public static string CounterHelp(CounterStyle style) => $"{style.Title}: {style.Explanation}";
 }
 
-/// The credit line of the About card and the tray menu.
 public static class Credit
 {
     public const string Author = "GastonDalla";
@@ -85,7 +82,6 @@ public static class Credit
     public static string MenuLine => $"{Line} · {DisplayUrl}";
     public static string Help => L10n.Format("Made by %@. Opens %@ in your browser", Author, DisplayUrl);
 
-    /// The line around the author's name, which the About card shows in the accent colour.
     public static (string Before, string After) Parts
     {
         get

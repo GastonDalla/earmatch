@@ -8,8 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Controls;
 
-/// A card of the macOS window: rounded 14, the card fill and a hairline, an optional spaced-out title with an
-/// accessory on its right, and its content 10 apart.
 public static class PaneCard
 {
     public static Border Make(string? title, UIElement? accessory, params UIElement?[] content)
@@ -23,7 +21,6 @@ public static class PaneCard
         return Wrap(stack);
     }
 
-    /// A card that fills its column's height, with content at the top and a footer at the bottom.
     public static Border Filling(string? title, UIElement? accessory, UIElement body, UIElement? footer)
     {
         var grid = new Grid();
@@ -76,7 +73,6 @@ public static class PaneCard
     }
 }
 
-/// The status line at the bottom of a card: a tone dot and monospaced text, with an optional trailing view.
 public sealed class CardStatusRow : Grid
 {
     private readonly System.Windows.Shapes.Ellipse _dot = new() { Width = 7, Height = 7, VerticalAlignment = VerticalAlignment.Top };
@@ -122,11 +118,8 @@ public static class Parts
         return block;
     }
 
-    /// The room SwiftUI's HStack(spacing: 16) { texts; Spacer(minLength: 8); switch } leaves between the texts and the
-    /// switch: two gaps and the spacer, which is where the macOS subtitles wrap.
     private const double SwitchRowGap = Spacing.Medium * 2 + Spacing.Small;
 
-    /// A title, an optional subtitle, and the switch on the right.
     public static (Grid Row, AccentSwitch Switch) SwitchRow(string title, string? subtitle, string? hint = null)
     {
         var texts = Ui.VStack(2, Ui.Text(title, TypeStyle.Headline, WindowTheme.PrimaryText),
@@ -162,7 +155,6 @@ public static class Parts
         return chip;
     }
 
-    /// The black screen the previews draw in.
     public static Border PreviewScreen(double height, UIElement content) => new()
     {
         Height = height,
@@ -174,8 +166,6 @@ public static class Parts
     };
 }
 
-/// The PREVIEW title (or the LIVE chip while rekordbox is mirrored) and the eye that, held down, shows rekordbox
-/// unchanged.
 public sealed class PreviewPeekControl : Border
 {
     private readonly TextBlock _unchanged = Ui.Text(WindowText.Unchanged, TypeStyle.Label, WindowTheme.SecondaryText);
@@ -258,12 +248,13 @@ public enum ActionKind
     Link,
 }
 
-/// The buttons of the macOS window: a lime accent button, a hairline pill, or an inline link.
 public sealed class ActionButton : Border
 {
     private readonly ActionKind _kind;
     private readonly Action _action;
     private bool _isPressed;
+
+    public ActionKind Kind => _kind;
 
     public ActionButton(ActionKind kind, string accessibilityText, Action action, UIElement label)
     {
@@ -385,4 +376,8 @@ public sealed class ActionButton : Border
             e.Handled = true;
         }
     }
+
+    internal void InvokeByUser() => _action();
+
+    protected override System.Windows.Automation.Peers.AutomationPeer OnCreateAutomationPeer() => new ActionButtonAutomationPeer(this);
 }

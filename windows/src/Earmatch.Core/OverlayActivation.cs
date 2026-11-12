@@ -11,8 +11,6 @@ public enum OverlayActivationKind
     Active,
 }
 
-/// Whether the overlays can run on rekordbox, and what the user should do when they cannot. Windows needs no
-/// Accessibility or Screen Recording permission, so the macOS accessibilityMissing state has no counterpart.
 public sealed record OverlayActivation
 {
     private OverlayActivation(OverlayActivationKind kind, RekordboxMode mode = RekordboxMode.Unknown, string? layoutName = null)
@@ -24,10 +22,8 @@ public sealed record OverlayActivation
 
     public OverlayActivationKind Kind { get; }
 
-    /// The mode rekordbox is in, for WrongMode.
     public RekordboxMode Mode { get; }
 
-    /// The layout rekordbox shows, for WrongLayout.
     public string? LayoutName { get; }
 
     public static OverlayActivation RekordboxNotRunning { get; } = new(OverlayActivationKind.RekordboxNotRunning);
