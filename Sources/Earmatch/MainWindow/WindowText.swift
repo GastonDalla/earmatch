@@ -3,6 +3,10 @@ import Foundation
 
 enum WindowText {
     static var permissions: String { L10n.text("PERMISSIONS") }
+    static var gateTitle: String { L10n.text("Two permissions before you start") }
+    static var gateExplanation: String {
+        L10n.text("Earmatch only reads rekordbox and never controls it. Allow both in System Settings and the options open here.")
+    }
     static var liveDecks: String { L10n.text("LIVE DECKS") }
     static var bpmPrecisionSection: String { L10n.text("BPM PRECISION") }
     static var waveformSection: String { L10n.text("WAVEFORM") }
@@ -21,8 +25,6 @@ enum WindowText {
     static var restart: String { L10n.text("Restart Earmatch") }
     static var allowed: String { L10n.text("Allowed") }
     static var openSettings: String { L10n.text("Open Settings") }
-    static var permissionMissing: String { L10n.text("A permission is missing, so Earmatch can't read rekordbox yet.") }
-    static var openSetup: String { L10n.text("Open Setup") }
     static var limitBPM: String { L10n.text("Limit BPM display") }
     static var limitBPMSubtitle: String { L10n.text("Covers the jog BPM's digits, so you match by ear") }
     static var bpmPrecision: String { L10n.text("BPM precision") }

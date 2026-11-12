@@ -11,10 +11,6 @@ struct LivePane: View {
             ConnectionChip(line: StatusText.connection(model.status))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                if model.arePermissionsMissing {
-                    PermissionBanner(openSetup: { model.select(.setup) })
-                        .transition(.opacity)
-                }
                 HStack(alignment: .top, spacing: 12) {
                     EnableCard(model: model)
                     BoothCard(model: model)
@@ -31,7 +27,6 @@ struct LivePane: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(WindowText.hotkeysSpoken)
             }
-            .animation(WindowTheme.motion(reduceMotion, duration: 0.25), value: model.arePermissionsMissing)
             .animation(WindowTheme.motion(reduceMotion), value: model.settings.isEnabled)
         }
     }
@@ -58,31 +53,6 @@ struct ConnectionChip: View {
         .animation(WindowTheme.motion(reduceMotion), value: line)
         .help(line.text)
         .accessibilityElement(children: .combine)
-    }
-}
-
-private struct PermissionBanner: View {
-    let openSetup: () -> Void
-
-    var body: some View {
-        HStack(spacing: Spacing.medium) {
-            Image(systemName: "exclamationmark.shield.fill")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(WindowTheme.waiting)
-                .accessibilityHidden(true)
-            Text(WindowText.permissionMissing)
-                .font(TypeScale.bodyStrong)
-                .foregroundStyle(WindowTheme.primaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: Spacing.small)
-            ActionButton(kind: .accent, accessibilityText: WindowText.openSetup, action: openSetup) {
-                Text(WindowText.openSetup)
-            }
-        }
-        .padding(.horizontal, Spacing.medium)
-        .padding(.vertical, 10)
-        .surface(cornerRadius: 12, fill: WindowTheme.waiting.opacity(0.12), stroke: WindowTheme.waiting.opacity(0.3))
-        .accessibilityElement(children: .contain)
     }
 }
 

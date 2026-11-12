@@ -18,6 +18,16 @@ import EarmatchCore
         #expect(line == StatusLine(tone: .waiting, text: OverlayActivation.accessibilityMissing.message))
     }
 
+    @Test func connectionAsksForScreenRecordingBeforeConnecting() {
+        let line = StatusText.connection(context(.screenRecordingMissing, screenRecording: false))
+        #expect(line == StatusLine(tone: .waiting, text: "Allow Earmatch in Privacy & Security › Screen Recording"))
+    }
+
+    @Test func thePermissionsScreenSaysWhenEarmatchStarts() {
+        #expect(StatusText.permissions(isWaiting: true) == StatusLine(tone: .waiting, text: "Earmatch starts once both are allowed"))
+        #expect(StatusText.permissions(isWaiting: false) == StatusLine(tone: .live, text: "Both allowed. Starting Earmatch…"))
+    }
+
     @Test func connectionWaitsForRekordbox() {
         #expect(StatusText.connection(context(.rekordboxNotRunning)) == StatusLine(tone: .waiting, text: "Waiting for rekordbox 7"))
     }

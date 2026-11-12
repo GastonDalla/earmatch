@@ -36,21 +36,23 @@ Run the tests with `swift test`.
 ## First run
 
 1. Move `Earmatch.app` to `/Applications` first. macOS ties the permissions to the app's location.
-2. Open Earmatch. Its window opens on **Setup**, which lists the permissions it still needs:
+2. Open Earmatch. Until both permissions are allowed its window shows only the permissions screen, and nothing else works: the overlays stay hidden, the hotkeys are off, and the menu bar menu only offers to allow the missing permissions, open the window or quit. Earmatch shows no system prompt at launch; it asks from that screen. The two permissions:
    - **Accessibility**: finds rekordbox's decks, labels and window position, and lets the hotkeys work.
    - **Screen Recording**: sees the rekordbox window's waveforms and BPM digits. Only the rekordbox window is captured.
-3. Click **Open Settings** next to each one and turn Earmatch on in System Settings › Privacy & Security. The window re-checks every second and turns each row green once it is allowed.
+3. Click **Open Settings** next to each one and turn Earmatch on in System Settings › Privacy & Security. The window re-checks every second, turns each row green once it is allowed, and opens on **Setup** a moment after both are.
 4. If macOS asks you to quit and reopen Earmatch, click **Restart Earmatch**.
+
+If you later turn either permission off, Earmatch locks again and the window goes back to the permissions screen.
 
 Running the binary from a terminal uses the terminal's permissions instead of the app's.
 
-While the window is open Earmatch shows a Dock icon and its own menu bar; closing the window keeps Earmatch running in the menu bar only. Choose **Open Earmatch…** from the menu bar icon (or open the app again) to bring it back. The window reopens where you left it, on the section you used last (on **Setup** while a permission is missing).
+While the window is open Earmatch shows a Dock icon and its own menu bar; closing the window keeps Earmatch running in the menu bar only. Choose **Open Earmatch…** from the menu bar icon (or open the app again) to bring it back. The window reopens where you left it, on the section you used last (on the permissions screen while a permission is missing).
 
 ## The window
 
-The window has a sidebar with four sections, and each one fits on a 13-inch MacBook without scrolling (the window is 1040 × 700 points by default and at least 940 × 640). The sidebar also shows whether Earmatch is live, off, waiting for rekordbox or missing a permission.
+The window has a sidebar with four sections, and each one fits on a 13-inch MacBook without scrolling (the window is 1040 × 700 points by default and at least 940 × 640). The sidebar also shows whether Earmatch is live, off or waiting for rekordbox.
 
-- **Live**: **Enable Earmatch**, the **BOOTH** presets, **LIVE DECKS** and the hotkeys. A banner leads to Setup while a permission is missing.
+- **Live**: **Enable Earmatch**, the **BOOTH** presets, **LIVE DECKS** and the hotkeys.
 - **Overlay**: **BPM PRECISION**, **WAVEFORM** and **PHASE METER**, each with its options, preview and status line.
 - **Practice**: the **Mix trainer** switch, the mix being timed, the last mix, its replay and your progress.
 - **Setup**: the permissions, the **LANGUAGE** selector, the hotkeys, **Check for Updates…** (in released builds), **Copy Diagnostics**, **Quit Earmatch** and the credit.
@@ -58,15 +60,15 @@ The window has a sidebar with four sections, and each one fits on a 13-inch MacB
 Switch sections with **Command-1** to **Command-4** (also in the **View** menu), or with **Up** and **Down** while the sidebar has focus.
 
 - **LIVE DECKS** mirrors the decks while rekordbox is in front (two or four, as in your layout): deck number, track title, a **SYNC MASTER** chip on the master deck, and each deck's phase meter in the type you chose, drawn exactly as the overlay draws it. Its status line shows the frame rate and the capture-to-screen latency (`Live · 112 fps · 2.1 ms`), or what Earmatch is waiting for.
-- Every option has a one-line explanation under it, and each card ends with a status line that says what Earmatch is waiting for (permissions, rekordbox, layout, a capture problem) or that it is live.
+- Every option has a one-line explanation under it, and each card ends with a status line that says what Earmatch is waiting for (rekordbox, layout, a capture problem) or that it is live.
 - Every control works from the keyboard: **Tab** moves between switches, option pickers and buttons (a lime ring marks the focused one), **Space** flips a switch or presses a button, **Left** and **Right** change a picker's option, and holding **Space** on a preview's eye icon shows that preview without Earmatch. VoiceOver reads each control as the native switch, segmented control or button it stands for.
 
 ## Options
 
-All options are in the window and in the menu bar menu, and apply immediately.
+Once both permissions are allowed, all options are in the window and in the menu bar menu, and apply immediately.
 
 - **Enable Earmatch**: turns every overlay on or off.
-- **BPM PRECISION**: **Limit BPM display** covers part of the BPM in each jog centre, which includes the pitch. **One decimal** reads `127.2` for `127.22`, **No decimals** reads `127`, **Cover fully** hides it. The track's original BPM in the deck header stays visible. Without Screen Recording, an enabled limit covers the BPM fully.
+- **BPM PRECISION**: **Limit BPM display** covers part of the BPM in each jog centre, which includes the pitch. **One decimal** reads `127.2` for `127.22`, **No decimals** reads `127`, **Cover fully** hides it. The track's original BPM in the deck header stays visible.
 - **WAVEFORM**: **Normal** leaves rekordbox's stacked waveform alone. **Split** shows each deck in its own half with its own centred playhead, so the beat grids cannot be lined up by eye. **Hide Both** blacks out both waveforms.
 - **PHASE METER**: an on/off switch and two looks. **Type 1 (Box)** shows four boxes per bar, as on the XDJ-1000 and CDJ-2000NXS. **Type 2 (Line)** shows scrolling beat lines around a centre line, as on the CDJ-3000. The master deck is orange and the other deck blue, with a bar counter such as `06.3 Bars` for each. In Split and Hide Both the meters sit above each deck's half; in Normal each deck's meter sits on a small dark band at the top of its waveform.
 
@@ -86,13 +88,13 @@ Translations live in `Support/en.lproj` and `Support/es.lproj`. `swift test` fai
 | --- | --- |
 | Hold **Right Option** | Peek: shows rekordbox unchanged while held |
 | **Control-Option-Command-E** | Turn Earmatch on or off |
-| **Command-1** to **Command-4** | Show Live, Overlay, Practice or Setup (while the window is in front) |
+| **Command-1** to **Command-4** | Show Live, Overlay, Practice or Setup (while the window is in front, once both permissions are allowed) |
 
-The peek starts only when Right Option is pressed on its own, and ends when you press any other key with it. The peek and on/off hotkeys need the Accessibility permission, and start working as soon as it is granted, without restarting Earmatch. Earmatch only observes keys; rekordbox still receives every key you press.
+The peek starts only when Right Option is pressed on its own, and ends when you press any other key with it. The peek and on/off hotkeys work once both permissions are allowed, without restarting Earmatch, and stop if either is turned off. Earmatch only observes keys; rekordbox still receives every key you press.
 
 ## Diagnostics
 
-- **Copy Diagnostics** (in the window's Setup section and the menu bar menu) copies a plain-text report to the clipboard: Earmatch, macOS and rekordbox versions, Mac model and architecture, permission status, the current status line and your settings, then the capture pipeline's numbers (capture status, whether the stacked waveform was found, frame rate, analysis time, capture-to-screen latency) and each deck's beat-grid reading. It contains no track titles or other personal data. Paste it into a bug report.
+- **Copy Diagnostics** (in the window's Setup section and the menu bar menu, once both permissions are allowed) copies a plain-text report to the clipboard: Earmatch, macOS and rekordbox versions, Mac model and architecture, permission status, the current status line and your settings, then the capture pipeline's numbers (capture status, whether the stacked waveform was found, frame rate, analysis time, capture-to-screen latency) and each deck's beat-grid reading. It contains no track titles or other personal data. Paste it into a bug report.
 - `Earmatch --dump-ax` prints rekordbox's main window as a JSON snapshot (the test-fixture format) on stdout and what Earmatch located in it on stderr. Use it to support a new rekordbox version:
 
   ```sh
@@ -113,7 +115,7 @@ Released builds connect to the network only for updates (Sparkle): each time you
 
 ## Credits
 
-Made by [GastonDalla](https://github.com/GastonDalla). The credit is also in the window's Setup section, in **About Earmatch** (menu bar menu and app menu) and in the app's copyright.
+Made by [GastonDalla](https://github.com/GastonDalla). The credit is also in the window's Setup section and permissions screen, in **About Earmatch** (app menu, and the menu bar menu once both permissions are allowed) and in the app's copyright.
 
 ## Independence
 

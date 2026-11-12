@@ -2,7 +2,8 @@ import AppKit
 import CoreGraphics
 
 enum Permissions {
-    static var isScreenRecordingGranted: Bool { CGPreflightScreenCaptureAccess() }
+    /// Takes several milliseconds per call (about 8 ms measured), so frequent checks run off the main thread.
+    nonisolated static var isScreenRecordingGranted: Bool { CGPreflightScreenCaptureAccess() }
 
     static func openAccessibilitySettings() {
         open("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")

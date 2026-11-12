@@ -17,7 +17,8 @@ struct SetupPane: View {
     }
 }
 
-private struct PermissionsCard: View {
+/// Also the heart of the permissions screen the window shows until both are allowed.
+struct PermissionsCard: View {
     let model: MainWindowModel
 
     var body: some View {
@@ -133,7 +134,6 @@ private struct HotkeysCard: View {
 private struct AboutCard: View {
     let model: MainWindowModel
     @State private var didCopy = false
-    @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -169,21 +169,7 @@ private struct AboutCard: View {
                 }
                 .padding(.top, Spacing.large)
                 Spacer(minLength: Spacing.large)
-                ActionButton(kind: .link, accessibilityText: WindowText.creditHelp, action: { openURL(Credit.url) }) {
-                    HStack(spacing: 5) {
-                        creditLine
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(WindowTheme.accent.opacity(0.8))
-                    }
-                    .font(TypeScale.body)
-                }
-                Text(WindowText.independence)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(WindowTheme.sectionText)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, Spacing.tight)
+                CreditLines()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, Spacing.small)
@@ -196,16 +182,40 @@ private struct AboutCard: View {
         }
     }
 
+    private func copy() {
+        model.onCopyDiagnostics()
+        withAnimation(WindowTheme.motion(reduceMotion, duration: 0.15)) { didCopy = true }
+    }
+}
+
+/// The credit link and the independence line, shown in the About card and on the permissions screen.
+struct CreditLines: View {
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(spacing: Spacing.tight) {
+            ActionButton(kind: .link, accessibilityText: WindowText.creditHelp, action: { openURL(Credit.url) }) {
+                HStack(spacing: 5) {
+                    creditLine
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(WindowTheme.accent.opacity(0.8))
+                }
+                .font(TypeScale.body)
+            }
+            Text(WindowText.independence)
+                .font(.system(size: 11.5))
+                .foregroundStyle(WindowTheme.sectionText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private var creditLine: Text {
         let before = Text(WindowText.credit.before).foregroundStyle(WindowTheme.secondaryText)
         let author = Text(Credit.author).fontWeight(.semibold).foregroundStyle(WindowTheme.accent)
         let after = Text(WindowText.credit.after).foregroundStyle(WindowTheme.secondaryText)
         let line: LocalizedStringKey = "\(before)\(author)\(after)"
         return Text(line)
-    }
-
-    private func copy() {
-        model.onCopyDiagnostics()
-        withAnimation(WindowTheme.motion(reduceMotion, duration: 0.15)) { didCopy = true }
     }
 }

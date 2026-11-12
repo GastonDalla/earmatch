@@ -52,7 +52,11 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     func show() {
         let window = window ?? makeWindow()
         self.window = window
-        if !window.isVisible { model.windowDidOpen() }
+        if !window.isVisible {
+            // The model skips monitor updates while the window is hidden; catch up before deciding whether it opens locked.
+            applyState()
+            model.windowDidOpen()
+        }
         startPermissionChecks()
         installMenus(replacing: false)
         if NSApp.activationPolicy() != .regular { NSApp.setActivationPolicy(.regular) }
