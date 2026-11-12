@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Earmatch.App/Earmatch.App.csproj" />
+    <Project Path="src/Earmatch.Core/Earmatch.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Earmatch.Core.Tests/Earmatch.Core.Tests.csproj" />
+  </Folder>
+</Solution>
