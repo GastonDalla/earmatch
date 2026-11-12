@@ -1,12 +1,7 @@
 namespace Earmatch.Core;
 
-/// A deck's phase as a frame left it: when, where in the bar, at what tempo, and whether it was measured (Live) or
-/// held by the tracker.
 public readonly record struct PhaseAnchor(double Time, double? PhaseInBar, double? BeatsPerSecond, bool IsMeasured);
 
-/// Draws a deck's phase at each screen refresh, between and slightly past the captured frames: it extrapolates the last
-/// measured phase at the measured tempo and eases the drawn phase towards it, so the meter moves smoothly, never steps
-/// back while playing and jumps only on a seek.
 public sealed class PhasePredictor
 {
     public const double MaxExtrapolation = PhaseTracker.HoldDuration + 0.05;
@@ -39,14 +34,12 @@ public sealed class PhasePredictor
         _drawn = null;
     }
 
-    /// Where the deck is at the time, from the last measurement; none once that is too old.
     public double? PredictedPhase(double time)
     {
         if (_measured is not { } measured || time - measured.Time > MaxExtrapolation) return null;
         return Numbers.PositiveModulo(measured.Phase + (measured.BeatsPerSecond ?? 0) * Math.Max(0, time - measured.Time), BeatGridDetector.BeatsPerBar);
     }
 
-    /// The phase to draw at the time, eased from the previous drawn phase towards the prediction.
     public double? Phase(double time)
     {
         if (PredictedPhase(time) is not { } target)

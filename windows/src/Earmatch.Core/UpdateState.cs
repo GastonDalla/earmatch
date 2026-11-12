@@ -4,16 +4,13 @@ namespace Earmatch.Core;
 
 public enum UpdatePhase
 {
-    /// No updates: a development build, or a feed that cannot be used.
     Off,
     Idle,
     Checking,
     UpToDate,
 
-    /// A newer version was found and the user has not seen it yet: the menus say "Update Available…".
     Available,
 
-    /// The user saw the newer version and chose Later.
     Postponed,
     Skipped,
     Downloading,
@@ -21,24 +18,18 @@ public enum UpdatePhase
     Failed,
 }
 
-/// The updater's state for the tray menu, the Setup pane and Copy Diagnostics (AppUpdater.swift's menu title and
-/// pending reminder on macOS).
 public sealed record UpdateState
 {
     private UpdateState(UpdatePhase phase) => Phase = phase;
 
     public UpdatePhase Phase { get; private init; }
 
-    /// The release channel the installed copy follows (win-x64 or win-arm64).
     public string? Channel { get; private init; }
 
-    /// Where the updates come from, as the diagnostics name it.
     public string? Feed { get; private init; }
 
-    /// The newer version that was found.
     public string? Version { get; private init; }
 
-    /// Why updates are off, or what went wrong.
     public string? Problem { get; private init; }
 
     public DateTimeOffset? LastCheck { get; private init; }
@@ -68,13 +59,10 @@ public sealed record UpdateState
 
     public UpdateState Restarting() => this with { Phase = UpdatePhase.Restarting };
 
-    /// The download failed: the version stays named in the diagnostics, and the next check finds it again.
     public UpdateState DownloadFailed(string problem) => this with { Phase = UpdatePhase.Failed, Problem = problem };
 
-    /// Whether a newer version waits to be installed.
     public bool HasUpdate => Phase is UpdatePhase.Available or UpdatePhase.Postponed;
 
-    /// Development builds show no update item, as macOS hides it without a public key.
     public bool ShowsMenuItem => Phase != UpdatePhase.Off;
 
     public bool IsMenuItemEnabled => Phase is not (UpdatePhase.Off or UpdatePhase.Downloading or UpdatePhase.Restarting);
@@ -86,7 +74,6 @@ public sealed record UpdateState
         _ => L10n.Text("Check for Updates…"),
     };
 
-    /// The diagnostics report's line, always in English.
     public string DiagnosticsLine
     {
         get

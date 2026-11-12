@@ -2,7 +2,6 @@ using System.Globalization;
 
 namespace Earmatch.Core;
 
-/// The practice pane's numbers and lines, in the user's language and number format (PracticeStrings on macOS).
 public static class PracticeText
 {
     public const string NoValue = "—";
@@ -25,7 +24,6 @@ public static class PracticeText
         return (number > 0 ? "+" + text : text) + " BPM";
     }
 
-    /// Minutes and seconds, as "1:10"; past an hour the minutes keep counting.
     public static string Duration(double seconds)
     {
         var total = (long)Math.Max(0, Numbers.Round(seconds));
@@ -61,7 +59,6 @@ public static class PracticeText
     public static string StatusWaiting(int savedMixes) =>
         savedMixes == 0 ? L10n.Text("Waiting for both decks to play") : L10n.Plural("Waiting for both decks · %ld mixes saved", savedMixes);
 
-    /// "Today", or the day as a short date ("Nov 1", "1 nov").
     public static string ShortDay(DateTimeOffset day, DateTimeOffset now, TimeZoneInfo zone)
     {
         var local = TimeZoneInfo.ConvertTime(day, zone).DateTime;
@@ -72,7 +69,6 @@ public static class PracticeText
         return monthFirst ? $"{month} {local.Day}" : $"{local.Day} {month}";
     }
 
-    /// The time a mix ended: the time alone today, the day and time before.
     public static string EndTime(DateTimeOffset date, DateTimeOffset now, TimeZoneInfo zone)
     {
         var local = TimeZoneInfo.ConvertTime(date, zone).DateTime;

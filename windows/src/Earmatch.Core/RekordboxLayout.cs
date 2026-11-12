@@ -26,7 +26,6 @@ public static class DeckArrangementMembers
 {
     extension(DeckArrangement arrangement)
     {
-        /// The layout name rekordbox shows in its layout menu.
         public string RawValue => arrangement switch
         {
             DeckArrangement.TwoDeckHorizontal => "2Deck Horizontal",
@@ -40,7 +39,6 @@ public static class DeckArrangementMembers
         public StripOrientation Orientation =>
             arrangement is DeckArrangement.TwoDeckHorizontal or DeckArrangement.FourDeckHorizontal ? StripOrientation.Horizontal : StripOrientation.Vertical;
 
-        /// The decks of the waveform strips, in strip order (top to bottom, or left to right).
         public IReadOnlyList<int> StripDecks => arrangement == DeckArrangement.FourDeckVertical ? [3, 1, 2, 4] : Enumerable.Range(1, arrangement.DeckCount).ToList();
     }
 
@@ -71,7 +69,6 @@ public sealed record WaveformStrip
     public ScreenRect Frame { get; }
     public StripOrientation Orientation { get; }
 
-    /// Where the beat markers are drawn: the whole strip, or in vertical layouts the part under the button bar.
     public ScreenRect MarkerArea { get; }
 
     public double Center => Orientation == StripOrientation.Horizontal ? Frame.MidX : Frame.MidY;
@@ -113,8 +110,6 @@ public sealed record DeckLayout
     public ScreenRect? WaveformStrip => Strip?.Frame;
 }
 
-/// Where rekordbox's decks, waveforms and BPM displays are on screen, read from its UI Automation tree. Scale is the
-/// screen units per rekordbox layout unit (the snapshot's DPI / 96), for distances the macOS code keeps in points.
 public sealed class RekordboxLayout : IEquatable<RekordboxLayout>
 {
     public RekordboxLayout(RekordboxMode mode, string? layoutName, ScreenRect? stackedWaveform, IEnumerable<DeckLayout> decks, double scale = 1)
@@ -140,7 +135,6 @@ public sealed class RekordboxLayout : IEquatable<RekordboxLayout>
 
     public static RekordboxLayout Locate(RekordboxWindowSnapshot snapshot) => RekordboxLocator.Locate(snapshot);
 
-    /// For each deck with a header BPM, the index of its text in the snapshot, to re-read between full reads.
     public Dictionary<int, int> HeaderBPMElementIndices(RekordboxWindowSnapshot snapshot)
     {
         var indices = new Dictionary<int, int>();
@@ -158,7 +152,6 @@ public sealed class RekordboxLayout : IEquatable<RekordboxLayout>
         return indices;
     }
 
-    /// Refreshes the decks' BPM from their header texts: a missing text keeps the BPM, an unreadable one clears it.
     public void ApplyLiveHeaderBPM(IReadOnlyDictionary<int, string> texts)
     {
         foreach (var deck in Decks)

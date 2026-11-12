@@ -11,8 +11,6 @@ public enum StatusTone
 
 public readonly record struct StatusLine(StatusTone Tone, string Text);
 
-/// What the status cards of the main window are about. Windows needs no Screen Recording grant, so a capture that
-/// cannot run is reported through CaptureProblem only.
 public sealed record StatusContext
 {
     public StatusContext(OverlayActivation activation, OverlaySettings settings, string? rekordboxVersion, string? captureProblem = null,
@@ -126,7 +124,6 @@ public static partial class StatusText
     }
 }
 
-/// How a BPM reads under a limit: the digits left visible and the digits the jog mask covers.
 public readonly record struct BPMSample(string Visible, string Covered)
 {
     public BPMSample(double bpm, BPMLimit? limit) : this("", "")

@@ -1,9 +1,5 @@
 namespace Earmatch.Core;
 
-/// A captured frame of the rekordbox window: 4 bytes per pixel, rows of BytesPerRow bytes. Origin is the screen point
-/// of pixel (0, 0) and Scale the pixels per screen unit. LayoutScale is the screen units per rekordbox layout unit (a
-/// macOS point): 1 where screen units are points, as on macOS, and the window's DPI / 96 on Windows, where screen units
-/// are physical pixels. The detectors keep the macOS distances in points and convert them with it, like the locator.
 public readonly struct PixelImage
 {
     public enum PixelLayout
@@ -46,10 +42,8 @@ public readonly struct PixelImage
     public ScreenPoint Origin { get; }
     public double LayoutScale { get; }
 
-    /// The pixels in one rekordbox layout unit (a macOS point).
     public double PixelsPerPoint => Scale * LayoutScale;
 
-    /// A macOS distance in points, in screen units.
     public double Points(double points) => points * LayoutScale;
 
     public RGB Pixel(int x, int y)
@@ -59,14 +53,10 @@ public readonly struct PixelImage
         return Layout == PixelLayout.Bgra ? new RGB(p[2], p[1], p[0]) : new RGB(p[0], p[1], p[2]);
     }
 
-    /// The column of a screen x, clamped to 0...Width: scans run from one clamped column up to another, so they stay
-    /// inside the frame.
     public int Column(double x) => Clamp((int)Math.Floor((x - Origin.X) * Scale), Width);
 
-    /// The column of a screen x, outside the frame when x is.
     public int UnclampedColumn(double x) => (int)Math.Floor((x - Origin.X) * Scale);
 
-    /// The row of a screen y, outside the frame when y is.
     public int UnclampedRow(double y) => (int)Math.Floor((y - Origin.Y) * Scale);
 
     public int Row(double y) => Clamp((int)Math.Floor((y - Origin.Y) * Scale), Height);

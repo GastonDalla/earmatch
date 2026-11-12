@@ -5,9 +5,6 @@ namespace Earmatch.Core;
 
 public delegate void SettingsChange(ref OverlaySettings settings);
 
-/// The settings file: the overlay settings under "overlaySettings" (the macOS UserDefaults key and JSON) plus small
-/// string values such as "appLanguage" and "mainWindowPane". A missing or damaged file reads as the defaults; every
-/// change is written at once, through a temporary file, and announced through Changed.
 public sealed class SettingsStore
 {
     private const string SettingsKey = "overlaySettings";

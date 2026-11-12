@@ -1,17 +1,9 @@
 namespace Earmatch.Core;
 
-/// One deck's part of the split or hidden waveform panel: its frame in the panel, the height of the waveform it shows,
-/// the strip area it copies from the frame (screen coordinates) and whether it carries the deck's phase meter.
 public sealed record WaveformOverlayPane(int Deck, ScreenRect Frame, double WaveformHeight, ScreenRect Source, bool ShowsMeter);
 
-/// What the waveform overlay draws over rekordbox's stacked waveform for a waveform mode. Horizontal layouts: Split
-/// (and Hide Both) cut the panel into a pane per deck with dividers, Normal lays a meter band over each strip. Vertical
-/// layouts keep their columns (Hide Both blacks them out) and show the meters beside them, on each deck's overview.
-/// Pane, divider and band frames are relative to the panel; the panel, sources and side meters are screen coordinates.
-/// Distances the macOS code keeps in points (the divider, the band rounding) follow the layout's scale.
 public sealed class WaveformOverlayPlan : IEquatable<WaveformOverlayPlan>
 {
-    /// The divider between panes, in points.
     public const double DividerWidth = 2;
     internal const double BandShare = 0.6;
 
@@ -33,8 +25,6 @@ public sealed class WaveformOverlayPlan : IEquatable<WaveformOverlayPlan>
     public IReadOnlyDictionary<int, ScreenRect> SideMeters { get; }
     public bool AllowsMasterWaveform { get; }
 
-    /// The plan, or null when the layout has no stacked waveform or the mode draws nothing (Normal without meters).
-    /// The band size is the meter band's size in screen units.
     public static WaveformOverlayPlan? Create(RekordboxLayout layout, WaveformMode mode, bool showsMeters, ScreenSize bandSize)
     {
         if (layout.Arrangement is not { } arrangement || layout.StackedWaveform is not { } stacked) return null;

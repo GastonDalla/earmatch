@@ -1,9 +1,5 @@
 namespace Earmatch.Core;
 
-/// Times the mixes from the live decks: a mix opens when two decks play together (the sync master, or the deck that
-/// started first, is the outgoing one), measures how fast their tempos matched and how far their beats drifted after
-/// that, and closes when one stops for a second, or when nothing is read for ten seconds. Times are seconds on the
-/// caller's clock; dateAtTimeZero dates them.
 public sealed class PracticeSession
 {
     public const double PauseTolerance = 1;
@@ -27,7 +23,6 @@ public sealed class PracticeSession
     public PracticeLiveStatus? Live { get; private set; }
     public bool IsMixing => _mix is not null;
 
-    /// Reads one snapshot of the decks; returns the mix it closed, when it closed one long enough to keep.
     public PracticeResult? Ingest(LiveDecksSnapshot snapshot, double time)
     {
         if (snapshot.Decks.Count == 0) return Advance(time);
@@ -66,7 +61,6 @@ public sealed class PracticeSession
         return finished;
     }
 
-    /// Moves the clock on without a reading; returns the open mix once nothing was read for the gap tolerance.
     public PracticeResult? Advance(double time)
     {
         if (_mix is not { } open) return null;
@@ -162,8 +156,6 @@ public sealed class PracticeSession
             return new PracticeResult(mix, new PracticeTrace(_id, LastBothPlaying - _start, secondsToMatch, _trace.ToValueList()));
         }
 
-        /// The tempos match once they stay within the tolerance for the hold time; the match counts from half the tempo
-        /// window before that run began, since the measured tempo lags the decks.
         private void UpdateMatch(double time)
         {
             if (_tempoDifference is not { } difference) return;
@@ -207,8 +199,6 @@ public sealed class PracticeSession
             _traceInterval *= 2;
         }
 
-        /// How far the incoming deck's beat is from the outgoing one's, wrapped to the nearest beat, in milliseconds of
-        /// the slave deck's beat.
         private static double? PhaseError(LiveDeckSnapshot outgoing, LiveDeckSnapshot incoming, double slaveBPM)
         {
             if (outgoing.PhaseInBar is not { } outgoingPhase || incoming.PhaseInBar is not { } incomingPhase || !(slaveBPM > 3)) return null;

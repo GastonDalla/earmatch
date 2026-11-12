@@ -2,13 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace Earmatch.Core;
 
-/// Builds the RekordboxLayout from the UI Automation snapshot of rekordbox for Windows. It ports the macOS locator
-/// (RekordboxLayout.swift): rekordbox for Windows draws the same JUCE layout as on macOS at the display scale, so every
-/// distance below is the macOS distance in points times the snapshot's scale. Differences from the macOS tree:
-/// - the waveform anchor is the zoom column's "RST" button (the macOS "Capture"/"Matching" buttons are absent);
-/// - a deck's MASTER button is the one with the "Sync Master" help (the browser has a Traffic Light MASTER button);
-/// - groups are Custom elements, static texts Text elements and the jog BPM an Edit (or Text) element;
-/// - deck columns start at the window's left edge instead of x = 0.
 internal static partial class RekordboxLocator
 {
     private const double HeaderHeight = 40;
@@ -30,7 +23,6 @@ internal static partial class RekordboxLocator
         return new RekordboxLayout(mode, layoutName, waveform?.Stacked, decks, snapshot.Scale);
     }
 
-    /// Converts the macOS point distances to the snapshot's pixels.
     private readonly record struct Units(double Scale)
     {
         public double this[double points] => points * Scale;

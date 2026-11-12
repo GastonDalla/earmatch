@@ -15,7 +15,6 @@ public sealed class WindowRenderProblem(WindowRenderProblemKind kind, string? si
 
     public WindowRenderProblemKind Kind { get; } = kind;
 
-    /// The size argument that could not be used.
     public string? Size { get; } = size;
 
     private static string Describe(WindowRenderProblemKind kind, string? size)
@@ -30,14 +29,11 @@ public sealed class WindowRenderProblem(WindowRenderProblemKind kind, string? si
     }
 }
 
-/// `Earmatch --render-window <directory> [--render-size ...]`: renders every WindowRenderShot to PNG and exits.
 public sealed record WindowRenderRequest(string Directory, WindowSize Size)
 {
     public const string Flag = "--render-window";
     public const string SizeFlag = "--render-size";
 
-    /// The request in the command line, or null when the app should start normally.
-    /// <exception cref="WindowRenderProblem">The flag is there but its arguments cannot be used.</exception>
     public static WindowRenderRequest? Parse(IReadOnlyList<string> arguments)
     {
         var flagIndex = IndexOf(arguments, Flag);
@@ -87,7 +83,6 @@ public sealed record WindowRenderRequest(string Directory, WindowSize Size)
 
 public sealed record WindowRenderShot(string FileName, MainWindowPane Pane, int DeckCount)
 {
-    /// Renders are twice the window's size in DIPs, like a 200% display (macOS renders at 2x).
     public const double Scale = 2;
 
     public static IReadOnlyList<WindowRenderShot> All { get; } =

@@ -3,7 +3,6 @@ using System.Text.Json;
 
 namespace Earmatch.Core;
 
-/// The UI Automation control types the rekordbox locator reads (rekordbox for Windows is a JUCE app).
 public enum UiaControlType
 {
     Other,
@@ -20,7 +19,6 @@ public static class UiaControlTypeMembers
 {
     extension(UiaControlType)
     {
-        /// The control type of a UI Automation programmatic name ("ControlType.Button"), Other when the locator ignores it.
         public static UiaControlType FromProgrammaticName(string? name)
         {
             var bare = name?.StartsWith("ControlType.", StringComparison.Ordinal) == true ? name["ControlType.".Length..] : name;
@@ -29,21 +27,12 @@ public static class UiaControlTypeMembers
     }
 }
 
-/// One UI Automation element of the rekordbox window: what the macOS AXElementSnapshot holds, with the Windows names
-/// (Name is the AX title, HelpText the AX help). Frame is in physical screen pixels.
 public sealed record UiaElementSnapshot(UiaControlType ControlType, ScreenRect Frame, string? Name = null, string? Value = null, string? HelpText = null);
 
-/// The rekordbox main window and its elements, in tree order. Scale is the physical pixels per rekordbox layout unit
-/// (the window's DPI / 96): the locator's distances are in layout units, like the macOS points.
 public sealed record RekordboxWindowSnapshot(ScreenRect WindowFrame, IReadOnlyList<UiaElementSnapshot> Elements, double Scale = 1);
 
-/// One node of a UI Automation dump, as windows/tools/dump-uia.ps1 -Fixture writes it: its position in the raw view
-/// (Parent is the index of its parent, -1 for a top-level window), its control type's programmatic name
-/// ("ControlType.Button"), name, first help line, value (null when it has no Value pattern) and frame in physical
-/// screen pixels (null when it has none).
 public sealed record UiaNode(int Index, int Parent, int Depth, string? ControlType, string? Name, string? HelpText, string? Value, ScreenRect? Frame)
 {
-    /// The first line of a help text without its trailing spaces: the title the locator matches ("Deck BPM display:").
     public static string? FirstLine(string? help)
     {
         if (help is null) return null;
@@ -52,21 +41,15 @@ public sealed record UiaNode(int Index, int Parent, int Depth, string? ControlTy
     }
 }
 
-/// The header of a dump: when and where it was read, and from which rekordbox.
 public sealed record UiaDumpInfo(DateTimeOffset CapturedAt, string Os, string Arch, double? Scale, int? ProcessId, string? ProcessPath,
     string? ProcessVersion);
 
-/// The JSON of windows/tools/dump-uia.ps1 (the format of the uia-*.json fixtures), which `Earmatch --dump-uia` writes
-/// too, and the rekordbox window snapshot of its nodes.
 public static class UiaDump
 {
-    /// The snapshot of the first top-level window named "rekordbox": its frame and every element under it. Empty names
-    /// and help texts become null; elements without a frame are left out.
     public static RekordboxWindowSnapshot Parse(string json, double scale) => Snapshot(ReadNodes(json), scale);
 
     public static RekordboxWindowSnapshot Snapshot(IReadOnlyList<UiaNode> nodes, double scale) => Snapshot(nodes, scale, out _);
 
-    /// The snapshot of the nodes, and for each of its elements the position of its node in `nodes`.
     public static RekordboxWindowSnapshot Snapshot(IReadOnlyList<UiaNode> nodes, double scale, out IReadOnlyList<int> positions)
     {
         var window = nodes.FirstOrDefault(node => node.Depth == 0 && node.ControlType == "ControlType.Window" && node.Name == "rekordbox")
@@ -97,8 +80,6 @@ public static class UiaDump
             .ToList();
     }
 
-    /// The dump of the nodes, one node per line like the fixtures. Non-ASCII text is escaped, so the JSON reads the same
-    /// whatever code page the console that shows it uses.
     public static string Write(UiaDumpInfo info, IReadOnlyList<UiaNode> nodes)
     {
         var header = Json(writer =>

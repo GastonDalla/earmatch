@@ -5,27 +5,15 @@ using IOPath = System.IO.Path;
 
 namespace Earmatch.Core;
 
-/// What loading the practice history found: the history, and for a file that could not be used, why (Problem) and
-/// where it was kept (QuarantinedPath), so the next save does not overwrite it. IsFileInTheWay says the unusable file
-/// is still at the history's path (it could not be read, or it is corrupt and could not be moved aside): saving would
-/// overwrite it, so nothing must be saved.
 public sealed record LoadedPracticeHistory(PracticeHistory History, string? QuarantinedPath = null, string? Problem = null,
     bool IsFileInTheWay = false);
 
-/// The practice history file, in the macOS app's format (PracticeHistoryFile.swift, Swift's JSONEncoder with sorted
-/// keys): {"lastTrace", "mixes", "version": 1}, dates as seconds since 2001-01-01, upper-case UUIDs, trace samples as
-/// "t" and "e", and no key for a missing value. A file that cannot be decoded, or comes from a newer version, is
-/// renamed to "practice.corrupt-<UTC time>.json" and the history starts empty; one that cannot be renamed either is left
-/// in place and reported as in the way (PracticeStore then saves nothing over it). A file that cannot be read (another
-/// program holds it, or it may not be opened) is not known to be corrupt: it is left in place, reported as unreadable
-/// and in the way, and the history starts empty.
 public sealed class PracticeHistoryFile
 {
     public const int FormatVersion = 1;
 
     private static readonly DateTimeOffset ReferenceDate = new(2001, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-    /// The dates a DateTimeOffset holds (years 1 to 9999), in seconds since the reference date.
     private static readonly double EarliestSeconds = (DateTimeOffset.MinValue - ReferenceDate).TotalSeconds + 1;
     private static readonly double LatestSeconds = (DateTimeOffset.MaxValue - ReferenceDate).TotalSeconds - 1;
 
@@ -58,7 +46,6 @@ public sealed class PracticeHistoryFile
         }
     }
 
-    /// Renames a corrupt file so the fresh history saved next does not overwrite it.
     private LoadedPracticeHistory KeepAside(string problem, DateTimeOffset? now)
     {
         try
@@ -73,7 +60,6 @@ public sealed class PracticeHistoryFile
         }
     }
 
-    /// Writes the history through a temporary file in the same folder, creating the folder when needed.
     public void Save(PracticeHistory history)
     {
         var directory = IOPath.GetDirectoryName(IOPath.GetFullPath(Path))!;
@@ -117,7 +103,6 @@ public sealed class PracticeHistoryFile
         ("mixID", Uuid(trace.MixID)),
         ("samples", new JsonArray(trace.Samples.Select(sample => (JsonNode?)Sorted(("e", sample.ErrorMilliseconds), ("t", sample.Seconds))).ToArray())));
 
-    /// An object with the keys in ordinal order and no key for a missing value, like Swift's sorted-keys encoding.
     private static JsonObject Sorted(params (string Key, JsonNode? Value)[] entries)
     {
         var result = new JsonObject();

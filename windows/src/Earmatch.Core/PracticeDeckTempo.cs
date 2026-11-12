@@ -1,7 +1,5 @@
 namespace Earmatch.Core;
 
-/// A deck's tempo for the mix trainer: the slope of its unwrapped beats over the last two seconds of play. A jump the
-/// deck's own tempo cannot explain (a seek, a lost frame) starts the measurement over.
 internal sealed class PracticeDeckTempo
 {
     internal const double Window = 2;
@@ -14,7 +12,6 @@ internal sealed class PracticeDeckTempo
     private readonly List<Sample> _samples = [];
     private double? _lastPhase;
 
-    /// When the deck started playing, on the session's clock; none while it is stopped.
     public double? PlayingSince { get; private set; }
 
     public void Add(LiveDeckSnapshot deck, double time)
@@ -53,7 +50,6 @@ internal sealed class PracticeDeckTempo
         }
     }
 
-    /// The least-squares tempo, once at least eight samples span a second.
     public double? BeatsPerMinute
     {
         get

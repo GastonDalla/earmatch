@@ -1,6 +1,5 @@
 namespace Earmatch.Core;
 
-/// One timed transition: how long both decks played together, how fast the tempos matched and how far the beats drifted.
 public sealed record PracticeMix(
     Guid Id,
     DateTimeOffset StartedAt,
@@ -15,7 +14,6 @@ public sealed record PracticeMix(
 
 public readonly record struct PracticeTraceSample(double Seconds, double ErrorMilliseconds);
 
-/// The phase error over the last transition, for its replay.
 public sealed record PracticeTrace(Guid MixID, double DurationSeconds, double? MatchedAtSeconds, ValueList<PracticeTraceSample> Samples)
 {
     public double? ErrorMilliseconds(double seconds)
@@ -40,7 +38,6 @@ public sealed record PracticeTrace(Guid MixID, double DurationSeconds, double? M
         return before.ErrorMilliseconds + (after.ErrorMilliseconds - before.ErrorMilliseconds) * (seconds - before.Seconds) / span;
     }
 
-    /// The largest error once the tempos matched; none when they never did.
     public PracticeTraceSample? WorstSample
     {
         get
@@ -59,7 +56,6 @@ public sealed record PracticeTrace(Guid MixID, double DurationSeconds, double? M
 
 public sealed record PracticeResult(PracticeMix Mix, PracticeTrace Trace);
 
-/// The transition being timed right now.
 public sealed record PracticeLiveStatus(
     int OutgoingDeck,
     int IncomingDeck,

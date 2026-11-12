@@ -1,6 +1,5 @@
 namespace Earmatch.Core;
 
-/// The one-line guides of the options, shown under each choice in the main window.
 public static class OptionExplanations
 {
     extension(BPMLimit limit)
@@ -45,7 +44,6 @@ public static class OptionExplanations
 
     extension(BoothPreset preset)
     {
-        /// The player's name as printed on it: never translated.
         public string DisplayName => preset switch
         {
             BoothPreset.Cdj3000 => "CDJ-3000",
