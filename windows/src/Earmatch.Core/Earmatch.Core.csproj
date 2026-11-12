@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Localization\*.json" LogicalName="Earmatch.Core.Localization.%(Filename).json" />
+  </ItemGroup>
+
 </Project>
