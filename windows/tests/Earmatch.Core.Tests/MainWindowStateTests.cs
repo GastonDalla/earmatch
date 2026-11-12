@@ -224,4 +224,65 @@ public sealed class MainWindowStateTests : IDisposable
         Assert.False(Sample(Decks((1, 1.25), (2, 3.5)), off).IsMirroringDecks);
         Assert.Equal(MainWindowStatus.Off, Sample(Decks(), off).WindowStatus);
     }
+
+    [Fact]
+    public void LiveDecksFromRekordboxAreShownOnceAndAnnounced()
+    {
+        var state = new MainWindowState(new SettingsStore(FilePath), RunNow);
+        var changes = 0;
+        state.Changed += () => changes++;
+        state.Apply(OverlayActivation.Active, "7.2.19", "2Deck Horizontal");
+        var decks = new LiveDecksSnapshot([new LiveDeckSnapshot(1, "Breaks 1", false, null), new LiveDeckSnapshot(2, "House 3", false, null)], 0, 0);
+
+        state.ApplyLive(decks);
+        state.ApplyLive(new LiveDecksSnapshot([new LiveDeckSnapshot(1, "Breaks 1", false, null), new LiveDeckSnapshot(2, "House 3", false, null)], 0, 0));
+
+        Assert.Equal(2, changes);
+        Assert.Equal(decks, state.Snapshot);
+        Assert.Equal([1, 2], state.Decks.Select(deck => deck.Number));
+        Assert.True(state.IsMirroringDecks);
+
+        state.ApplyLive(LiveDecksSnapshot.Empty);
+
+        Assert.Equal(3, changes);
+        Assert.False(state.IsMirroringDecks);
+    }
+
+    /// A capture problem reaches the status lines (OverlayController.captureMessage on macOS), once per change.
+    [Fact]
+    public void ACaptureProblemShowsInTheStatusOncePerChange()
+    {
+        var state = new MainWindowState(new SettingsStore(FilePath), RunNow);
+        var changes = 0;
+        state.Changed += () => changes++;
+
+        state.ApplyCaptureProblem("Capture failed: access denied");
+        state.ApplyCaptureProblem("Capture failed: access denied");
+
+        Assert.Equal(1, changes);
+        Assert.Equal("Capture failed: access denied", state.Status.CaptureProblem);
+        state.ApplyCaptureProblem(null);
+        Assert.Null(state.Status.CaptureProblem);
+        Assert.Equal(2, changes);
+    }
+
+    /// The Practice pane follows the trainer: its history and the transition being timed.
+    [Fact]
+    public void ThePracticeStateFollowsTheTrainer()
+    {
+        var state = new MainWindowState(new SettingsStore(FilePath), RunNow);
+        var changes = 0;
+        state.Changed += () => changes++;
+        var live = new PracticeLiveStatus(1, 2, 3.5, 2.5, null, 0.4, null, null);
+        var overview = new PracticeOverview(null, null, 3, []);
+
+        state.ApplyPractice(overview, live);
+        state.ApplyPractice(overview, live);
+
+        Assert.Equal(1, changes);
+        Assert.Equal(3, state.PracticeOverview.MixCount);
+        Assert.True(state.IsMixing);
+        state.ApplyPractice(overview, null);
+        Assert.False(state.IsMixing);
+    }
 }

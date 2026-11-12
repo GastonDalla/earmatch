@@ -69,6 +69,8 @@ public sealed record PhaseMeterDisplay(
 /// What a deck's phase meter shows: the sync master's row above the deck's own, as the players draw it.
 public static class PhaseMeterModel
 {
+    /// The bar length as an int for the boxes and the downbeat ticks. Private on purpose: nothing outside the model needs
+    /// it, and the public bar length is BeatGridDetector.BeatsPerBar.
     private const int BeatsPerBar = (int)BeatGridDetector.BeatsPerBar;
     public const double LineSpan = 4.0;
     public const double Cdj3000Span = 4.8;

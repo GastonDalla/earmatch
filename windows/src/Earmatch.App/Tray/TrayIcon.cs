@@ -6,10 +6,19 @@ using Earmatch.Core;
 namespace Earmatch.App.Tray;
 
 /// The tray icon and its menu, the Windows counterpart of the macOS menu bar menu (MenuBarController.swift): the
-/// status, every option, Open Earmatch…, Copy Diagnostics, About, the credit and Quit.
+/// status, every option, Open Earmatch…, Copy Diagnostics, About, the credit and Quit. Like the macOS menu bar icon
+/// (waveform.circle.fill or waveform.circle), the icon is in full colour while the overlays run on rekordbox and
+/// greyed out otherwise; its tooltip says the status.
 public sealed class TrayIcon : IDisposable
 {
+    private const int MaxTooltipLength = 127;
+
     private readonly NotifyIcon _icon;
+    private readonly Icon _activeIcon;
+    private readonly Icon _inactiveIcon;
+    private readonly IntPtr _inactiveHandle;
+    private bool? _isActive;
+    private string _tooltip = "Earmatch";
     private readonly ContextMenuStrip _menu = new() { Renderer = new DarkMenuRenderer(), ShowCheckMargin = true, ShowImageMargin = false };
     private readonly MainWindowModel _model;
     private readonly Action _open;
@@ -27,10 +36,12 @@ public sealed class TrayIcon : IDisposable
         _menu.Opening += (_, _) => Rebuild();
         _menu.ForeColor = MenuColors.Text;
         _menu.BackColor = MenuColors.Background;
+        _activeIcon = AppIcon.TrayIcon(System.Windows.Forms.SystemInformation.SmallIconSize.Width);
+        (_inactiveIcon, _inactiveHandle) = Greyed(_activeIcon);
         _icon = new NotifyIcon
         {
-            Icon = AppIcon.TrayIcon(System.Windows.Forms.SystemInformation.SmallIconSize.Width),
-            Text = "Earmatch",
+            Icon = _inactiveIcon,
+            Text = _tooltip,
             ContextMenuStrip = _menu,
             Visible = true,
         };
@@ -39,6 +50,44 @@ public sealed class TrayIcon : IDisposable
             if (e.Button == MouseButtons.Left) _open();
         };
         Rebuild();
+    }
+
+    /// Shows whether the overlays run on rekordbox, and the status in the tooltip.
+    public void SetStatus(bool isActive, string status)
+    {
+        if (isActive != _isActive)
+        {
+            _isActive = isActive;
+            _icon.Icon = isActive ? _activeIcon : _inactiveIcon;
+        }
+        var tooltip = $"Earmatch · {status}";
+        if (tooltip.Length > MaxTooltipLength) tooltip = tooltip[..(MaxTooltipLength - 1)] + "…";
+        if (tooltip == _tooltip) return;
+        _tooltip = tooltip;
+        _icon.Text = tooltip;
+    }
+
+    /// The icon in grey at 55% opacity, and the icon handle to destroy with it.
+    private static (Icon Icon, IntPtr Handle) Greyed(Icon icon)
+    {
+        using var source = icon.ToBitmap();
+        using var greyed = new Bitmap(source.Width, source.Height);
+        using (var graphics = Graphics.FromImage(greyed))
+        {
+            float[][] matrix =
+            [
+                [0.3f, 0.3f, 0.3f, 0, 0],
+                [0.59f, 0.59f, 0.59f, 0, 0],
+                [0.11f, 0.11f, 0.11f, 0, 0],
+                [0, 0, 0, 0.55f, 0],
+                [0, 0, 0, 0, 1],
+            ];
+            using var attributes = new System.Drawing.Imaging.ImageAttributes();
+            attributes.SetColorMatrix(new System.Drawing.Imaging.ColorMatrix(matrix));
+            graphics.DrawImage(source, new Rectangle(0, 0, source.Width, source.Height), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attributes);
+        }
+        var handle = greyed.GetHicon();
+        return (Icon.FromHandle(handle), handle);
     }
 
     private void Rebuild()
@@ -137,6 +186,9 @@ public sealed class TrayIcon : IDisposable
         _icon.Visible = false;
         _icon.Dispose();
         _menu.Dispose();
+        _activeIcon.Dispose();
+        _inactiveIcon.Dispose();
+        NativeMethods.DestroyIcon(_inactiveHandle);
     }
 }
 
