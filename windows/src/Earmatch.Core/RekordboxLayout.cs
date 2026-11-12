@@ -113,21 +113,24 @@ public sealed record DeckLayout
     public ScreenRect? WaveformStrip => Strip?.Frame;
 }
 
-/// Where rekordbox's decks, waveforms and BPM displays are on screen, read from its UI Automation tree.
+/// Where rekordbox's decks, waveforms and BPM displays are on screen, read from its UI Automation tree. Scale is the
+/// screen units per rekordbox layout unit (the snapshot's DPI / 96), for distances the macOS code keeps in points.
 public sealed class RekordboxLayout : IEquatable<RekordboxLayout>
 {
-    public RekordboxLayout(RekordboxMode mode, string? layoutName, ScreenRect? stackedWaveform, IEnumerable<DeckLayout> decks)
+    public RekordboxLayout(RekordboxMode mode, string? layoutName, ScreenRect? stackedWaveform, IEnumerable<DeckLayout> decks, double scale = 1)
     {
         Mode = mode;
         LayoutName = layoutName;
         StackedWaveform = stackedWaveform;
         Decks = decks.ToList();
+        Scale = scale;
     }
 
     public RekordboxMode Mode { get; }
     public string? LayoutName { get; }
     public ScreenRect? StackedWaveform { get; }
     public List<DeckLayout> Decks { get; }
+    public double Scale { get; }
 
     public DeckArrangement? Arrangement => DeckArrangement.FromRawValue(LayoutName);
 
@@ -166,7 +169,7 @@ public sealed class RekordboxLayout : IEquatable<RekordboxLayout>
 
     public bool Equals(RekordboxLayout? other) =>
         other is not null && Mode == other.Mode && LayoutName == other.LayoutName && StackedWaveform == other.StackedWaveform
-        && Decks.SequenceEqual(other.Decks);
+        && Decks.SequenceEqual(other.Decks) && Scale == other.Scale;
 
     public override bool Equals(object? obj) => Equals(obj as RekordboxLayout);
 
