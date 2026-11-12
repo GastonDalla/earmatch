@@ -8,6 +8,8 @@ A release is a disk image (`Earmatch-<version>.dmg`) that anyone can download an
 
 `scripts/release.sh` does everything on this Mac and uploads nothing. At the end it prints the files to upload and the commands to do it.
 
+Earmatch for Windows goes into the same GitHub release, built by `windows/scripts/release-windows.sh`: see [Windows](#windows).
+
 > **Before the first public release.** Assets of a private GitHub repository cannot be downloaded without signing in to GitHub, so neither people nor Sparkle can fetch the DMG while the repository is private. Publish releases once the repository is public, or set `EARMATCH_DOWNLOAD_URL_PREFIX` to another public location (for example a `downloads/` folder on the website) and upload the DMG there.
 
 ## One-time setup
@@ -134,6 +136,57 @@ Open a new terminal so the variables are set.
 - **Signing order.** Inside-out: each XPC service (keeping the entitlements Sparkle ships them with), `Autoupdate`, `Updater.app`, the framework, then the app, all with `--options runtime`. `Autoupdate` is signed without entitlements: Sparkle's prebuilt copy claims `com.apple.application-identifier`, which a Developer ID binary cannot carry without a provisioning profile.
 - **Entitlements.** None. Earmatch is not sandboxed. Screen Recording and Accessibility are permissions the user grants in System Settings, not entitlements; Sparkle needs none outside the sandbox. Check with `codesign -d --entitlements - build/Earmatch.app`.
 - **Permissions after switching certificates.** macOS ties the Accessibility and Screen Recording grants to the signing certificate. A Developer ID build is a different app to macOS than a development build signed with an Apple Development certificate, so grant both permissions again the first time you run a release build.
+
+## Windows
+
+Earmatch for Windows ships in the same GitHub release as the macOS DMG (`v<version>`): an installer per architecture and the update package and feed that installed copies read. [Velopack](https://velopack.io) makes them, from this Mac: `windows/scripts/release-windows.sh` builds everything and uploads nothing.
+
+- **One version.** `<Version>` in `windows/Directory.Build.props` must equal `CFBundleShortVersionString` in `Support/Info.plist`. `dotnet test windows/Earmatch.slnx` (`AppVersionTests`) and the release script both stop when they differ, so raise both together.
+- **Unsigned for now.** The installer and the app are not code-signed, so Windows SmartScreen shows "Windows protected your PC" the first time someone runs `Setup.exe`, until they choose **More info › Run anyway**. Signing can be added later in the script (vpk's `--signTemplate` or `--azureTrustedSignFile`) without other changes.
+- **Per architecture.** Each architecture has its own Velopack channel, named like its runtime (`win-x64`, `win-arm64`), so an installed copy only ever reads `releases.<channel>.json` of its own architecture.
+
+### One-time setup
+
+Install the .NET 10 SDK, then restore the pinned `vpk` tool (Velopack's CLI, from `windows/.config/dotnet-tools.json`):
+
+```sh
+cd windows && dotnet tool restore
+```
+
+The script runs `dotnet tool restore` too, so this only checks that it works.
+
+### Each release
+
+1. **Version and notes.** The same as for macOS (steps 1 and 2 above): `Support/Info.plist`, `windows/Directory.Build.props` and `docs/release-notes/<version>.md`. Velopack keeps the notes in the update package.
+2. **Build.**
+
+   ```sh
+   windows/scripts/release-windows.sh            # or --dry-run to build into build/windows-release/dry-run/
+   ```
+
+   For `win-x64` and `win-arm64` it publishes a self-contained Release build and packs it with `vpk [win] pack` into `build/windows-release/<version>/`: Earmatch's icon, product name Earmatch, author GastonDalla, a per-user install in `%LocalAppData%\Earmatch` that needs no administrator, and shortcuts in the Start menu and on the desktop. It checks the version, the notes and every output (each `Setup.exe` is a Windows program, each package holds `Earmatch.exe` with the right version and channel, each feed lists its package), then prints what to upload.
+3. **Upload** the six files it lists to the release `v<version>`, after the macOS release exists (`scripts/release.sh` prints its `gh release create`):
+
+   ```sh
+   gh release upload v<version> --repo GastonDalla/earmatch \
+     build/windows-release/<version>/Earmatch-win-x64-Setup.exe \
+     build/windows-release/<version>/Earmatch-<version>-win-x64-full.nupkg \
+     build/windows-release/<version>/releases.win-x64.json \
+     build/windows-release/<version>/Earmatch-win-arm64-Setup.exe \
+     build/windows-release/<version>/Earmatch-<version>-win-arm64-full.nupkg \
+     build/windows-release/<version>/releases.win-arm64.json
+   ```
+
+   Installed copies look for `releases.<channel>.json` in the repository's releases (Velopack's `GithubSource`, without a token, prereleases ignored), then download the `.nupkg` it names from the same release.
+4. **Check.** On a Windows PC, download the `Setup.exe` of its architecture from the release page and run it: Earmatch installs and opens. In an older installed copy, choose **Check for Updates…**.
+
+### How Windows updates work
+
+- **Only installed copies.** The updater starts only when Earmatch runs from its Velopack install (`%LocalAppData%\Earmatch\current`). Development builds (`dotnet run`, a `dotnet publish` folder) never check, hide **Check for Updates…** and say `Updates: off (development build, …)` in **Copy Diagnostics**.
+- **When it checks.** When Earmatch opens, once a day while it runs, and on **Check for Updates…** (tray menu and Setup pane).
+- **Never during a set.** An update found by the check at opening asks at once only when rekordbox is not in front and Earmatch opened less than two minutes before (`UpdatePrompt`, as on macOS). Otherwise, and for the daily check, the tray menu and the Setup pane say **Update Available…** instead, and choosing it asks. Installing downloads the package, quits Earmatch the normal way and Velopack opens the new version; **No** leaves the item at **Check for Updates…** until the next check finds the update again.
+- **Testing an update before publishing it.** Pack a higher version into a local folder (for example `0.1.3-test.1` with `dotnet publish … -p:Version=0.1.3-test.1` and the script's `vpk [win] pack` line with `--outputDir <folder>`), copy the folder to the PC, set the user environment variable `EARMATCH_UPDATE_FEED` to its full path (`C:\…`) and start the installed Earmatch: it reads that folder instead of GitHub. Anything that is not a full Windows folder path turns updates off rather than reading another feed. Remove the variable afterwards.
+- **Uninstalling** (Settings › Apps › Installed apps › Earmatch › Uninstall) quits Earmatch and removes `%LocalAppData%\Earmatch`, the shortcuts and the Apps entry. Settings and the practice history stay in `%APPDATA%\Earmatch`.
 
 ## Troubleshooting
 

@@ -10,12 +10,14 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The Setup pane (SetupPane.swift): language, hotkeys and the About card. Windows needs no permissions, so the macOS
-/// permissions card is gone.
+/// The Setup pane (SetupPane.swift): language, hotkeys and the About card, with Check for Updates… in installed copies.
+/// Windows needs no permissions, so the macOS permissions card is gone.
 public sealed class SetupPane : PaneView
 {
     private readonly SegmentedPicker<AppLanguageChoice> _language;
     private readonly TextBlock _languageExplanation = Parts.Explanation("");
+    private ActionButton? _updates;
+    private TextBlock? _updatesLabel;
 
     public SetupPane(MainWindowModel model) : base(model, MainWindowPane.Setup.Title)
     {
@@ -36,6 +38,21 @@ public sealed class SetupPane : PaneView
     {
         _language.Selected = Model.Language;
         _languageExplanation.Text = Model.Language.Explanation;
+        RefreshUpdates();
+    }
+
+    /// The update button follows the menus' item: hidden in development builds, Update Available… when an update
+    /// waits, and dimmed while it downloads.
+    private void RefreshUpdates()
+    {
+        if (_updates is null || _updatesLabel is null) return;
+        var updates = Model.Updates;
+        _updates.Visibility = updates.ShowsMenuItem ? Visibility.Visible : Visibility.Collapsed;
+        _updates.IsEnabled = updates.IsMenuItemEnabled;
+        _updates.Opacity = updates.IsMenuItemEnabled ? 1 : 0.5;
+        _updatesLabel.Text = updates.MenuTitle;
+        _updates.ToolTip = updates.MenuTitle;
+        System.Windows.Automation.AutomationProperties.SetName(_updates, updates.MenuTitle);
     }
 
     private static Border HotkeysCard()
@@ -99,8 +116,10 @@ public sealed class SetupPane : PaneView
         }, WindowText.CopyDiagnosticsHelp);
         copyLabel = FindFirst<TextBlock>(copy);
         copyIcon = FindFirst<Icon>(copy);
+        _updates = ActionButton.WithIcon(ActionKind.Pill, Model.Updates.MenuTitle, IconKind.ArrowDownCircle, () => Model.CheckForUpdates());
+        _updatesLabel = FindFirst<TextBlock>(_updates);
         var quit = ActionButton.Plain(ActionKind.Pill, WindowText.Quit, () => Model.Quit());
-        var buttons = Ui.VStack(Spacing.Small, copy, quit);
+        var buttons = Ui.VStack(Spacing.Small, _updates, copy, quit);
         buttons.HorizontalAlignment = HorizontalAlignment.Center;
         buttons.Margin = new Thickness(0, Spacing.Large, 0, 0);
 

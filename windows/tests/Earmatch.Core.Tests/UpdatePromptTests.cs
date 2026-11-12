@@ -24,4 +24,30 @@ public class UpdatePromptTests
     {
         Assert.False(UpdatePrompt.AsksNow(secondsSinceLaunch, rekordboxIsFrontmost: false));
     }
+
+    [Fact]
+    public void TheCheckWhenEarmatchOpensFollowsTheSameRule()
+    {
+        Assert.True(UpdatePrompt.AsksNow(UpdateTrigger.Launch, secondsSinceLaunch: 3, rekordboxIsFrontmost: false));
+        Assert.False(UpdatePrompt.AsksNow(UpdateTrigger.Launch, secondsSinceLaunch: 3, rekordboxIsFrontmost: true));
+        Assert.False(UpdatePrompt.AsksNow(UpdateTrigger.Launch, secondsSinceLaunch: UpdatePrompt.LaunchWindow, rekordboxIsFrontmost: false));
+    }
+
+    [Theory]
+    [InlineData(3, false)]
+    [InlineData(3, true)]
+    [InlineData(90_000, false)]
+    public void TheDailyCheckNeverAsksInFront(double secondsSinceLaunch, bool rekordboxIsFrontmost)
+    {
+        Assert.False(UpdatePrompt.AsksNow(UpdateTrigger.Daily, secondsSinceLaunch, rekordboxIsFrontmost));
+    }
+
+    [Theory]
+    [InlineData(3, false)]
+    [InlineData(3, true)]
+    [InlineData(90_000, true)]
+    public void ACheckTheUserAskedForAlwaysAnswers(double secondsSinceLaunch, bool rekordboxIsFrontmost)
+    {
+        Assert.True(UpdatePrompt.AsksNow(UpdateTrigger.User, secondsSinceLaunch, rekordboxIsFrontmost));
+    }
 }

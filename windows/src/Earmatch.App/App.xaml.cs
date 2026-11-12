@@ -7,8 +7,10 @@ using Earmatch.App.Panes;
 using Earmatch.App.Practice;
 using Earmatch.App.Rekordbox;
 using Earmatch.App.Tray;
+using Earmatch.App.Updates;
 using Earmatch.Core;
 using Microsoft.Win32;
+using Velopack;
 
 namespace Earmatch.App;
 
@@ -32,6 +34,7 @@ public partial class App : Application
     private HotkeyMonitor? _hotkeys;
     private OverlayController? _overlays;
     private PracticeController? _practice;
+    private AppUpdater? _updater;
     private DispatcherTimer? _liveExpiry;
     private double _liveReceivedAt;
     private bool _isPeeking;
@@ -41,6 +44,17 @@ public partial class App : Application
 
     /// How long quitting waits for the practice history's last saves.
     private static readonly TimeSpan PracticeFlushTimeout = TimeSpan.FromSeconds(2);
+
+    /// Velopack's hooks run first: when Setup installs Earmatch, an update replaces it or it is uninstalled, Velopack
+    /// starts Earmatch with its own arguments, does its part and exits before any window or hook exists.
+    [STAThread]
+    public static void Main()
+    {
+        VelopackApp.Build().Run();
+        var app = new App();
+        app.InitializeComponent();
+        app.Run();
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -98,6 +112,10 @@ public partial class App : Application
             _model.Select(MainWindowPane.Setup);
             ShowWindow();
         }, CopyDiagnostics, Quit);
+        _updater = new AppUpdater(IsRekordboxFrontmost, () => IsWindowShown ? _window : null, Quit);
+        _updater.Changed += () => _model.ApplyUpdates(_updater.State);
+        _model.ApplyUpdates(_updater.State);
+        _model.CheckForUpdates = _updater.ChooseMenuItem;
 
         _overlays = new OverlayController(Dispatcher);
         _overlays.CaptureStatusChanged += ShowCaptureProblem;
@@ -129,6 +147,16 @@ public partial class App : Application
         _monitor.Start();
         Render();
         ShowWindow();
+        _updater.Start();
+    }
+
+    /// Whether rekordbox, or one of its dialogs, is the foreground app: an update found then waits in the menus.
+    private static bool IsRekordboxFrontmost()
+    {
+        var processId = NativeMethods.ForegroundProcessId();
+        if (processId == 0) return false;
+        var path = NativeMethods.ProcessImagePath((int)processId);
+        return path is not null && string.Equals(System.IO.Path.GetFileNameWithoutExtension(path), RekordboxProduct.ProcessName, StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnSettingsChanged(object? sender, EventArgs e)
@@ -198,7 +226,7 @@ public partial class App : Application
         if (_model is null) return false;
         var version = SystemInfo.ShortVersion ?? L10n.English(() => WindowText.DevelopmentBuild);
         var report = new DiagnosticsReport(version, SystemInfo.WindowsVersion, SystemInfo.Architecture, _model.RekordboxVersion, _model.Activation,
-            _model.Settings, LayoutDiagnostics(version));
+            _model.Settings, LayoutDiagnostics(version)) { Updates = _model.Updates.DiagnosticsLine };
         return ClipboardRetry.TryWrite(() => Clipboard.SetText(report.Text), () => Thread.Sleep(50));
     }
 
@@ -222,6 +250,7 @@ public partial class App : Application
 
     private void StopMonitoring()
     {
+        _updater?.Dispose();
         SystemEvents.SessionSwitch -= OnSessionSwitch;
         if (_store is not null) _store.Changed -= OnSettingsChanged;
         _monitor?.Dispose();

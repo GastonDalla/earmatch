@@ -12,10 +12,12 @@
     <RootNamespace>Earmatch.App</RootNamespace>
     <AssemblyName>Earmatch</AssemblyName>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
-    <Version>0.1.2</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- App.Main runs Velopack's install, update and uninstall hooks before WPF starts (App.xaml is a Page, not the
+         ApplicationDefinition that would generate a Main of its own). -->
+    <StartupObject>Earmatch.App.App</StartupObject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- WFO0003 asks WinForms apps to set DPI in code; this is a WPF app, which takes Per-Monitor V2 from app.manifest. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
@@ -27,12 +29,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\AppIcon.png" />
     <Resource Include="Assets\AppIcon.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Earmatch.Core\Earmatch.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
 </Project>
