@@ -2,7 +2,6 @@ using System.Globalization;
 
 namespace Earmatch.Core;
 
-/// The language the window and the menus use: the Windows display language, or English or Spanish whatever it is.
 public enum AppLanguageChoice
 {
     System,
@@ -14,7 +13,6 @@ public static class AppLanguageChoiceMembers
 {
     extension(AppLanguageChoice choice)
     {
-        /// The stored value, the macOS raw value.
         public string RawValue => choice switch
         {
             AppLanguageChoice.English => "en",
@@ -22,7 +20,6 @@ public static class AppLanguageChoiceMembers
             _ => "system",
         };
 
-        /// The catalog language for this choice; System follows the first preferred language Earmatch has.
         public string LanguageCode(string? systemPreferred) => choice.LanguageCodeFrom([systemPreferred]);
 
         public string LanguageCodeFrom(IEnumerable<string?> preferredLanguages)
@@ -36,7 +33,6 @@ public static class AppLanguageChoiceMembers
             return AppLanguageChoice.FallbackCode;
         }
 
-        /// English and Español are named in their own language; System is translated.
         public string Label => choice switch
         {
             AppLanguageChoice.English => L10n.Text("English"),

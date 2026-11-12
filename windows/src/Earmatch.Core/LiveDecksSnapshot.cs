@@ -6,7 +6,6 @@ public sealed record LiveDeckSnapshot(int Number, string? Title, bool IsMaster, 
     public bool IsPlaying => BeatsPerSecond > 0.05;
 }
 
-/// What the main window's live decks mirror shows: each deck's title and phase meter, and how fast the capture runs.
 public sealed record LiveDecksSnapshot(ValueList<LiveDeckSnapshot> Decks, double FramesPerSecond, double LatencyMilliseconds)
 {
     public static LiveDecksSnapshot Empty { get; } = new([], 0, 0);
@@ -14,7 +13,6 @@ public sealed record LiveDecksSnapshot(ValueList<LiveDeckSnapshot> Decks, double
 
 public static partial class StatusText
 {
-    /// The live decks card's line. Windows needs no Screen Recording grant, so the macOS line asking for it is gone.
     public static StatusLine LiveDecks(StatusContext context, LiveDecksSnapshot? snapshot)
     {
         if (Blocked(context, null) is { } blocked) return blocked;

@@ -22,7 +22,6 @@ public static class MainWindowPaneMembers
             _ => L10n.Text("Setup"),
         };
 
-        /// Ctrl+1 to Ctrl+4 (Command on macOS) select the panes in sidebar order.
         public int ShortcutNumber => (int)pane + 1;
 
         public string KeyEquivalent => pane.ShortcutNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -47,13 +46,10 @@ public static class MainWindowPaneMembers
             return index < MainWindowPane.AllCases.Count ? MainWindowPane.AllCases[index] : null;
         }
 
-        /// The pane the window opens on: the remembered one, or Live. Windows has no permissions to ask for, so the
-        /// macOS rule that opens Setup while one is missing has no counterpart.
         public static MainWindowPane Initial(string? stored) => EnumRawValue.Parse<MainWindowPane>(stored) ?? MainWindowPane.Live;
     }
 }
 
-/// The sidebar's status chip. Windows has no permissions, so the macOS needsPermission state is gone.
 public enum MainWindowStatus
 {
     Live,

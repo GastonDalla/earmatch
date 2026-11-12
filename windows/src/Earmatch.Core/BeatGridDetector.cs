@@ -1,11 +1,7 @@
 namespace Earmatch.Core;
 
-/// What the beat markers along one waveform strip say: the beat spacing in screen units, the markers on the grid (their
-/// x, or y in a vertical strip), the downbeats among them and the playhead's position in the bar (0 to 4 beats).
 public sealed record BeatGridReading(double BeatSpacing, ValueList<double> BeatXs, ValueList<double> DownbeatXs, double? PhaseInBar);
 
-/// Reads the beat grid rekordbox draws along a waveform strip: grey ticks on the beats and red marks on the downbeats,
-/// in a thin band at the strip's edge (both edges of a vertical column).
 public static class BeatGridDetector
 {
     public const double BeatsPerBar = 4.0;
@@ -121,7 +117,6 @@ public static class BeatGridDetector
             return Math.Abs(k - Numbers.Round(k)) < 0.2;
         }
 
-        /// The playhead's beat in the bar, counted from the downbeat residue most red marks agree on.
         public double? Phase(double x, IReadOnlyList<double> downbeats)
         {
             if (downbeats.Count == 0) return null;
@@ -136,8 +131,6 @@ public static class BeatGridDetector
         }
     }
 
-    /// A least-squares grid through the markers that agree with the typical gap, anchored on the best supported marker
-    /// (the one nearest the playhead among equals). The gap must be longer than the minimum spacing (one point).
     internal static Grid? FitGrid(IReadOnlyList<Marker> markers, double playheadX, double minimumSpacing)
     {
         var xs = markers.Select(marker => marker.X).Order().ToList();
@@ -186,7 +179,6 @@ public static class BeatGridDetector
     }
 }
 
-/// Finds the grey playhead line rekordbox draws across a strip, within 3 points of its centre.
 public static class PlayheadDetector
 {
     internal const double SearchDistance = 3;
@@ -231,8 +223,6 @@ public static class PlayheadDetector
     }
 }
 
-/// Tells the sync master by the blue border rekordbox draws on its MASTER button. Only the part of the button inside
-/// the frame is read: a row or column outside it is skipped, never taken from the frame's edge.
 public static class SyncMasterDetector
 {
     public static bool IsMaster(ScreenRect button, PixelImage image)

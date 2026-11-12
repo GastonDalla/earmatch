@@ -1,13 +1,9 @@
 namespace Earmatch.Core;
 
-/// Where the digits of a jog BPM display are: the integer digits, the decimal point and the decimals.
 public sealed record BPMGlyphs(ValueList<ScreenRect> IntegerDigits, ScreenRect Point, ValueList<ScreenRect> Decimals);
 
-/// Measures the jog BPM digits so the limit BPM cover hides only the decimals it has to.
 public static class BPMGlyphMask
 {
-    /// The part of the jog display to cover for the limit: from between the kept and hidden glyphs to past the last
-    /// digit. The whole display when the digits cannot be read or the limit covers it fully.
     public static ScreenRect Cover(BPMLimit limit, ScreenRect jogFrame, PixelImage image)
     {
         if (limit == BPMLimit.CoverFully || Glyphs(jogFrame, image) is not { Decimals.Count: > 0 } glyphs) return jogFrame;
@@ -26,7 +22,6 @@ public static class BPMGlyphMask
         return new ScreenRect(left, jogFrame.MinY, right - left, jogFrame.Height);
     }
 
-    /// The glyphs of a display like "135.00": large digits up to the cap line, a short point, then smaller decimals.
     public static BPMGlyphs? Glyphs(ScreenRect jogFrame, PixelImage image)
     {
         var clusters = InkClusters(jogFrame, image);
@@ -49,7 +44,6 @@ public static class BPMGlyphMask
             decimals.Select(cluster => cluster.Rect(image)).ToValueList());
     }
 
-    /// A run of columns with ink, and the rows its ink spans, in pixels.
     internal record struct Cluster(int First, int Last, int Top, int Bottom)
     {
         public readonly int Height => Bottom - Top + 1;

@@ -1,7 +1,5 @@
 namespace Earmatch.Core;
 
-/// The bar and beat rekordbox prints near the playhead, from the elapsed time and BPM, corrected by the beat grid the
-/// pixels show: the bar changes when the drawn downbeat passes, even if the clock is a little early or late.
 public static class BarCounter
 {
     public static BarPosition Position(double elapsedSeconds, double bpm, double? phaseInBar)

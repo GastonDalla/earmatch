@@ -2,20 +2,15 @@ using System.Globalization;
 
 namespace Earmatch.Core;
 
-/// Looks up the user-facing text of Earmatch. Keys are the English texts, as in the macOS app; formats use the same
-/// printf specifiers (%@, %ld, %.1f), so the catalogs keep the macOS keys. The installed lookup serves the app;
-/// WithOverride swaps it for the code it runs (per async flow), the way the Swift tests use the task-local override.
 public static class L10n
 {
     public delegate string Lookup(string key);
 
-    /// The template for a plural key and count, or null when the lookup has no plural forms for it.
     public delegate string? PluralLookup(string key, int count);
 
     private sealed record Source(Lookup Text, PluralLookup? Plural, CultureInfo? Culture);
 
     private static readonly AsyncLocal<Source?> Override = new();
-    // Volatile: an install on one thread is seen by every thread that reads text after it.
     private static volatile Source _installed = new(key => key, null, null);
 
     public static void Install(Lookup lookup, CultureInfo culture, PluralLookup? plural = null) =>
@@ -23,7 +18,6 @@ public static class L10n
 
     public static void Install(LocalizationCatalog catalog) => Install(catalog.Text, catalog.Culture, catalog.PluralTemplate);
 
-    /// The culture numbers are formatted in; null formats them invariantly.
     public static CultureInfo? Culture => Current.Culture;
 
     public static T WithOverride<T>(Lookup lookup, Func<T> body, CultureInfo? culture = null, PluralLookup? plural = null)
@@ -43,7 +37,6 @@ public static class L10n
     public static T WithOverride<T>(LocalizationCatalog catalog, Func<T> body) =>
         WithOverride(catalog.Text, body, catalog.Culture, catalog.PluralTemplate);
 
-    /// Runs the body with the English keys and invariant numbers, for reports that stay in English.
     public static T English<T>(Func<T> body) => WithOverride(key => key, body);
 
     public static string Text(string key) => Current.Text(key);

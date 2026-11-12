@@ -2,10 +2,6 @@ using System.Globalization;
 
 namespace Earmatch.Core;
 
-/// How the capture keeps up (FrameStats in FrameAnalyzer.swift): frames per second and their jitter, analysis time,
-/// how long a frame takes from capture to the screen, and how often the meters are drawn. The counters close a window
-/// once a second of frames has gone by; Current is the last closed window. Safe to call from the capture thread and the
-/// window's thread at once.
 public sealed class FrameStats
 {
     public sealed record Snapshot
@@ -23,8 +19,6 @@ public sealed class FrameStats
         public double AverageRefreshMicroseconds { get; init; }
         public double MaxRefreshMicroseconds { get; init; }
 
-        /// How far the meters drawn were from where the next frames measured the decks, on average; measured only while
-        /// tracing (as on macOS), none without a measurement.
         public double? PredictionErrorMilliseconds { get; init; }
     }
 
@@ -54,13 +48,11 @@ public sealed class FrameStats
     private readonly Dictionary<int, int> _lostFrames = [];
     private Snapshot _last = new();
 
-    /// With tracing on (EARMATCH_TRACE=1 in the app), Record returns a line of figures each time a window closes.
     public FrameStats(bool isTracing = false)
     {
         _isTracing = isTracing;
     }
 
-    /// Whether tracing is on: the trace lines are written and the meter error is measured.
     public bool IsTracing => _isTracing;
 
     public Snapshot Current
@@ -71,8 +63,6 @@ public sealed class FrameStats
         }
     }
 
-    /// A frame was analysed in `processingSeconds`; `frameTime` is when it was captured. Returns the trace line of a
-    /// window it closed, while tracing.
     public string? Record(double processingSeconds, double frameTime, IReadOnlyDictionary<int, DeckFrameReading> decks)
     {
         lock (_gate)
@@ -143,7 +133,6 @@ public sealed class FrameStats
         }
     }
 
-    /// A frame reached the overlays `seconds` after it was captured.
     public void RecordCommit(double seconds)
     {
         lock (_gate)
@@ -153,7 +142,6 @@ public sealed class FrameStats
         }
     }
 
-    /// A refresh put a frame on screen: between `earliest` and `latest` seconds after it was captured.
     public void RecordScreen(double earliest, double latest)
     {
         lock (_gate)
@@ -165,13 +153,11 @@ public sealed class FrameStats
         }
     }
 
-    /// A refresh came with no frame drawn yet.
     public void RecordRepeatedFrame()
     {
         lock (_gate) _repeatedFrames++;
     }
 
-    /// A refresh of the overlays took `workSeconds`.
     public void RecordRefresh(double workSeconds)
     {
         lock (_gate)
@@ -182,7 +168,6 @@ public sealed class FrameStats
         }
     }
 
-    /// A frame measured a deck `seconds` away from where its meter was drawn at that frame's capture time.
     public void RecordPredictionError(double seconds)
     {
         lock (_gate)

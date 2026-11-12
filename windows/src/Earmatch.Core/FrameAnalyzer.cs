@@ -1,9 +1,7 @@
 namespace Earmatch.Core;
 
-/// Where the limit BPM cover goes on a jog display for the two limits that keep digits.
 public sealed record BPMCovers(ScreenRect OneDecimal, ScreenRect NoDecimals)
 {
-    /// The measured cover for the limit; none for Cover fully, which covers the whole display.
     public ScreenRect? Cover(BPMLimit limit) => limit switch
     {
         BPMLimit.OneDecimal => OneDecimal,
@@ -12,8 +10,6 @@ public sealed record BPMCovers(ScreenRect OneDecimal, ScreenRect NoDecimals)
     };
 }
 
-/// One deck as one frame shows it: the beat grid, the tracked phase and tempo, whether its MASTER button is lit, the
-/// jog BPM covers and how many beats ahead the next cue is.
 public sealed record DeckFrameReading(
     BeatGridReading? Grid,
     PhaseEstimate Phase,
@@ -22,14 +18,8 @@ public sealed record DeckFrameReading(
     BPMCovers? BPMCovers,
     double? CueBeatsAhead);
 
-/// What a frame is read for besides the grid: the jog BPM digits (while Limit BPM display is on) and the cues (for the
-/// cue countdown counter).
 public readonly record struct FrameAnalysisOptions(bool MeasuresBPMGlyphs, bool ReadsCues);
 
-/// Reads every deck from one captured frame of the rekordbox window (the platform-independent part of the macOS
-/// FrameAnalyzer): finds each strip's playhead, reads its beat grid, tracks the phase and tempo per deck across frames,
-/// and measures the sync master, the BPM digit covers and the next cue. The frame's PixelImage and the decks' frames
-/// share screen coordinates. Safe to call from the capture thread while another thread resets it.
 public sealed class FrameAnalyzer
 {
     private readonly object _gate = new();
@@ -37,8 +27,6 @@ public sealed class FrameAnalyzer
     private readonly Dictionary<int, (ScreenRect Strip, double Position)> _playheads = [];
     private double _trackerScale = 1;
 
-    /// The readings of the decks, by deck number. An unmapped frame (one that does not show the window as the layout
-    /// describes it) only advances the trackers and covers the jog displays whole.
     public IReadOnlyDictionary<int, DeckFrameReading> Analyze(PixelImage image, IReadOnlyList<DeckLayout> decks, FrameAnalysisOptions options,
         bool isMapped, double time)
     {
@@ -55,7 +43,6 @@ public sealed class FrameAnalyzer
         }
     }
 
-    /// Forgets the trackers and playheads, for a new capture or layout.
     public void Reset()
     {
         lock (_gate)
@@ -88,8 +75,6 @@ public sealed class FrameAnalyzer
             covers, cues);
     }
 
-    /// The playhead line in the frame; while a frame does not show it, the last one found on the same strip, or half a
-    /// point past the strip's centre, where rekordbox draws it.
     private double Playhead(int deck, WaveformStrip strip, PixelImage image)
     {
         if (PlayheadDetector.Locate(strip, image) is { } found)

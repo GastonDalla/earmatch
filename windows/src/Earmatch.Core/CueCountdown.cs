@@ -6,18 +6,14 @@ public enum CueMarkerKind
     CuePoint,
 }
 
-/// A cue rekordbox draws on a horizontal waveform strip: a pink hot cue flag at the top or an orange cue point
-/// triangle at the bottom, at X in screen units.
 public readonly record struct CueMarker(double X, CueMarkerKind Kind);
 
-/// Finds the cues ahead of the playhead and counts down to the nearest one in bars and beats, as the players do.
 public static class CueCountdown
 {
     internal static readonly (double Min, double Max) FlagWidth = (6, 16);
     internal static readonly (double Min, double Max) TriangleWidth = (6, 22);
     internal const double ReachedDistance = 1.0;
 
-    /// The cues right of minX, left to right (a hot cue before a cue point at the same place).
     public static ValueList<CueMarker> Markers(ScreenRect strip, double minX, PixelImage image)
     {
         var left = image.Column(Math.Max(strip.MinX, minX - image.Points(8)));
@@ -50,7 +46,6 @@ public static class CueCountdown
             .ToValueList();
     }
 
-    /// How many beats ahead the nearest cue past the playhead is; none without a cue ahead or a usable beat spacing.
     public static double? BeatsToNextCue(ScreenRect strip, double playheadX, double beatSpacing, PixelImage image)
     {
         if (!(beatSpacing > image.Points(1))) return null;
@@ -58,7 +53,6 @@ public static class CueCountdown
         return ahead.Count > 0 ? (ahead[0].X - playheadX) / beatSpacing : null;
     }
 
-    /// The countdown the players show: "00.1" on the last beat before the cue, "01.1" five beats before.
     public static BarPosition? Counter(double? beatsAhead)
     {
         if (beatsAhead is not { } ahead || !(ahead > 0)) return null;
@@ -67,7 +61,6 @@ public static class CueCountdown
         return new BarPosition((beats - 1) / 4, (beats - 1) % 4 + 1);
     }
 
-    /// The beats ahead a frame measured, moved on at the deck's tempo to the given time.
     public static double BeatsAhead(double measured, double measuredAt, double beatsPerSecond, double time) =>
         measured - beatsPerSecond * (time - measuredAt);
 
@@ -80,7 +73,6 @@ public static class CueCountdown
 
     private static bool Contains((double Min, double Max) range, double value) => value >= range.Min && value <= range.Max;
 
-    /// Runs of columns with at least two matching pixels between the rows, joined across one-column gaps.
     internal static List<Run> Runs(int firstColumn, int endColumn, int firstRow, int endRow, PixelImage image, Func<PixelImage.RGB, bool> matches)
     {
         var result = new List<Run>();

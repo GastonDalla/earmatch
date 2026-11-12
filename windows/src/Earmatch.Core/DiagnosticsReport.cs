@@ -1,7 +1,5 @@
 namespace Earmatch.Core;
 
-/// The plain-text report Copy Diagnostics puts on the clipboard, always in English. Windows has no Accessibility or
-/// Screen Recording grants, so the macOS permission lines are gone.
 public sealed record DiagnosticsReport(
     string AppVersion,
     string Windows,
@@ -11,7 +9,6 @@ public sealed record DiagnosticsReport(
     OverlaySettings Settings,
     string Extra)
 {
-    /// The updater's line (UpdateState.DiagnosticsLine); the app always sets it, a report without it leaves it out.
     public string? Updates { get; init; }
 
     public string? Model { get; init; }
