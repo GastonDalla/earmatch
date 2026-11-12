@@ -2,10 +2,6 @@ using System.Collections.Concurrent;
 
 namespace Earmatch.App;
 
-/// A background thread with a Win32 message loop for Earmatch's system-wide hooks (the low-level keyboard hook and the
-/// WinEvent hooks). Windows calls a hook on the thread that installed it, between that thread's messages, so hooks on
-/// the window's thread would wait for every layout and animation frame of the window, and a slow keyboard hook delays
-/// every key the user types in rekordbox. Post runs an action on the thread, where the hooks are installed and removed.
 internal sealed class HookThread : IDisposable
 {
     private readonly Thread _thread;
@@ -45,7 +41,6 @@ internal sealed class HookThread : IDisposable
         }
     }
 
-    /// Runs the queued actions (the hooks' removal), then ends the loop.
     public void Dispose()
     {
         if (_isDisposed) return;

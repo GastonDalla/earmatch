@@ -5,11 +5,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Tray;
 
-/// The tray icon and its menu, the Windows counterpart of the macOS menu bar menu (MenuBarController.swift): the
-/// status, every option, Open Earmatch…, Copy Diagnostics, About, Check for Updates… (in installed copies), the credit
-/// and Quit. Like the macOS menu bar icon
-/// (waveform.circle.fill or waveform.circle), the icon is in full colour while the overlays run on rekordbox and
-/// greyed out otherwise; its tooltip says the status.
 public sealed class TrayIcon : IDisposable
 {
     private const int MaxTooltipLength = 127;
@@ -53,7 +48,6 @@ public sealed class TrayIcon : IDisposable
         Rebuild();
     }
 
-    /// Shows whether the overlays run on rekordbox, and the status in the tooltip.
     public void SetStatus(bool isActive, string status)
     {
         if (isActive != _isActive)
@@ -68,7 +62,6 @@ public sealed class TrayIcon : IDisposable
         _icon.Text = tooltip;
     }
 
-    /// The icon in grey at 55% opacity, and the icon handle to destroy with it.
     private static (Icon Icon, IntPtr Handle) Greyed(Icon icon)
     {
         using var source = icon.ToBitmap();
@@ -132,8 +125,6 @@ public sealed class TrayIcon : IDisposable
         items.Add(Action(WindowText.Quit, _quit));
     }
 
-    /// The menu is rebuilt each time it opens; the items it replaces, their submenus and the submenus' items are
-    /// disposed so their window handles and fonts do not pile up.
     private static void DisposeAll(ToolStripItemCollection items)
     {
         var removed = items.Cast<ToolStripItem>().ToList();
@@ -149,7 +140,6 @@ public sealed class TrayIcon : IDisposable
         }
     }
 
-    /// The tray has no "Copied" to show, so it speaks up only when the copy failed.
     private void CopyDiagnostics()
     {
         if (_copyDiagnostics()) return;
@@ -209,7 +199,6 @@ internal static class MenuColors
     public static readonly Color Accent = Color.FromArgb(184, 242, 59);
 }
 
-/// Draws the tray menu in the window's dark colours with lime check marks.
 internal sealed class DarkMenuRenderer() : ToolStripProfessionalRenderer(new DarkColors())
 {
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)

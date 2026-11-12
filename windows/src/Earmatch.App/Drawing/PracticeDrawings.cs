@@ -6,8 +6,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Drawing;
 
-/// The phase error meter of the practice pane (PracticeErrorMeter.swift): behind on the left, ahead on the right, the
-/// in-phase band in the middle.
 public sealed class PracticeErrorMeter : FrameworkElement
 {
     public const double Range = 50;
@@ -69,7 +67,6 @@ public sealed class PracticeErrorMeter : FrameworkElement
     }
 }
 
-/// The replay's trace of the phase error over the last transition (PracticeTraceDrawing in PracticeReplayView.swift).
 public sealed class PracticeTraceView : FrameworkElement
 {
     private static readonly Brush BandFill = WindowTheme.Solid(WindowTheme.DeckColor, 0.12);
@@ -100,7 +97,6 @@ public sealed class PracticeTraceView : FrameworkElement
         var worst = trace.WorstSample is { } sample ? Math.Abs(sample.ErrorMilliseconds) : 0;
         var scale = matched is null ? 100 : Math.Min(Math.Max(worst * 1.25, PracticeErrorMeter.InPhase * 2), 100);
         var midY = height / 2;
-        // The trace keeps 2 points from the edges; a trace shorter than that draws flat instead of upside down.
         var reach = Math.Max(0, height / 2 - 2);
         double X(double seconds) => seconds / duration * width;
         double Y(double milliseconds) => midY - Math.Clamp(milliseconds, -scale, scale) / scale * reach;
@@ -155,7 +151,6 @@ public sealed class PracticeTraceView : FrameworkElement
     }
 }
 
-/// The progress chart: the median phase error of each day, newest on the right (PracticeProgressChart.swift).
 public sealed class PracticeProgressView : FrameworkElement
 {
     private static readonly Pen Threshold = new(WindowTheme.Solid(WindowTheme.DeckColor, 0.45), 1) { DashStyle = new DashStyle([3, 3], 0) };

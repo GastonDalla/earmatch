@@ -8,8 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Practice;
 
-/// The replay of the last transition (PracticeReplayView.swift): its phase error over time, played back on demand,
-/// otherwise pointing at the worst moment after the tempos matched.
 public sealed class PracticeReplay : Border
 {
     private readonly PracticeTrace _trace;

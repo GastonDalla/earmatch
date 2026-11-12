@@ -5,9 +5,7 @@
     <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <UseWPF>true</UseWPF>
-    <!-- WinForms only for the tray icon (NotifyIcon); its global usings would clash with WPF's types. -->
     <UseWindowsForms>true</UseWindowsForms>
-    <!-- Lets the app build on macOS for checks; it only runs on Windows. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>Earmatch.App</RootNamespace>
     <AssemblyName>Earmatch</AssemblyName>
@@ -15,11 +13,8 @@
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- App.Main runs Velopack's install, update and uninstall hooks before WPF starts (App.xaml is a Page, not the
-         ApplicationDefinition that would generate a Main of its own). -->
     <StartupObject>Earmatch.App.App</StartupObject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- WFO0003 asks WinForms apps to set DPI in code; this is a WPF app, which takes Per-Monitor V2 from app.manifest. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
   </PropertyGroup>
 

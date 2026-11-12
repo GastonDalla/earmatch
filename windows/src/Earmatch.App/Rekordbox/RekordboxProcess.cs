@@ -3,8 +3,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Rekordbox;
 
-/// A running rekordbox for Windows (rekordbox.exe) and its version. It keeps the process open, so telling whether it
-/// still runs costs no process enumeration.
 internal sealed class RekordboxProcess : IDisposable
 {
     private readonly Process _process;
@@ -20,10 +18,8 @@ internal sealed class RekordboxProcess : IDisposable
     public int Id { get; }
     public string? Path { get; }
 
-    /// The executable's product version ("7.2.19.0342").
     public string? ProductVersion { get; }
 
-    /// The version as rekordbox shows it ("7.2.19").
     public string? Version => RekordboxProduct.ShortVersion(ProductVersion);
 
     public bool IsRunning => !HasExited(_process);
@@ -39,8 +35,6 @@ internal sealed class RekordboxProcess : IDisposable
         return found;
     }
 
-    /// rekordbox's main window: its largest visible, unowned top-level window titled "rekordbox" (its dialogs and the
-    /// splash screen have other titles or an owner). Zero when it has none yet.
     public IntPtr MainWindow() =>
         NativeMethods.TopLevelWindows(Id)
             .Where(window => window.Title == MainWindowListCheck.MainWindowTitle)
@@ -59,7 +53,6 @@ internal sealed class RekordboxProcess : IDisposable
         }
         catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
         {
-            // Windows did not let Earmatch open it: it runs, as another user or elevated.
             return false;
         }
     }

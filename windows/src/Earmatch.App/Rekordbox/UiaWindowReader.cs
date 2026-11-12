@@ -3,23 +3,15 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Rekordbox;
 
-/// Reads rekordbox's main window through UI Automation (AccessibilityReader.swift): the whole raw-view tree in one
-/// cached request, as the nodes dump-uia.ps1 writes and the snapshot the locator reads, then the values of a few
-/// elements (header BPMs, times) between full reads. It only reads: it never invokes, focuses or sets anything.
 internal sealed class UiaWindowReader
 {
     private readonly CacheRequest _request = MakeRequest();
     private List<(int Index, AutomationElement Element)> _watched = [];
 
-    /// Whether a watched element went away since the last full read (rekordbox rebuilt part of its window).
     public bool IsStale { get; private set; }
 
-    /// A full read: the nodes, the snapshot and the UI Automation element of each snapshot element.
     public sealed record Read(IReadOnlyList<UiaNode> Nodes, RekordboxWindowSnapshot Snapshot, IReadOnlyList<AutomationElement> Elements);
 
-    /// The window's nodes and snapshot; Scale is the window's DPI / 96. Throws the UI Automation exceptions
-    /// (ElementNotAvailableException, TimeoutException, COMException...) when rekordbox does not answer. The read is
-    /// only kept for ReadWatched once it is adopted.
     public static Read ReadWindow(IntPtr window, CacheRequest request)
     {
         var root = AutomationElement.FromHandle(window).GetUpdatedCache(request);
@@ -42,14 +34,12 @@ internal sealed class UiaWindowReader
 
     public Read ReadWindow(IntPtr window) => ReadWindow(window, _request);
 
-    /// Keeps the read's elements and watches some of them (indices in its snapshot) for ReadWatched.
     public void Adopt(Read read, IReadOnlyList<int> watched)
     {
         _watched = watched.Where(index => index < read.Elements.Count).Select(index => (index, read.Elements[index])).ToList();
         IsStale = false;
     }
 
-    /// The current values of the watched elements; an element that cannot be read is left out.
     public Dictionary<int, string> ReadWatched()
     {
         var values = new Dictionary<int, string>();

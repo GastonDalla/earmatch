@@ -4,10 +4,8 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Theme;
 
-/// The colors of the macOS window (WindowTheme.swift), as frozen WPF brushes.
 public static class WindowTheme
 {
-    /// Animations are skipped when Windows turns client area animations off (Settings › Accessibility › Visual effects).
     public static bool ReduceMotion => !System.Windows.SystemParameters.ClientAreaAnimation;
 
     public static readonly Color AccentColor = Rgb(0.72, 0.95, 0.23);
@@ -91,8 +89,6 @@ public static class Spacing
     public const double ExtraLarge = 32;
 }
 
-/// The fonts. SF Pro maps to Segoe UI Variable Text and SF Mono to Cascadia Mono, falling back to Segoe UI and Consolas
-/// where Windows lacks them.
 public static class AppFonts
 {
     public static readonly FontFamily Text = new("Segoe UI Variable Text, Segoe UI");
@@ -100,11 +96,9 @@ public static class AppFonts
     public static readonly FontFamily Mono = new("Cascadia Mono, Consolas");
     public static readonly FontFamily Icons = new("Segoe Fluent Icons, Segoe MDL2 Assets");
 
-    /// The line height SF Pro gives a size, which keeps the macOS vertical rhythm with Segoe UI's taller lines.
     public static double LineHeight(double size) => Math.Round(size * 1.2, 1);
 }
 
-/// A font role of the macOS TypeScale.
 public readonly record struct TypeStyle(double Size, FontWeight Weight, bool IsMono = false)
 {
     public FontFamily Family => IsMono ? AppFonts.Mono : Size >= 20 ? AppFonts.Display : AppFonts.Text;

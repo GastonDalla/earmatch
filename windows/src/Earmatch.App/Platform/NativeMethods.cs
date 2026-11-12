@@ -87,8 +87,6 @@ internal static partial class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
 
-    /// The dark Windows 11 frame around the custom title bar: dark mode for the system menu and the resize shadow,
-    /// rounded corners, and the 1-pixel border in the sidebar's colour (Windows 10 keeps its own frame colours).
     public static void StyleFrame(Window window, Color border)
     {
         var handle = new WindowInteropHelper(window).Handle;
@@ -98,27 +96,22 @@ internal static partial class NativeMethods
         var round = DwmwcpRound;
         DwmSetWindowAttribute(handle, DwmwaWindowCornerPreference, ref round, sizeof(int));
         var colour = ColorRef(border);
-        // The caption colour only shows for a moment while the window is created, before WPF draws over it.
         DwmSetWindowAttribute(handle, DwmwaCaptionColor, ref colour, sizeof(int));
         DwmSetWindowAttribute(handle, DwmwaBorderColor, ref colour, sizeof(int));
     }
 
-    /// Asks Windows for WM_NCMOUSELEAVE once the mouse leaves the window's non-client parts (the maximize button).
     public static void TrackNonClientLeave(IntPtr hwnd)
     {
         var info = new TrackMouseEventInfo { Size = Marshal.SizeOf<TrackMouseEventInfo>(), Flags = TmeLeave | TmeNonClient, Window = hwnd };
         TrackMouseEvent(ref info);
     }
 
-    /// The screen point of a mouse message's lParam (signed: monitors left of or above the main one are negative).
     public static Point ScreenPoint(IntPtr lParam)
     {
         var value = lParam.ToInt64();
         return new Point(unchecked((short)value), unchecked((short)(value >> 16)));
     }
 
-    /// How far a maximized window's client area hangs past the monitor's work area, in DIPs. With the title bar drawn
-    /// by WPF the client area covers the whole window, and Windows places a maximized window's frame off screen.
     public static Thickness MaximizedOverhang(Window window)
     {
         var handle = new WindowInteropHelper(window).Handle;

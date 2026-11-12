@@ -8,7 +8,6 @@ namespace Earmatch.App;
 
 public static class SystemInfo
 {
-    /// The app version ("0.1.2"), or null for a development build without one.
     public static string? ShortVersion
     {
         get
@@ -27,7 +26,6 @@ public static class SystemInfo
         ? BuildNumber is { } build ? $"{version} ({build})" : version
         : null;
 
-    /// "Microsoft Windows 10.0.26100": Windows 11 keeps the 10.0 version, its build tells them apart.
     public static string WindowsVersion => RuntimeInformation.OSDescription.Trim();
 
     public static string Architecture

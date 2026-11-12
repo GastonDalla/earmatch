@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 
 namespace Earmatch.App;
 
-/// The Win32 calls of the rekordbox monitor, the overlays and the hotkeys.
 internal static partial class NativeMethods
 {
     public const int WhKeyboardLl = 13;
@@ -84,7 +83,6 @@ internal static partial class NativeMethods
         public uint Private;
     }
 
-    // Hooks take delegates, which the source-generated LibraryImport does not marshal.
     [DllImport("user32.dll", EntryPoint = "SetWindowsHookExW", SetLastError = true)]
     public static extern IntPtr SetWindowsHookEx(int hook, LowLevelKeyboardProc procedure, IntPtr module, uint threadId);
 
@@ -159,7 +157,6 @@ internal static partial class NativeMethods
     [LibraryImport("user32.dll")]
     private static partial IntPtr GetAncestor(IntPtr window, uint flags);
 
-    /// The process of the foreground window; 0 when no window is in front.
     public static uint ForegroundProcessId()
     {
         var window = GetForegroundWindow();
@@ -168,7 +165,6 @@ internal static partial class NativeMethods
         return processId;
     }
 
-    /// Whether a window is a top-level window rather than a child of another window.
     public static bool IsTopLevel(IntPtr window) => window != IntPtr.Zero && GetAncestor(window, GaRoot) == window;
 
     [LibraryImport("user32.dll", EntryPoint = "GetWindowTextW")]
@@ -200,10 +196,8 @@ internal static partial class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool CloseHandle(IntPtr handle);
 
-    /// Creates the calling thread's message queue, so messages posted to it before its loop starts are kept.
     public static void CreateMessageQueue() => PeekMessage(out _, IntPtr.Zero, 0, 0, PmNoRemove);
 
-    /// The visible top-level windows of a process that no other window owns, with their titles.
     public static List<(IntPtr Window, string Title)> TopLevelWindows(int processId)
     {
         var windows = new List<(IntPtr, string)>();
@@ -223,7 +217,6 @@ internal static partial class NativeMethods
         return length <= 0 ? "" : new string(buffer, 0, length);
     }
 
-    /// The path of a process's executable; it works for elevated processes too, which only allow limited queries.
     public static unsafe string? ProcessImagePath(int processId)
     {
         var process = OpenProcess(ProcessQueryLimitedInformation, false, (uint)processId);

@@ -15,10 +15,6 @@ using Velopack;
 
 namespace Earmatch.App;
 
-/// Earmatch for Windows (AppDelegate.swift): the tray icon, the main window, the rekordbox monitor, the overlays with
-/// the window capture, the mix trainer and the hotkeys. Every change of rekordbox, of the settings or of the peek
-/// renders the overlays, the window's status and the tray icon again; the overlays feed the live decks mirror and the
-/// mix trainer.
 public partial class App : Application
 {
     private const string InstanceName = @"Local\Earmatch.SingleInstance";
@@ -42,14 +38,10 @@ public partial class App : Application
     private double _liveReceivedAt;
     private bool _isPeeking;
 
-    /// How long the live decks mirror keeps a snapshot without a newer one (MainWindowController.liveSnapshotLifetime).
     private const double LiveSnapshotLifetime = 0.75;
 
-    /// How long quitting waits for the practice history's last saves.
     private static readonly TimeSpan PracticeFlushTimeout = TimeSpan.FromSeconds(2);
 
-    /// Velopack's hooks run first: when Setup installs Earmatch, an update replaces it or it is uninstalled, Velopack
-    /// starts Earmatch with its own arguments, does its part and exits before any window or hook exists.
     [STAThread]
     public static void Main()
     {
@@ -151,7 +143,6 @@ public partial class App : Application
         _updater.Start();
     }
 
-    /// Whether rekordbox, or one of its dialogs, is the foreground app: an update found then waits in the menus.
     private static bool IsRekordboxFrontmost()
     {
         var processId = NativeMethods.ForegroundProcessId();
@@ -166,10 +157,8 @@ public partial class App : Application
         else Dispatcher.BeginInvoke(Render);
     }
 
-    /// A lock or a user switch can hide a held key's release from the hook: the peek ends.
     private void OnSessionSwitch(object? sender, SessionSwitchEventArgs e) => _hotkeys?.Reset();
 
-    /// The overlays, the window's status and live decks, and the tray icon for rekordbox's state and the settings.
     private void Render()
     {
         if (_store is null || _model is null || _monitor is null) return;
@@ -185,8 +174,6 @@ public partial class App : Application
 
     private bool IsWindowShown => _window is { IsVisible: true } window && window.WindowState != WindowState.Minimized;
 
-    /// The live decks mirror (MainWindowController.updateLive): shown while the window is, and cleared when no newer
-    /// snapshot came for a moment (the overlays stopped sending).
     private void UpdateLive(LiveDecksSnapshot snapshot)
     {
         if (_model is null || !IsWindowShown) return;
@@ -231,7 +218,6 @@ public partial class App : Application
         _about.ShowAndActivate();
     }
 
-    /// Copies the diagnostics report; false when the clipboard stayed busy (another app holds it open).
     private bool CopyDiagnostics()
     {
         if (_model is null) return false;
@@ -245,8 +231,6 @@ public partial class App : Application
         return ClipboardRetry.TryWrite(() => Clipboard.SetText(report.Text), () => Thread.Sleep(50));
     }
 
-    /// The capture section of the report (OverlayController.diagnostics on macOS): what UI Automation located and how
-    /// the capture keeps up, with the hotkey hook's state.
     private string LayoutDiagnostics(string version)
     {
         if (_overlays is null) return "";
@@ -280,8 +264,6 @@ public partial class App : Application
         ClearLive();
     }
 
-    /// One Earmatch at a time: a second launch shows the running one's window and exits. An Earmatch running as
-    /// administrator keeps a normal launch from opening its mutex and its signal; the normal launch then just exits.
     private bool ClaimSingleInstance()
     {
         bool isFirst;
@@ -306,7 +288,6 @@ public partial class App : Application
         }
         catch (UnauthorizedAccessException)
         {
-            // Another Earmatch as administrator still holds the signal: this one runs, and a later launch cannot raise it.
             return true;
         }
         var signalHandle = _showSignal;
@@ -331,11 +312,9 @@ public partial class App : Application
         }
         catch (WaitHandleCannotBeOpenedException)
         {
-            // The running instance is still starting; it shows its window anyway.
         }
         catch (UnauthorizedAccessException)
         {
-            // The running instance is elevated: Windows does not let this launch signal it.
         }
     }
 
@@ -354,7 +333,6 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         StopMonitoring();
-        // A mix finished just before quitting may still be on its way to the file.
         if (_practice?.Flush(PracticeFlushTimeout) == false)
             System.Diagnostics.Trace.WriteLine("earmatch: the practice history was still being saved when Earmatch quit");
         _tray?.Dispose();

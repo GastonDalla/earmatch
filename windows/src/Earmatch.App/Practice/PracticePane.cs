@@ -10,8 +10,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Practice;
 
-/// The Practice pane (PracticePane.swift): the mix trainer switch, the transition being timed, the last mix, its replay
-/// and the progress day by day.
 public sealed class PracticePane : PaneView
 {
     private readonly Grid _columns;
@@ -194,7 +192,6 @@ public sealed class PracticePane : PaneView
         return view;
     }
 
-    /// The three captions under a chart: left, centred and right.
     public static Grid Footer(string left, string centre, string right)
     {
         var grid = new Grid();

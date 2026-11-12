@@ -8,9 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Rekordbox;
 
-/// `Earmatch --dump-uia` (DiagnosticsCommand.swift's --dump-ax): reads rekordbox's main window once, prints the dump in
-/// the fixture format of windows/tools/dump-uia.ps1 to standard output and what the locator found to standard error,
-/// and exits: 0 when it read the window, 1 when it could not.
 internal static class DumpUiaCommand
 {
     public const string Flag = "--dump-uia";
