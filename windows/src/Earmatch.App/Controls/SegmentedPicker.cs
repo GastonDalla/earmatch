@@ -10,8 +10,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Controls;
 
-/// The segmented picker of the macOS window: a dark well with one lime pill on the selected option. Labels that fit
-/// share the row equally (SegmentWidths); Left and Right step through the options.
 public sealed class SegmentedPicker<T> : FrameworkElement, ISegmentedOptions
 {
     private const double Inset = Spacing.Tight;

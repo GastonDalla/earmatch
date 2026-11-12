@@ -3,10 +3,6 @@ using Earmatch.App.Capture;
 
 namespace Earmatch.App.Overlay;
 
-/// Calls back once per frame WPF draws, at the display's refresh rate (DisplayLinkDriver.swift's CADisplayLink), with
-/// the screen times of that frame on CaptureClock: `timestamp`, the next vertical blank, the earliest a change made now
-/// can be seen, and `targetTime`, the blank after it, when WPF's render thread and the desktop composition have shown
-/// it (the time the meters are predicted for). The times come from the desktop composition's timing, or 60 Hz without.
 internal sealed class RefreshDriver
 {
     private const double FallbackPeriod = 1.0 / 60;

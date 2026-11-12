@@ -9,8 +9,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The sidebar (MainWindowSidebar.swift): the app's icon, name and version, the four sections with their shortcuts,
-/// and Earmatch's status at the bottom. Up and Down move between sections while the list has the keyboard.
 public sealed class Sidebar : Grid
 {
     private readonly MainWindowModel _model;
@@ -33,7 +31,6 @@ public sealed class Sidebar : Grid
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var brand = Brand(model.VersionLabel);
-        // macOS leaves 48 points for the traffic lights over the sidebar; on Windows that band drags the window.
         brand.Margin = new Thickness(12 + 6, MainWindowFrame.TitleBandHeight, 12, Spacing.Large);
         Children.Add(brand);
 
@@ -67,7 +64,6 @@ public sealed class Sidebar : Grid
         Refresh();
     }
 
-    /// Set by the window while the keyboard drives it, so the focus ring shows only then.
     public static bool IsKeyboardNavigating { get; set; }
 
     private static FrameworkElement Brand(string versionLabel)

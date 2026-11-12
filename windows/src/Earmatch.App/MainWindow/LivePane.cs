@@ -8,7 +8,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Panes;
 
-/// The Live pane (LivePane.swift): the on/off switch, the booth presets, the live decks mirror and the hotkeys.
 public sealed class LivePane : PaneView
 {
     private readonly ConnectionChip _connection = new();
@@ -80,7 +79,6 @@ public sealed class LivePane : PaneView
     }
 }
 
-/// The pill at the top right of the Live pane with rekordbox's connection.
 public sealed class ConnectionChip : Border
 {
     private readonly System.Windows.Shapes.Ellipse _dot = new() { Width = 8, Height = 8 };
@@ -109,7 +107,6 @@ public sealed class ConnectionChip : Border
     }
 }
 
-/// The live decks mirror (LiveDecksPanel.swift): each deck's title and phase meter while rekordbox is mirrored.
 public sealed class LiveDecksPanel : Border
 {
     private readonly MainWindowModel _model;

@@ -8,7 +8,6 @@ using Earmatch.App.Theme;
 
 namespace Earmatch.App.Controls;
 
-/// The lime switch of the macOS window: 46×26, a white knob, toggled by a click, Space or Enter.
 public sealed class AccentSwitch : FrameworkElement
 {
     private static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(nameof(Progress), typeof(double), typeof(AccentSwitch),

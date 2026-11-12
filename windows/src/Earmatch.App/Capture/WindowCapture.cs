@@ -16,8 +16,6 @@ internal enum CaptureStatusKind
     Failed,
 }
 
-/// Where the capture stands (WindowCapture.Status on macOS). Windows asks no permission to capture a window, so the
-/// macOS permission state is gone; a capture Windows refuses (an elevated rekordbox) fails with its reason.
 internal readonly record struct CaptureStatus(CaptureStatusKind Kind, string? Reason = null)
 {
     public static CaptureStatus Stopped => new(CaptureStatusKind.Stopped);
@@ -34,12 +32,9 @@ internal readonly record struct CaptureStatus(CaptureStatusKind Kind, string? Re
     };
 }
 
-/// One captured frame as it leaves the capture thread: its pixels, when it was captured (seconds on CaptureClock), the
-/// window's visible bounds and window rectangle at that moment (physical pixels), and its capture generation.
 internal readonly record struct RawFrame(FramePixels Pixels, double Time, NativeMethods.WindowRect Bounds, NativeMethods.WindowRect WindowRect,
     int Generation);
 
-/// The performance counter in seconds: the clock of Windows.Graphics.Capture's frame times and of the screen refreshes.
 internal static class CaptureClock
 {
     public static double Now => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
@@ -47,13 +42,6 @@ internal static class CaptureClock
     public static double Seconds(long ticks) => ticks / (double)Stopwatch.Frequency;
 }
 
-/// Captures rekordbox's main window with Windows.Graphics.Capture (WindowCapture.swift on macOS, ScreenCaptureKit):
-/// a free-threaded Direct3D 11 frame pool delivers each new frame on a worker thread, where its pixels are copied to
-/// the CPU (BGRA) for the analyser; the yellow capture border is turned off where Windows allows it, and the cursor is
-/// left out. It runs only while a feature needs pixels, follows the window it is given, waits while the window is
-/// minimized or hidden, and retries a failed start on RetrySchedule's delays. A failure drops the Direct3D device too,
-/// so a device Windows removed or reset (a driver update, a GPU reset, DXGI_ERROR_DEVICE_REMOVED) is created anew on the
-/// retry. It only reads the window's pixels. Follow, Stop and the status are used on the window's thread.
 internal sealed class WindowCapture : IDisposable
 {
     private readonly Dispatcher _dispatcher;
@@ -75,22 +63,16 @@ internal sealed class WindowCapture : IDisposable
         _dispatcher = dispatcher;
     }
 
-    /// Raised on the window's thread when the status changed.
     public event Action<CaptureStatus>? StatusChanged;
 
-    /// Called on the capture thread with each new frame; the receiver owns its pixels.
     public Action<RawFrame>? FrameArrived { get; set; }
 
     public CaptureStatus Status { get; private set; } = CaptureStatus.Stopped;
 
-    /// Grows at each start and stop: frames of an earlier generation are stale.
     public int Generation { get; private set; }
 
-    /// The window captured, or zero.
     public IntPtr Window => _wanted;
 
-    /// Captures `window` (zero stops the capture). A window already being captured keeps its stream; a failed start is
-    /// tried again once its retry delay has passed.
     public void Follow(IntPtr window)
     {
         if (window == IntPtr.Zero)
@@ -113,7 +95,6 @@ internal sealed class WindowCapture : IDisposable
         }
     }
 
-    /// rekordbox came back in front: a capture waiting for its window tries at once.
     public void WindowMayBeBack()
     {
         if (Status.Kind != CaptureStatusKind.WaitingForWindow || _wanted == IntPtr.Zero) return;
@@ -183,7 +164,6 @@ internal sealed class WindowCapture : IDisposable
         }
     }
 
-    /// Windows 11 draws a yellow border around a captured window unless the app may capture without it.
     private static void HideBorder(GraphicsCaptureSession session)
     {
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 20348)) return;
@@ -198,7 +178,6 @@ internal sealed class WindowCapture : IDisposable
         }
         catch (Exception error) when (error is UnauthorizedAccessException or System.Runtime.InteropServices.COMException or ArgumentException)
         {
-            // This Windows keeps the border; the capture works with it.
         }
     }
 
@@ -226,7 +205,6 @@ internal sealed class WindowCapture : IDisposable
                     _pixels.Return(bytes);
                     return;
                 }
-                // Only the pixels copied are the frame's: the rest of the pooled buffer holds an earlier frame.
                 raw = new RawFrame(new FramePixels(_pixels, bytes, copied.Width, copied.Height, stride), frame.SystemRelativeTime.TotalSeconds, bounds,
                     windowRect, _deliveringGeneration);
                 if (content.Width != _poolSize.Width || content.Height != _poolSize.Height)
@@ -254,7 +232,6 @@ internal sealed class WindowCapture : IDisposable
         else raw.Pixels.Release();
     }
 
-    /// Stops the capture session; `dropDevice` also lets the Direct3D device go, for a fresh one at the next start.
     private void TearDown(bool dropDevice = false)
     {
         _retryTimer?.Stop();

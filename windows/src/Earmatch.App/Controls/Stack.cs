@@ -3,7 +3,6 @@ using System.Windows.Controls;
 
 namespace Earmatch.App.Controls;
 
-/// A StackPanel with spacing between its visible children, like SwiftUI's VStack and HStack.
 public sealed class Stack : Panel
 {
     public Orientation Orientation { get; init; } = Orientation.Vertical;
@@ -50,7 +49,6 @@ public sealed class Stack : Panel
     }
 }
 
-/// Shows its first child when it fits the width, otherwise its second, like SwiftUI's ViewThatFits.
 public sealed class FirstThatFits : Panel
 {
     protected override Size MeasureOverride(Size available)

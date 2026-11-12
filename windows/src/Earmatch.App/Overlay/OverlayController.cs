@@ -5,12 +5,6 @@ using Earmatch.Core;
 
 namespace Earmatch.App.Overlay;
 
-/// Places and draws the overlays over rekordbox (OverlayController.swift). While a feature needs pixels it captures
-/// rekordbox's window (WindowCapture), reads each frame off the window's thread (FrameReader) and hands the newest one
-/// over; at each screen refresh it draws the phase meters predicted for that refresh (PhaseMeterBoard), and with each
-/// new frame the split waveform, the master's waveform band and the measured jog BPM covers. Blind mode's covers come
-/// from UI Automation alone (OverlayCovers). Every overlay hides while Earmatch is off, rekordbox is not active in
-/// front, or Right Alt is held. It also feeds the live decks mirror (30 times a second) and the diagnostics.
 internal sealed class OverlayController : IDisposable
 {
     private const double StaleFrameAge = 0.25;
@@ -60,13 +54,10 @@ internal sealed class OverlayController : IDisposable
         _refresh.Refresh = Refresh;
     }
 
-    /// Raised when the capture's status or its mapping problem changed: the status lines read CaptureMessage again.
     public event Action? CaptureStatusChanged;
 
-    /// The live decks mirror, 30 times a second while the overlays show, then LiveDecksSnapshot.Empty once.
     public event Action<LiveDecksSnapshot>? LiveUpdate;
 
-    /// Why the capture cannot be used, for the status lines; null while it can (or is not needed).
     public string? CaptureMessage
     {
         get
@@ -84,7 +75,6 @@ internal sealed class OverlayController : IDisposable
         Render();
     }
 
-    /// The capture section of the diagnostics report, in English.
     public CaptureDiagnostics Diagnostics(string earmatchVersion, string windowsVersion) => L10n.English(() =>
     {
         var stats = _reader.Stats.Current;
@@ -176,8 +166,6 @@ internal sealed class OverlayController : IDisposable
         _panelWindow.Place(panel, _state.Offset);
     }
 
-    /// The meters drawn over the waveform in Normal (bands) and beside the vertical columns (side meters): each in a
-    /// small overlay of its own, on a dark rounded plate, rather than in one overlay across the whole waveform.
     private void PlaceMeters(Dictionary<int, (OverlayWindow Window, MeterView View)> meters, IReadOnlyDictionary<int, ScreenRect> frames)
     {
         foreach (var (number, frame) in frames)
