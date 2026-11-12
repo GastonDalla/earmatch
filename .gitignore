@@ -7,3 +7,6 @@ build/
 # Earmatch for Windows
 windows/**/bin/
 windows/**/obj/
+
+# Local task notes
+odd/
