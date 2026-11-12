@@ -27,7 +27,7 @@ internal static partial class RekordboxLocator
         {
             if (deck.Strip is { Orientation: StripOrientation.Vertical } strip) deck.BarsText = BarsText(strip.Frame, elements, units);
         }
-        return new RekordboxLayout(mode, layoutName, waveform?.Stacked, decks);
+        return new RekordboxLayout(mode, layoutName, waveform?.Stacked, decks, snapshot.Scale);
     }
 
     /// Converts the macOS point distances to the snapshot's pixels.

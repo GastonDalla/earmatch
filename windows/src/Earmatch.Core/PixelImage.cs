@@ -1,7 +1,9 @@
 namespace Earmatch.Core;
 
 /// A captured frame of the rekordbox window: 4 bytes per pixel, rows of BytesPerRow bytes. Origin is the screen point
-/// of pixel (0, 0) and Scale the pixels per screen unit.
+/// of pixel (0, 0) and Scale the pixels per screen unit. LayoutScale is the screen units per rekordbox layout unit (a
+/// macOS point): 1 where screen units are points, as on macOS, and the window's DPI / 96 on Windows, where screen units
+/// are physical pixels. The detectors keep the macOS distances in points and convert them with it, like the locator.
 public readonly struct PixelImage
 {
     public enum PixelLayout
@@ -23,7 +25,8 @@ public readonly struct PixelImage
 
     private readonly ReadOnlyMemory<byte> _bytes;
 
-    public PixelImage(ReadOnlyMemory<byte> bytes, int width, int height, int bytesPerRow, PixelLayout layout, double scale, ScreenPoint origin)
+    public PixelImage(ReadOnlyMemory<byte> bytes, int width, int height, int bytesPerRow, PixelLayout layout, double scale, ScreenPoint origin,
+        double layoutScale = 1)
     {
         _bytes = bytes;
         Width = width;
@@ -32,6 +35,7 @@ public readonly struct PixelImage
         Layout = layout;
         Scale = scale;
         Origin = origin;
+        LayoutScale = layoutScale;
     }
 
     public int Width { get; }
@@ -40,6 +44,13 @@ public readonly struct PixelImage
     public PixelLayout Layout { get; }
     public double Scale { get; }
     public ScreenPoint Origin { get; }
+    public double LayoutScale { get; }
+
+    /// The pixels in one rekordbox layout unit (a macOS point).
+    public double PixelsPerPoint => Scale * LayoutScale;
+
+    /// A macOS distance in points, in screen units.
+    public double Points(double points) => points * LayoutScale;
 
     public RGB Pixel(int x, int y)
     {

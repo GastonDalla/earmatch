@@ -70,9 +70,6 @@ public sealed record PracticeLiveStatus(
     double? PhaseErrorMilliseconds,
     double? MeanPhaseErrorMilliseconds)
 {
-    /// A mix is saved once both decks played this long together (PracticeSession.minimumMixSeconds on macOS).
-    public const double MinimumMixSeconds = 8;
-
     public bool IsMatched => SecondsToMatch is not null;
-    public bool IsLongEnough => BothPlayingSeconds >= MinimumMixSeconds;
+    public bool IsLongEnough => BothPlayingSeconds >= PracticeSession.MinimumMixSeconds;
 }

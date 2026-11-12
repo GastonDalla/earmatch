@@ -3,6 +3,9 @@ namespace Earmatch.Core;
 /// A point in screen coordinates (physical pixels on Windows).
 public readonly record struct ScreenPoint(double X, double Y);
 
+/// A size in screen coordinates (physical pixels on Windows).
+public readonly record struct ScreenSize(double Width, double Height);
+
 /// A rectangle in screen coordinates (physical pixels on Windows), with the semantics of CoreGraphics' CGRect that the
 /// macOS code relies on: Contains includes the min edges and excludes the max edges.
 public readonly record struct ScreenRect(double X, double Y, double Width, double Height)
@@ -18,6 +21,8 @@ public readonly record struct ScreenRect(double X, double Y, double Width, doubl
     public double Area => Width * Height;
 
     public bool Contains(ScreenPoint point) => point.X >= MinX && point.X < MaxX && point.Y >= MinY && point.Y < MaxY;
+
+    public ScreenRect Offset(double dx, double dy) => this with { X = X + dx, Y = Y + dy };
 
     public ScreenRect Union(ScreenRect other)
     {

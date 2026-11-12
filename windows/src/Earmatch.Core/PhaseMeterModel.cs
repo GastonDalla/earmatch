@@ -69,8 +69,7 @@ public sealed record PhaseMeterDisplay(
 /// What a deck's phase meter shows: the sync master's row above the deck's own, as the players draw it.
 public static class PhaseMeterModel
 {
-    /// Beats in a bar (BeatGridDetector.beatsPerBar on macOS).
-    public const int BeatsPerBar = 4;
+    private const int BeatsPerBar = (int)BeatGridDetector.BeatsPerBar;
     public const double LineSpan = 4.0;
     public const double Cdj3000Span = 4.8;
     public static IReadOnlyList<string> MasterLabelLines { get; } = ["MASTER", "PLAYER"];
