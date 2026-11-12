@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 usage() {
     cat <<'USAGE'
 Builds a release of Earmatch that anyone can download and open without Gatekeeper warnings:
-Developer ID signature with the hardened runtime, a drag-to-Applications DMG, notarization,
+Developer ID signature with the hardened runtime, a designed drag-to-Applications DMG, notarization,
 stapling, and a Sparkle appcast item signed with the EdDSA key.
 
 It never uploads anything. At the end it prints the files to upload and the commands to do it.
@@ -15,7 +15,8 @@ Usage:
   scripts/release.sh [--dry-run] [--notes FILE]
 
   --dry-run    Build, package and check everything that needs no credentials. Skips Developer ID
-               signing, notarization, stapling and the signed appcast, and says so.
+               signing, notarization, stapling and the signed appcast, and says so. Like a release,
+               it lays out the DMG window with Finder, so it needs a logged-in session.
   --notes FILE Markdown release notes for this version (default: docs/release-notes/<version>.md).
 
 Environment:
@@ -202,42 +203,90 @@ else
     echo "note: Gatekeeper rejects the app until it is notarized (expected here; checked again after stapling)"
 fi
 
-step "Creating $dmg"
-mkdir -p "$out"
-rm -f "$dmg"
-staging="$(mktemp -d)"
+work="$(mktemp -d)"
 mounts=()
 cleanup() {
-    for mount in ${mounts[@]+"${mounts[@]}"}; do hdiutil detach -quiet "$mount" 2>/dev/null || true; done
-    rm -rf "$staging"
+    for mount in ${mounts[@]+"${mounts[@]}"}; do hdiutil detach -quiet -force "$mount" 2>/dev/null || true; done
+    rm -rf "$work"
 }
 trap cleanup EXIT
-ditto "$app" "$staging/Earmatch.app"
-ln -s /Applications "$staging/Applications"
-hdiutil create -quiet -volname "Earmatch" -srcfolder "$staging" -fs HFS+ -format UDZO -ov "$dmg"
-hdiutil verify -quiet "$dmg"
-echo "ok: $(du -h "$dmg" | cut -f1) $dmg"
 
 attach() {
     mount="$(mktemp -d)"
     hdiutil attach -readonly -nobrowse -noautoopen -quiet -mountpoint "$mount" "$1"
     mounts+=("$mount")
 }
+# Unmounts a DMG; Spotlight or Finder can hold a fresh mount for a moment, so it retries before forcing.
 detach() {
-    hdiutil detach -quiet "$1"
+    local attempt
+    for attempt in 1 2 3 4 5; do
+        hdiutil detach -quiet "$1" 2>/dev/null && break
+        if [[ $attempt == 5 ]]; then hdiutil detach -quiet -force "$1"; else sleep 1; fi
+    done
     local kept=()
     for mount in ${mounts[@]+"${mounts[@]}"}; do [[ "$mount" == "$1" ]] || kept+=("$mount"); done
     mounts=(${kept[@]+"${kept[@]}"})
     rmdir "$1" 2>/dev/null || true
 }
 
+step "Creating $dmg"
+# The DMG opens on a designed window: Earmatch and an Applications link on a drawn background
+# (scripts/dmg-background.swift), laid out by Finder (scripts/dmg-layout.applescript) in a read-write
+# image that is then compressed. Finder must run, so this needs a logged-in session, and macOS asks once
+# to let the terminal control Finder.
+mkdir -p "$out"
+rm -f "$dmg"
+staging="$work/content"
+mkdir -p "$staging/.background"
+ditto "$app" "$staging/Earmatch.app"
+ln -s /Applications "$staging/Applications"
+swift scripts/dmg-background.swift "$work/background" || fail "could not draw the DMG background"
+tiffutil -cathidpicheck "$work/background/background.png" "$work/background/background@2x.png" \
+    -out "$staging/.background/background.tiff" >/dev/null
+rw_image="$work/Earmatch-rw.dmg"
+hdiutil create -quiet -volname "Earmatch" -srcfolder "$staging" -fs HFS+ -format UDRW \
+    -size "$(( $(du -sm "$staging" | cut -f1) + 20 ))m" -ov "$rw_image"
+# Mounted at a private folder and addressed by path, so an "Earmatch" volume already open in Finder
+# (an older DMG) is left alone. Finder must see this mount, so it is attached without -nobrowse.
+layout="$work/layout"
+mkdir "$layout"
+hdiutil attach -readwrite -noverify -noautoopen -quiet -mountpoint "$layout" "$rw_image"
+mounts+=("$layout")
+chflags hidden "$layout/.background"
+osascript scripts/dmg-layout.applescript "$layout" \
+    || fail "Finder could not lay out the DMG window. Run the release in a logged-in session and allow the terminal to control Finder in System Settings > Privacy & Security > Automation"
+[[ -s "$layout/.DS_Store" ]] || fail "Finder did not save the DMG window layout (no .DS_Store)"
+# The disk icon goes in after the layout: saving it, Finder removes .VolumeIcon.icns and the custom-icon flag.
+setfile="$(xcrun --find SetFile 2>/dev/null || true)"
+volume_icon=0
+if [[ -n "$setfile" ]]; then
+    cp Support/AppIcon.icns "$layout/.VolumeIcon.icns"
+    chflags hidden "$layout/.VolumeIcon.icns"
+    "$setfile" -a C "$layout"
+    volume_icon=1
+else
+    echo "note: SetFile was not found (Xcode or the Command Line Tools); the DMG keeps the generic disk icon"
+fi
+rm -rf "$layout/.fseventsd" "$layout/.Trashes"
+sync
+detach "$layout"
+hdiutil convert -quiet "$rw_image" -format UDZO -imagekey zlib-level=9 -o "$dmg"
+hdiutil verify -quiet "$dmg"
+echo "ok: $(du -h "$dmg" | cut -f1) $dmg"
+
 step "Checking the DMG layout"
 attach "$dmg"
 ls -l "$mount"
 [[ -d "$mount/Earmatch.app" ]] || fail "the DMG has no Earmatch.app"
 [[ -L "$mount/Applications" && "$(readlink "$mount/Applications")" == "/Applications" ]] || fail "the DMG has no Applications link"
+[[ -s "$mount/.background/background.tiff" ]] || fail "the DMG has no background picture"
+LC_ALL=C grep -qa icvp "$mount/.DS_Store" 2>/dev/null || fail "the DMG has no Finder icon view layout in .DS_Store"
+if [[ $volume_icon == 1 ]]; then
+    [[ -s "$mount/.VolumeIcon.icns" ]] || fail "the DMG lost its disk icon (.VolumeIcon.icns)"
+    [[ "$("$(dirname "$setfile")/GetFileInfo" -aC "$mount")" == 1 ]] || fail "the DMG's disk icon flag is not set"
+fi
 codesign --verify --deep --strict "$mount/Earmatch.app"
-echo "ok: Earmatch.app and the Applications link; the app's signature is intact inside the DMG"
+echo "ok: Earmatch.app, the Applications link, the background and the Finder layout; the app's signature is intact inside the DMG"
 detach "$mount"
 
 if [[ $dry_run == 1 ]]; then
