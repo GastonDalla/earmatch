@@ -96,8 +96,7 @@ public sealed class PracticePane : PaneView
             : live.PhaseErrorMilliseconds is null && live.IsMatched ? PracticeStrings.NoPhase
             : PracticeText.AverageSinceMatch(live.MeanPhaseErrorMilliseconds);
         var view = Ui.VStack(Spacing.Small, top, tempo, meterRow, Ui.Text(caption, TypeStyle.Caption, WindowTheme.SecondaryText));
-        AutomationProperties.SetName(view, $"{PracticeText.DeckPair(live.OutgoingDeck, live.IncomingDeck)}, {matchText}");
-        return view;
+        return new SpokenGroup(view, () => PracticeSpeech.Live(live));
     }
 
     private static FrameworkElement Waiting()
@@ -146,7 +145,7 @@ public sealed class PracticePane : PaneView
             ErrorBrush(mix.MeanPhaseErrorMilliseconds)), 2, 0);
         Place(grid, Metric(PracticeStrings.WorstError, mix.WorstPhaseErrorMilliseconds is { } worst ? PracticeText.Milliseconds(worst) : PracticeText.NoValue,
             ErrorBrush(mix.WorstPhaseErrorMilliseconds)), 2, 2);
-        return Ui.VStack(Spacing.Small, heading, grid);
+        return new SpokenGroup(Ui.VStack(Spacing.Small, heading, grid), () => PracticeSpeech.Summary(mix));
     }
 
     private static void Place(Grid grid, UIElement element, int row, int column)

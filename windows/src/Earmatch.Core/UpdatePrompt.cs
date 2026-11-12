@@ -18,6 +18,11 @@ public static class UpdatePrompt
 {
     public const double LaunchWindow = 120;
 
+    public const string SkippedVersionKey = "skippedUpdateVersion";
+
+    public static bool IsSkipped(UpdateTrigger trigger, string version, string? skippedVersion) =>
+        trigger != UpdateTrigger.User && string.Equals(version, skippedVersion, StringComparison.Ordinal);
+
     public static bool AsksNow(double secondsSinceLaunch, bool rekordboxIsFrontmost) =>
         secondsSinceLaunch < LaunchWindow && !rekordboxIsFrontmost;
 

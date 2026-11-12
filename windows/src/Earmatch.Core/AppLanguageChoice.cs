@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Earmatch.Core;
 
 /// The language the window and the menus use: the Windows display language, or English or Spanish whatever it is.
@@ -21,13 +23,17 @@ public static class AppLanguageChoiceMembers
         };
 
         /// The catalog language for this choice; System follows the first preferred language Earmatch has.
-        public string LanguageCode(string? systemPreferred)
+        public string LanguageCode(string? systemPreferred) => choice.LanguageCodeFrom([systemPreferred]);
+
+        public string LanguageCodeFrom(IEnumerable<string?> preferredLanguages)
         {
             if (choice != AppLanguageChoice.System) return choice.RawValue;
-            var language = systemPreferred?.Split('-', '_')[0];
-            return AppLanguageChoice.FromStoredValue(language) is var match && match != AppLanguageChoice.System
-                ? match.RawValue
-                : AppLanguageChoice.FallbackCode;
+            foreach (var preferred in preferredLanguages)
+            {
+                if (AppLanguageChoice.FromStoredValue(preferred?.Split('-', '_')[0]) is var match && match != AppLanguageChoice.System)
+                    return match.RawValue;
+            }
+            return AppLanguageChoice.FallbackCode;
         }
 
         /// English and Español are named in their own language; System is translated.
@@ -39,12 +45,25 @@ public static class AppLanguageChoiceMembers
         };
 
         public string Explanation => choice == AppLanguageChoice.System
-            ? L10n.Text("Follows the Windows display language")
+            ? L10n.Text("Follows the language order in Windows Settings")
             : L10n.Text("The window and the menus switch right away");
     }
 
     extension(AppLanguageChoice)
     {
+        public static CultureInfo FormatCulture(string languageCode, CultureInfo regional)
+        {
+            if (string.Equals(regional.TwoLetterISOLanguageName, languageCode, StringComparison.OrdinalIgnoreCase)) return regional;
+            var culture = (CultureInfo)CultureInfo.GetCultureInfo(languageCode).Clone();
+            culture.NumberFormat = (NumberFormatInfo)regional.NumberFormat.Clone();
+            var dates = culture.DateTimeFormat;
+            var regionalDates = regional.DateTimeFormat;
+            dates.ShortTimePattern = regionalDates.ShortTimePattern;
+            dates.LongTimePattern = regionalDates.LongTimePattern;
+            dates.FirstDayOfWeek = regionalDates.FirstDayOfWeek;
+            return culture;
+        }
+
         public static IReadOnlyList<AppLanguageChoice> AllCases => Enum.GetValues<AppLanguageChoice>();
 
         public static string StorageKey => "appLanguage";

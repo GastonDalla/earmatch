@@ -46,4 +46,20 @@
     <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <EarmatchInfoPlist>$(MSBuildThisFileDirectory)..\..\..\Support\Info.plist</EarmatchInfoPlist>
+  </PropertyGroup>
+
+  <Target Name="EarmatchBuildNumber" BeforeTargets="GetAssemblyAttributes" Condition="Exists('$(EarmatchInfoPlist)')">
+    <XmlPeek XmlInputPath="$(EarmatchInfoPlist)" Query="/plist/dict/key[.='CFBundleVersion']/following-sibling::string[1]/text()" ProhibitDtd="false">
+      <Output TaskParameter="Result" PropertyName="EarmatchBuildNumber" />
+    </XmlPeek>
+    <ItemGroup Condition="'$(EarmatchBuildNumber)' != ''">
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>BuildNumber</_Parameter1>
+        <_Parameter2>$(EarmatchBuildNumber)</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
+
 </Project>

@@ -39,7 +39,7 @@ public sealed class LocalizationCatalog
 
     public static LocalizationCatalog Load(string language) => Load(language, CultureInfo.GetCultureInfo(language));
 
-    private static LocalizationCatalog Load(string language, CultureInfo culture)
+    public static LocalizationCatalog Load(string language, CultureInfo culture)
     {
         var name = $"Earmatch.Core.Localization.{language}.json";
         using var stream = typeof(LocalizationCatalog).Assembly.GetManifestResourceStream(name)

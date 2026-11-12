@@ -265,6 +265,8 @@ public sealed class ActionButton : Border
     private readonly Action _action;
     private bool _isPressed;
 
+    public ActionKind Kind => _kind;
+
     public ActionButton(ActionKind kind, string accessibilityText, Action action, UIElement label)
     {
         _kind = kind;
@@ -385,4 +387,8 @@ public sealed class ActionButton : Border
             e.Handled = true;
         }
     }
+
+    internal void InvokeByUser() => _action();
+
+    protected override System.Windows.Automation.Peers.AutomationPeer OnCreateAutomationPeer() => new ActionButtonAutomationPeer(this);
 }

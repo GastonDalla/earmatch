@@ -55,4 +55,11 @@ public class DiagnosticsReportTests
         BoothPreset.Cdj3000.Apply(ref settings);
         Assert.Contains("Booth: CDJ-3000\n", (Report with { Settings = settings }).Text);
     }
+
+    [Fact]
+    public void ThePCLineNamesTheModelBeforeTheArchitecture()
+    {
+        var text = (Report with { AppVersion = "0.1.2 (3)", Model = "Microsoft Corporation Virtual Machine" }).Text;
+        Assert.Contains("Earmatch: 0.1.2 (3)\nWindows: Windows 11 (10.0.26100)\nPC: Microsoft Corporation Virtual Machine (ARM64)\n", text);
+    }
 }

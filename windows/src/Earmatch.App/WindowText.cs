@@ -45,6 +45,7 @@ public static class WindowText
     public static string Sections => L10n.Text("Sections");
     public static string Independence => L10n.Text("Independent utility. Not affiliated with AlphaTheta, Pioneer DJ or rekordbox.");
     public static string DevelopmentBuild => L10n.Text("development build");
+    public static string ToggleSwitch => L10n.Text("toggle switch");
 
     public static string Sample(string visible) => L10n.Format("Sample: BPM reads %@", visible);
     public static string Status(string title) => L10n.Format("Status: %@", title);

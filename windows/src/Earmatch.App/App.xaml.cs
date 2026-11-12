@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
 using Earmatch.App.Capture;
+using Earmatch.App.Dialogs;
 using Earmatch.App.Hotkeys;
 using Earmatch.App.Overlay;
 using Earmatch.App.Panes;
@@ -35,6 +36,8 @@ public partial class App : Application
     private OverlayController? _overlays;
     private PracticeController? _practice;
     private AppUpdater? _updater;
+    private MainWindowPlacement? _placement;
+    private AboutWindow? _about;
     private DispatcherTimer? _liveExpiry;
     private double _liveReceivedAt;
     private bool _isPeeking;
@@ -107,12 +110,9 @@ public partial class App : Application
         _model.Quit = Quit;
         _window = new EarmatchWindow(_model);
         MainWindow = _window;
-        _tray = new TrayIcon(_model, ShowWindow, () =>
-        {
-            _model.Select(MainWindowPane.Setup);
-            ShowWindow();
-        }, CopyDiagnostics, Quit);
-        _updater = new AppUpdater(IsRekordboxFrontmost, () => IsWindowShown ? _window : null, Quit);
+        _placement = new MainWindowPlacement(_window, store);
+        _tray = new TrayIcon(_model, ShowWindow, ShowAbout, CopyDiagnostics, Quit);
+        _updater = new AppUpdater(store, IsRekordboxFrontmost, () => IsWindowShown ? _window : null, Quit);
         _updater.Changed += () => _model.ApplyUpdates(_updater.State);
         _model.ApplyUpdates(_updater.State);
         _model.CheckForUpdates = _updater.ChooseMenuItem;
@@ -146,6 +146,7 @@ public partial class App : Application
         _window.StateChanged += (_, _) => ClearLiveUnlessShown();
         _monitor.Start();
         Render();
+        _placement.Restore();
         ShowWindow();
         _updater.Start();
     }
@@ -220,13 +221,27 @@ public partial class App : Application
 
     private void ShowWindow() => _window?.ShowAndActivate();
 
+    private void ShowAbout()
+    {
+        if (_about is null)
+        {
+            _about = new AboutWindow(IsWindowShown ? _window : null);
+            _about.Closed += (_, _) => _about = null;
+        }
+        _about.ShowAndActivate();
+    }
+
     /// Copies the diagnostics report; false when the clipboard stayed busy (another app holds it open).
     private bool CopyDiagnostics()
     {
         if (_model is null) return false;
         var version = SystemInfo.ShortVersion ?? L10n.English(() => WindowText.DevelopmentBuild);
-        var report = new DiagnosticsReport(version, SystemInfo.WindowsVersion, SystemInfo.Architecture, _model.RekordboxVersion, _model.Activation,
-            _model.Settings, LayoutDiagnostics(version)) { Updates = _model.Updates.DiagnosticsLine };
+        var report = new DiagnosticsReport(SystemInfo.VersionWithBuild ?? version, SystemInfo.WindowsVersion, SystemInfo.Architecture,
+            _model.RekordboxVersion, _model.Activation, _model.Settings, LayoutDiagnostics(version))
+        {
+            Updates = _model.Updates.DiagnosticsLine,
+            Model = SystemInfo.HardwareModel,
+        };
         return ClipboardRetry.TryWrite(() => Clipboard.SetText(report.Text), () => Thread.Sleep(50));
     }
 
@@ -241,6 +256,7 @@ public partial class App : Application
 
     private void Quit()
     {
+        _placement?.Save();
         if (_window is not null) _window.IsQuitting = true;
         StopMonitoring();
         _tray?.Dispose();
@@ -310,6 +326,7 @@ public partial class App : Application
         try
         {
             using var signal = EventWaitHandle.OpenExisting(ShowSignalName);
+            LetRunningInstanceComeToFront();
             signal.Set();
         }
         catch (WaitHandleCannotBeOpenedException)
@@ -319,6 +336,18 @@ public partial class App : Application
         catch (UnauthorizedAccessException)
         {
             // The running instance is elevated: Windows does not let this launch signal it.
+        }
+    }
+
+    private static void LetRunningInstanceComeToFront()
+    {
+        using var current = System.Diagnostics.Process.GetCurrentProcess();
+        foreach (var process in System.Diagnostics.Process.GetProcessesByName(current.ProcessName))
+        {
+            using (process)
+            {
+                if (process.Id != current.Id && process.SessionId == current.SessionId) NativeMethods.AllowForeground(process.Id);
+            }
         }
     }
 

@@ -15,6 +15,7 @@ public enum UpdatePhase
 
     /// The user saw the newer version and chose Later.
     Postponed,
+    Skipped,
     Downloading,
     Restarting,
     Failed,
@@ -61,6 +62,8 @@ public sealed record UpdateState
 
     public UpdateState Postponed() => this with { Phase = UpdatePhase.Postponed };
 
+    public UpdateState Skipped() => this with { Phase = UpdatePhase.Skipped };
+
     public UpdateState Downloading() => this with { Phase = UpdatePhase.Downloading, Problem = null };
 
     public UpdateState Restarting() => this with { Phase = UpdatePhase.Restarting };
@@ -97,6 +100,7 @@ public sealed record UpdateState
                 UpdatePhase.UpToDate => $"up to date (checked {checkedAt})",
                 UpdatePhase.Available => $"{Version} available (checked {checkedAt})",
                 UpdatePhase.Postponed => $"{Version} available, put off (checked {checkedAt})",
+                UpdatePhase.Skipped => $"{Version} available, skipped (checked {checkedAt})",
                 UpdatePhase.Downloading => $"downloading {Version}",
                 UpdatePhase.Restarting => $"restarting to install {Version}",
                 _ when Version is not null => $"downloading {Version} failed: {Problem}",

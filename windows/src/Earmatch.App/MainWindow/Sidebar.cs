@@ -14,8 +14,10 @@ namespace Earmatch.App.Panes;
 public sealed class Sidebar : Grid
 {
     private readonly MainWindowModel _model;
-    private readonly List<(MainWindowPane Pane, Border Row, Icon Icon, TextBlock Title, Border Ring)> _rows = [];
-    private readonly Stack _list = new() { Spacing = 2 };
+    private readonly List<(MainWindowPane Pane, SelectionRow Row, Icon Icon, TextBlock Title, Border Ring)> _rows = [];
+    private readonly Stack _stack = new() { Spacing = 2 };
+    private readonly SelectionList _list = new();
+    private MainWindowPane? _announcedPane;
     private readonly Border _status;
     private readonly System.Windows.Shapes.Ellipse _statusDot = new() { Width = 8, Height = 8 };
     private readonly TextBlock _statusTitle = Ui.Text("", TypeStyle.Caption, WindowTheme.White(0.92 * 0.85), wraps: true);
@@ -35,7 +37,8 @@ public sealed class Sidebar : Grid
         brand.Margin = new Thickness(12 + 6, MainWindowFrame.TitleBandHeight, 12, Spacing.Large);
         Children.Add(brand);
 
-        foreach (var pane in MainWindowPane.AllCases) _list.Children.Add(MakeRow(pane));
+        foreach (var pane in MainWindowPane.AllCases) _stack.Children.Add(MakeRow(pane));
+        _list.Child = _stack;
         _list.Margin = new Thickness(12, 0, 12, 0);
         _list.Focusable = true;
         _list.FocusVisualStyle = null;
@@ -110,7 +113,14 @@ public sealed class Sidebar : Grid
         var content = new Grid();
         content.Children.Add(new Border { Padding = new Thickness(10, 0, 10, 0), Child = grid });
         content.Children.Add(ring);
-        var row = new Border { Height = 34, CornerRadius = new CornerRadius(9), Child = content, Background = Brushes.Transparent, Cursor = Cursors.Hand };
+        var row = new SelectionRow(() => _model.Pane == pane, () => _model.Select(pane))
+        {
+            Height = 34,
+            CornerRadius = new CornerRadius(9),
+            Child = content,
+            Background = Brushes.Transparent,
+            Cursor = Cursors.Hand,
+        };
         row.MouseLeftButtonUp += (_, _) => _model.Select(pane);
         AutomationProperties.SetName(row, pane.Title);
         AutomationProperties.SetHelpText(row, WindowText.Shortcut(pane.ShortcutNumber));
@@ -135,6 +145,11 @@ public sealed class Sidebar : Grid
             icon.Brush = isSelected ? WindowTheme.Accent : WindowTheme.SecondaryText;
             title.Foreground = isSelected ? WindowTheme.PrimaryText : WindowTheme.White(0.92 * 0.75);
             ring.Visibility = isSelected && _list.IsKeyboardFocused && IsKeyboardNavigating ? Visibility.Visible : Visibility.Hidden;
+            if (isSelected && _announcedPane != pane)
+            {
+                if (_announcedPane is not null) _list.RaiseSelected(row);
+                _announcedPane = pane;
+            }
         }
         var status = _model.WindowStatus;
         var colour = WindowTheme.ColorFor(status.Tone);
@@ -148,5 +163,9 @@ public sealed class Sidebar : Grid
         AutomationProperties.SetHelpText(_status, detail);
     }
 
-    public void FocusList() => _list.Focus();
+    public void FocusList()
+    {
+        FocusManager.SetFocusedElement(FocusManager.GetFocusScope(_list), _list);
+        _list.Focus();
+    }
 }

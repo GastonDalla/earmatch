@@ -65,6 +65,7 @@ public sealed class EarmatchWindow : Window
         if (!IsVisible) Show();
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Activate();
+        if (!IsKeyboardFocusWithin || ReferenceEquals(Keyboard.FocusedElement, this)) _frame.View.Sidebar.FocusList();
     }
 
     protected override void OnSourceInitialized(EventArgs e)

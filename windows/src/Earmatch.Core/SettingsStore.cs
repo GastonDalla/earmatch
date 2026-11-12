@@ -56,6 +56,23 @@ public sealed class SettingsStore
         Save();
     }
 
+    public string? Value(string key, string member) =>
+        _document[key] is JsonObject group && group[member] is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+
+    public void SetValue(string key, string member, string? value)
+    {
+        if (Value(key, member) == value) return;
+        if (_document[key] is not JsonObject group)
+        {
+            if (value is null) return;
+            group = [];
+            _document[key] = group;
+        }
+        if (value is null) group.Remove(member);
+        else group[member] = value;
+        Save();
+    }
+
     private static JsonObject Read(string path)
     {
         try
