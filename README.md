@@ -1,139 +1,59 @@
-# Earmatch
+<p align="center"><img src="docs/images/icon.png" width="96" alt="Earmatch icon"></p>
 
-Made by [GastonDalla](https://github.com/GastonDalla).
+<h1 align="center">Earmatch</h1>
 
-Earmatch is a native overlay for rekordbox 7 on macOS and Windows for practising beatmatching by ear. It covers the parts of rekordbox that let you mix by eye: the decimals of the jog BPM, the stacked waveforms that line up the beat grids, and it adds a Pioneer-style phase meter you can switch on when you want a check.
+<p align="center">Practise beatmatching by ear on rekordbox 7. Free for Mac and Windows.</p>
 
-Earmatch only reads rekordbox. It never clicks, types into or controls rekordbox, and it never posts keyboard or mouse events.
+<p align="center">
+  <a href="https://github.com/GastonDalla/earmatch/releases/latest"><b>Download</b></a> ·
+  <a href="https://earmatch.gastondalla.com">Website</a> ·
+  <a href="docs/GUIDE.md">Guide</a>
+</p>
 
-Download it from the [latest release](https://github.com/GastonDalla/earmatch/releases/latest): `Earmatch-<version>.dmg` for the Mac, `Earmatch-win-x64-Setup.exe` for most Windows PCs and `Earmatch-win-arm64-Setup.exe` for Windows on Arm. Both apps do the same things; the sections below describe the Mac app, and [Windows](#windows) lists what differs on Windows.
+![Earmatch's Overlay section](docs/images/overlay.jpg)
 
-## Requirements
+## What it does
 
-- macOS 14 or later, on Apple silicon or Intel (the app is a universal binary), or Windows 10 (version 2004 or later) or Windows 11, on x64 or Arm64.
-- rekordbox 7 in **PERFORMANCE** mode with any of the **2Deck Horizontal**, **2Deck Vertical**, **4Deck Horizontal** or **4Deck Vertical** layouts. The overlays hide in Browse, in other modes, and while another app or another rekordbox window is in front.
-  - In vertical layouts every deck already has its own column, so Split behaves like Normal and the phase meters sit beside the columns.
-  - In 4-deck layouts Split and Hide Both use a 2x2 grid that mirrors the deck quadrants; empty decks show nothing.
-  - The cue countdown and the CDJ-3000 master waveform band work in horizontal layouts.
-- To build: Xcode 27 with Swift 6.4 (Swift Package Manager; every target builds in the Swift 6 language mode) for the universal app. With only the Command Line Tools, the build script makes an app for this Mac's architecture and warns about it.
+- **Hides what you would match by eye:** the decimals of the jog BPM (or all of it) and the stacked waveforms, split per deck or hidden.
+- **Adds a Pioneer-style phase meter** when you want a check: XDJ/CDJ-2000NXS boxes or a CDJ-3000 line, meter or waveform, with a bar counter or a cue countdown.
+- **Times every mix** with the mix trainer and keeps your practice history.
+- **Peek:** hold a key to see rekordbox unchanged.
 
-## Build
+Earmatch only reads rekordbox. It never clicks, types into or controls it.
 
-```sh
-./scripts/build-app.sh
-```
+## Install
 
-This builds `build/Earmatch.app` for arm64 and x86_64 (only for this Mac's architecture, with a warning, when Xcode is not installed), copies the icon, embeds the Sparkle update framework and signs the app. With an Apple Development or Developer ID identity in the keychain, macOS keeps the permission grants across rebuilds; set `EARMATCH_SIGN_IDENTITY` to choose one. Without an identity the app is signed ad hoc and macOS asks for both permissions again after every build.
+| | Mac | Windows |
+| --- | --- | --- |
+| Needs | macOS 14 or later, Apple silicon or Intel | Windows 10 (2004 or later) or 11, x64 or Arm64 |
+| Download | `Earmatch-<version>.dmg` | `Earmatch-win-x64-Setup.exe` (Windows on Arm: `-arm64-`) |
+| First run | Drag Earmatch to Applications, open it and allow **Accessibility** and **Screen Recording** | Run the installer. Until it is signed, SmartScreen asks: **More info** › **Run anyway** |
 
-In released builds, opening Earmatch checks for a new version and, when there is one, asks whether to install it. Earmatch never takes the focus from rekordbox for an update: when rekordbox is in front, and for the daily check while Earmatch runs, it shows **Update Available…** in the menus instead.
-
-Development builds have automatic updates off: the updater starts only in builds made with the Sparkle public key in `EARMATCH_SPARKLE_PUBLIC_KEY`, and **Check for Updates…** appears only then.
-
-Run the tests with `swift test`.
-
-## Releasing
-
-[docs/RELEASING.md](docs/RELEASING.md) describes the one-time setup (Developer ID certificate, notarization credentials, Sparkle keys) and each release: `./scripts/release.sh` builds a signed, notarized and stapled DMG and the signed update feed, and prints what to upload. `./scripts/release.sh --dry-run` checks everything that needs no credentials. `windows/scripts/release-windows.sh` builds the Windows installers and update packages for the same GitHub release.
-
-## First run
-
-1. Move `Earmatch.app` to `/Applications` first. macOS ties the permissions to the app's location.
-2. Open Earmatch. Until both permissions are allowed its window shows only the permissions screen, and nothing else works: the overlays stay hidden, the hotkeys are off, and the menu bar menu only offers to allow the missing permissions, open the window or quit. Earmatch shows no system prompt at launch; it asks from that screen. The two permissions:
-   - **Accessibility**: finds rekordbox's decks, labels and window position, and lets the hotkeys work.
-   - **Screen Recording**: sees the rekordbox window's waveforms and BPM digits. Only the rekordbox window is captured.
-3. Click **Open Settings** next to each one and turn Earmatch on in System Settings › Privacy & Security. The window re-checks every second, turns each row green once it is allowed, and opens on **Setup** a moment after both are.
-4. If macOS asks you to quit and reopen Earmatch, click **Restart Earmatch**.
-
-If you later turn either permission off, Earmatch locks again and the window goes back to the permissions screen.
-
-Running the binary from a terminal uses the terminal's permissions instead of the app's.
-
-While the window is open Earmatch shows a Dock icon and its own menu bar; closing the window keeps Earmatch running in the menu bar only. Choose **Open Earmatch…** from the menu bar icon (or open the app again) to bring it back. The window reopens where you left it, on the section you used last (on the permissions screen while a permission is missing).
-
-## The window
-
-The window has a sidebar with four sections, and each one fits on a 13-inch MacBook without scrolling (the window is 1040 × 700 points by default and at least 940 × 640). The sidebar also shows whether Earmatch is live, off or waiting for rekordbox.
-
-- **Live**: **Enable Earmatch**, the **BOOTH** presets, **LIVE DECKS** and the hotkeys.
-- **Overlay**: **BPM PRECISION**, **WAVEFORM** and **PHASE METER**, each with its options, preview and status line.
-- **Practice**: the **Mix trainer** switch, the mix being timed, the last mix, its replay and your progress.
-- **Setup**: the permissions, the **LANGUAGE** selector, the hotkeys, **Check for Updates…** (in released builds), **Copy Diagnostics**, **Quit Earmatch** and the credit.
-
-Switch sections with **Command-1** to **Command-4** (also in the **View** menu), or with **Up** and **Down** while the sidebar has focus.
-
-- **LIVE DECKS** mirrors the decks while rekordbox is in front (two or four, as in your layout): deck number, track title, a **SYNC MASTER** chip on the master deck, and each deck's phase meter in the type you chose, drawn exactly as the overlay draws it. Its status line shows the frame rate and the capture-to-screen latency (`Live · 112 fps · 2.1 ms`), or what Earmatch is waiting for.
-- Every option has a one-line explanation under it, and each card ends with a status line that says what Earmatch is waiting for (rekordbox, layout, a capture problem) or that it is live.
-- Every control works from the keyboard: **Tab** moves between switches, option pickers and buttons (a lime ring marks the focused one), **Space** flips a switch or presses a button, **Left** and **Right** change a picker's option, and holding **Space** on a preview's eye icon shows that preview without Earmatch. VoiceOver reads each control as the native switch, segmented control or button it stands for.
-
-## Options
-
-Once both permissions are allowed, all options are in the window and in the menu bar menu, and apply immediately.
-
-- **Enable Earmatch**: turns every overlay on or off.
-- **BPM PRECISION**: **Limit BPM display** covers part of the BPM in each jog centre, which includes the pitch. **One decimal** reads `127.2` for `127.22`, **No decimals** reads `127`, **Cover fully** hides it. The track's original BPM in the deck header stays visible.
-- **WAVEFORM**: **Normal** leaves rekordbox's stacked waveform alone. **Split** shows each deck in its own half with its own centred playhead, so the beat grids cannot be lined up by eye. **Hide Both** blacks out both waveforms.
-- **PHASE METER**: an on/off switch and two looks. **Type 1 (Box)** shows four boxes per bar, as on the XDJ-1000 and CDJ-2000NXS. **Type 2 (Line)** shows scrolling beat lines around a centre line, as on the CDJ-3000. The master deck is orange and the other deck blue, with a bar counter such as `06.3 Bars` for each. In Split and Hide Both the meters sit above each deck's half; in Normal each deck's meter sits on a small dark band at the top of its waveform.
-
-The **WAVEFORM** and **PHASE METER** cards each have a PREVIEW that animates the chosen option; while rekordbox is connected they switch to the decks' live beat positions and show a **LIVE** chip. Hold the eye icon next to PREVIEW to see that preview without Earmatch (to see rekordbox itself unchanged, hold Right Option). The **BPM PRECISION** card has no preview; its status line shows a sample BPM with the covered digits marked.
-
-## Languages
-
-Earmatch speaks English and Spanish. **LANGUAGE** in the window's Setup section picks **System**, **English** or **Español**; the window, the app menus and the menu bar menu switch right away, without restarting, and Earmatch keeps the choice. **System** (the default) follows the language order in System Settings › General › Language & Region: the first of your languages that Earmatch has is used, and English is the fallback. Numbers, dates and durations follow the chosen language in your region. Copy Diagnostics always writes its report in English.
-
-The labels a Pioneer DJ player prints on its own screen stay in English on the overlay in both languages, exactly as on the hardware: `MASTER`, `PLAYER`, `Bars`, the empty counter `--.-` and the player model names (CDJ-3000, CDJ-2000NXS2, XDJ-1000). A DJ who learns the meter on Earmatch reads the same words on the players in the booth. VoiceOver still reads the counters in your language.
-
-Translations live in `Support/en.lproj` and `Support/es.lproj`. `swift test` fails when a key used in the code is missing from either language, when a translation reads different format arguments than its key, or when a window or menu text skips the translation tables.
+Both use rekordbox 7 in **PERFORMANCE** mode with a 2Deck or 4Deck layout, and update themselves.
 
 ## Hotkeys
 
-| Keys | Action |
-| --- | --- |
-| Hold **Right Option** | Peek: shows rekordbox unchanged while held |
-| **Control-Option-Command-E** | Turn Earmatch on or off |
-| **Command-1** to **Command-4** | Show Live, Overlay, Practice or Setup (while the window is in front, once both permissions are allowed) |
+| Mac | Windows | Action |
+| --- | --- | --- |
+| Hold **Right Option** | Hold **Right Alt** | Peek at rekordbox unchanged |
+| **⌃⌥⌘E** | **Ctrl+Alt+Win+E** | Turn Earmatch on or off |
+| **⌘1**–**⌘4** | **Ctrl+1**–**Ctrl+4** | Live, Overlay, Practice, Setup |
 
-The peek starts only when Right Option is pressed on its own, and ends when you press any other key with it. The peek and on/off hotkeys work once both permissions are allowed, without restarting Earmatch, and stop if either is turned off. Earmatch only observes keys; rekordbox still receives every key you press.
-
-## Diagnostics
-
-- **Copy Diagnostics** (in the window's Setup section and the menu bar menu, once both permissions are allowed) copies a plain-text report to the clipboard: Earmatch, macOS and rekordbox versions, Mac model and architecture, permission status, the current status line and your settings, then the capture pipeline's numbers (capture status, whether the stacked waveform was found, frame rate, analysis time, capture-to-screen latency) and each deck's beat-grid reading. It contains no track titles or other personal data. Paste it into a bug report.
-- `Earmatch --dump-ax` prints rekordbox's main window as a JSON snapshot (the test-fixture format) on stdout and what Earmatch located in it on stderr. Use it to support a new rekordbox version:
-
-  ```sh
-  /Applications/Earmatch.app/Contents/MacOS/Earmatch --dump-ax > rekordbox-ax.json
-  ```
-
-- `Earmatch --render-window <directory>` writes PNG images of the window at 2x, one per section plus the four-deck Live view: `live.png`, `overlay.png`, `practice.png`, `setup.png` and `live-4deck.png`. They show sample data only (sample track titles and a sample practice history). The command does not read rekordbox, your settings or your practice history, asks for no permission, starts no capture, hotkeys or update checks, and quits when it is done. `--render-size minimum` (or `default`, or `WIDTHxHEIGHT` in points) picks the window size. Run the app's own binary to get its icon, version and translations; `-AppleLanguages '(es)'` renders the Spanish window:
-
-  ```sh
-  /Applications/Earmatch.app/Contents/MacOS/Earmatch --render-window ~/Desktop/earmatch-window --render-size default
-  ```
+<p align="center">
+  <img src="docs/images/live.jpg" width="49%" alt="Earmatch's Live section">
+  <img src="docs/images/practice.jpg" width="49%" alt="Earmatch's Practice section">
+</p>
 
 ## Privacy
 
-Earmatch reads rekordbox's Accessibility labels and captures only the rekordbox window. Frames are processed in memory and are never saved to disk or sent anywhere.
+Earmatch reads only the rekordbox window. Frames stay in memory and are never saved or sent anywhere. It goes online only to check for updates.
 
-Released builds connect to the network only for updates (Sparkle): each time you open Earmatch, once a day while it runs, and when you choose **Check for Updates…**, Earmatch downloads `https://earmatch.gastondalla.com/appcast.xml`, and it downloads the new version from GitHub when you install one. Sparkle's system profiling stays off, so these requests carry only Earmatch's name and version, plus the IP address every web request shows. Development builds make no network connections.
+## Build
 
-## Windows
-
-Earmatch for Windows is a native Windows app built from `windows/` (C# / .NET 10, WPF), released next to the Mac app in each [GitHub release](https://github.com/GastonDalla/earmatch/releases/latest). It works with rekordbox 7 for Windows like the macOS app, with the same layouts and the same rule: the overlays show only while rekordbox is in front in PERFORMANCE mode with a 2Deck or 4Deck layout. It covers the BPM limit (the jog's digits measured from the captured window), blind mode, Normal, Split and Hide Both, the four phase meter types with the bar counter or the cue countdown, the live decks mirror and the mix trainer with its practice history (`%APPDATA%\Earmatch\practice.json`, the macOS file format).
-
-- **Requirements:** Windows 10 or 11, x64 or Arm64, and rekordbox 7. Windows asks for no permission. Build and test with the .NET 10 SDK: `dotnet build windows/Earmatch.slnx`, `dotnet test windows/Earmatch.slnx`, and `dotnet publish windows/src/Earmatch.App -c Release -r win-x64 --self-contained` for an app folder (`-r win-arm64` on Arm).
-- **Install:** download `Earmatch-win-x64-Setup.exe` (most PCs) or `Earmatch-win-arm64-Setup.exe` (Windows on Arm) from the GitHub release of the version and open it. It installs Earmatch for your account only, without asking for an administrator, in `%LocalAppData%\Earmatch`, adds it to the Start menu and the desktop, and opens it. The installer is not signed yet, so Windows SmartScreen says "Windows protected your PC" the first time: choose **More info**, then **Run anyway**.
-- **Updates:** an installed Earmatch checks the GitHub releases when it opens, once a day while it runs, and when you choose **Check for Updates…** in the tray menu or the Setup section. When the check at opening finds a new version, it asks whether to install it in a window with the release notes and **Install Update**, **Remind Me Later** and **Skip This Version**, like Sparkle on macOS; a skipped version is not offered again by the automatic checks, only by **Check for Updates…**. Like on macOS it never takes the focus from rekordbox for an update: when rekordbox is in front, and for the daily check, it shows **Update Available…** in those places instead, and choosing it asks. Installing downloads the new version with its progress in the window, then Earmatch closes and opens again in it. Builds you run with `dotnet run` or from a `dotnet publish` folder never check for updates and show no **Check for Updates…**. Maintainers: `windows/scripts/release-windows.sh` and [docs/RELEASING.md](docs/RELEASING.md#windows).
-- **Uninstall:** Settings › Apps › Installed apps › Earmatch › **Uninstall** quits Earmatch and removes the app, its shortcuts and its Apps entry. Your settings and practice history stay in `%APPDATA%\Earmatch`; delete that folder to remove them too.
-- **First run:** open Earmatch from the Start menu (or `Earmatch.exe` of a build). Its icon sits in the notification area, in colour while the overlays run on rekordbox and grey otherwise, with the status in its tooltip; its menu replaces the macOS menu bar menu, and closing the window keeps Earmatch running there until **Quit Earmatch**.
-- **Window:** Earmatch reopens where you left it, for each arrangement of monitors, and keeps the window on the screen when a monitor is gone or smaller. Opening Earmatch again while it runs brings its window to the front. **About Earmatch** in the tray menu shows the version with its build number and the credit. With **System**, the language follows the language order in Windows Settings (the first of English and Spanish there), and numbers and times follow your regional format. Narrator reads the switches, the segmented pickers, the buttons and the sections list as such, and the live decks, the mix trainer and the replay as one line each, like VoiceOver on macOS.
-- **Hotkeys:** hold **Right Alt** (AltGr; the Spanish window calls it Alt Gr) to peek at rekordbox unchanged; **Ctrl+Alt+Win+E** turns Earmatch on or off; **Ctrl+1** to **Ctrl+4** switch the window's sections. Every key still reaches rekordbox, except the E of Ctrl+Alt+Win+E, which Earmatch keeps from Windows so it does not open File Explorer.
-- **Hotkeys and the Start menu:** right after Ctrl+Alt+Win+E, Earmatch types an unassigned key (0xE8) while the keys are still held, so releasing Win does not open the Start menu.
-- **Capture:** while a feature needs pixels (the BPM limit's One decimal or No decimals, Split, the phase meter or the mix trainer), Earmatch captures the rekordbox window with Windows.Graphics.Capture, without the cursor and, where Windows allows it, without the yellow capture border. The **Copy Diagnostics** report shows its frame rate, analysis time and capture-to-screen latency, after the version with its build number and the PC's maker and model.
-- **Privacy:** Earmatch only reads rekordbox, through UI Automation (the labels and positions of its window) and the capture of its window; it never clicks, types into or controls rekordbox. Frames are processed in memory and are never saved or sent anywhere. An installed Earmatch connects to the network only for updates: it reads the release list of `github.com/GastonDalla/earmatch` and downloads a new version from it when you install one; these requests carry no personal data beyond the IP address every web request shows. `Earmatch.exe --dump-uia > rekordbox-uia.json` prints what it reads (the test-fixture format) and what it located; `Earmatch.exe --capture-frame <folder>` saves one captured frame with what the analyser read from it, for checking the capture.
+- Mac: `./scripts/build-app.sh`, tests with `swift test`.
+- Windows: `dotnet build windows/Earmatch.slnx`, tests with `dotnet test windows/Earmatch.slnx`.
+- Releases: [docs/RELEASING.md](docs/RELEASING.md). Everything else: [docs/GUIDE.md](docs/GUIDE.md).
 
 ## Credits
 
-Made by [GastonDalla](https://github.com/GastonDalla). The credit is also in the window's Setup section and permissions screen, in **About Earmatch** (app menu, and the menu bar menu once both permissions are allowed) and in the app's copyright.
-
-## Independence
-
-Independent utility. Not affiliated with AlphaTheta, Pioneer DJ or rekordbox. rekordbox, Pioneer DJ, CDJ and XDJ are trademarks of their respective owners.
+Made by [GastonDalla](https://github.com/GastonDalla). Independent utility, not affiliated with AlphaTheta, Pioneer DJ or rekordbox. rekordbox, Pioneer DJ, CDJ and XDJ are trademarks of their respective owners.
