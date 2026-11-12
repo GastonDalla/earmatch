@@ -34,7 +34,7 @@ public sealed record StatusContext
     internal DeckArrangement? Arrangement => DeckArrangement.FromRawValue(LayoutName);
 }
 
-public static class StatusText
+public static partial class StatusText
 {
     public static StatusLine Connection(StatusContext context) =>
         context.Activation.Kind == OverlayActivationKind.RekordboxNotRunning

@@ -15,7 +15,8 @@ public static class L10n
     private sealed record Source(Lookup Text, PluralLookup? Plural, CultureInfo? Culture);
 
     private static readonly AsyncLocal<Source?> Override = new();
-    private static Source _installed = new(key => key, null, null);
+    // Volatile: an install on one thread is seen by every thread that reads text after it.
+    private static volatile Source _installed = new(key => key, null, null);
 
     public static void Install(Lookup lookup, CultureInfo culture, PluralLookup? plural = null) =>
         _installed = new Source(lookup, plural, culture);
