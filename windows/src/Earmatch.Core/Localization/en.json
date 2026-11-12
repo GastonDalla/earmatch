@@ -77,7 +77,40 @@
     "Mix trainer": "Mix trainer",
     "Records your mixes even with the overlays off": "Records your mixes even with the overlays off",
     "Mix Trainer": "Mix Trainer",
-    "No other master": "No other master"
+    "No other master": "No other master",
+    "English": "English",
+    "Español": "Español",
+    "System": "System",
+    "Follows the Windows display language": "Follows the Windows display language",
+    "The window and the menus switch right away": "The window and the menus switch right away",
+    "Reading the decks…": "Reading the decks…",
+    "Live · %.0f fps · %.1f ms": "Live · %.0f fps · %.1f ms",
+    "Live · %.0f fps": "Live · %.0f fps",
+    "Live · %.1f ms": "Live · %.1f ms",
+    "Live": "Live",
+    "Overlay": "Overlay",
+    "Practice": "Practice",
+    "Setup": "Setup",
+    "Live on rekordbox": "Live on rekordbox",
+    "Waiting for rekordbox": "Waiting for rekordbox",
+    "Deck %ld → Deck %ld": "Deck %ld → Deck %ld",
+    "Tempos matched in %@": "Tempos matched in %@",
+    "Matching tempos · %@": "Matching tempos · %@",
+    "Matching tempos": "Matching tempos",
+    "Average %@ since the tempos matched": "Average %@ since the tempos matched",
+    "Average appears once the tempos match": "Average appears once the tempos match",
+    "Worst at %@": "Worst at %@",
+    "Down from %@ to %@": "Down from %@ to %@",
+    "Up from %@ to %@": "Up from %@ to %@",
+    "Steady at %@": "Steady at %@",
+    "Timing deck %ld → deck %ld": "Timing deck %ld → deck %ld",
+    "Waiting for both decks to play": "Waiting for both decks to play",
+    "Today": "Today"
   },
-  "plurals": {}
+  "plurals": {
+    "Waiting for both decks · %ld mixes saved": {
+      "one": "Waiting for both decks · %ld mix saved",
+      "other": "Waiting for both decks · %ld mixes saved"
+    }
+  }
 }

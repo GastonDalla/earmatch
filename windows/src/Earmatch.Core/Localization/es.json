@@ -77,7 +77,40 @@
     "Mix trainer": "Entrenador de mezclas",
     "Records your mixes even with the overlays off": "Registra tus mezclas aunque las capas estén apagadas",
     "Mix Trainer": "Entrenador de mezclas",
-    "No other master": "Sin otro master"
+    "No other master": "Sin otro master",
+    "English": "English",
+    "Español": "Español",
+    "System": "Sistema",
+    "Follows the Windows display language": "Sigue el idioma de pantalla de Windows",
+    "The window and the menus switch right away": "La ventana y los menús cambian al instante",
+    "Reading the decks…": "Leyendo los decks…",
+    "Live · %.0f fps · %.1f ms": "En vivo · %.0f fps · %.1f ms",
+    "Live · %.0f fps": "En vivo · %.0f fps",
+    "Live · %.1f ms": "En vivo · %.1f ms",
+    "Live": "En vivo",
+    "Overlay": "Capas",
+    "Practice": "Práctica",
+    "Setup": "Configuración",
+    "Live on rekordbox": "En vivo en rekordbox",
+    "Waiting for rekordbox": "Esperando a rekordbox",
+    "Deck %ld → Deck %ld": "Deck %ld → Deck %ld",
+    "Tempos matched in %@": "Tempos ajustados en %@",
+    "Matching tempos · %@": "Ajustando tempos · %@",
+    "Matching tempos": "Ajustando tempos",
+    "Average %@ since the tempos matched": "Media de %@ desde que coinciden los tempos",
+    "Average appears once the tempos match": "La media aparece cuando los tempos coinciden",
+    "Worst at %@": "Peor en %@",
+    "Down from %@ to %@": "Bajó de %@ a %@",
+    "Up from %@ to %@": "Subió de %@ a %@",
+    "Steady at %@": "Estable en %@",
+    "Timing deck %ld → deck %ld": "Cronometrando deck %ld → deck %ld",
+    "Waiting for both decks to play": "Esperando a que suenen ambos decks",
+    "Today": "Hoy"
   },
-  "plurals": {}
+  "plurals": {
+    "Waiting for both decks · %ld mixes saved": {
+      "one": "Esperando ambos decks · %ld mezcla guardada",
+      "other": "Esperando ambos decks · %ld mezclas guardadas"
+    }
+  }
 }
