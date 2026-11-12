@@ -1,0 +1,39 @@
+Earmatch for Windows: the same rekordbox 7 overlay as the macOS app, for DJs who use Windows.
+Branch: GastonDalla/feat-windows-port (from main). Delivery: ask-on-risk; chain strategy stacked-to-main (user, 2026-11-12): one small PR per slice, each on the previous one, merged to main in order.
+Stack: C# / .NET 10 (LTS) + WPF, in `windows/` of this repo. Test runner: `dotnet test windows/Earmatch.sln` (xUnit), on macOS for the core; the app runs in the VMPal VM "Earmatch Windows".
+
+## Specs
+
+- S1. "empecemos este mismo programa, igual pero para windows": the Windows app has the features and look of the macOS app (README.md is the reference): limit BPM display, waveform Normal/Split/Hide Both, phase meter Type 1/Type 2 with bar counter, booth presets, blind mode, cue countdown, mix trainer and practice history, live decks mirror, diagnostics, English and Spanish.
+- S2. "Windows rekordbox 7 y dj que conozco no todos tienen macos por eso quiero hacer windows": target rekordbox 7 for Windows, PERFORMANCE mode, 2Deck/4Deck Horizontal/Vertical layouts, on ordinary Windows 10/11 x64 PCs (Windows on Arm works too, as in the test VM).
+- S3. Earmatch only reads rekordbox (UI Automation + capture of the rekordbox window); it never clicks, types into or controls rekordbox (same promise as the macOS README).
+- S4. The pure logic lives in a cross-platform library (`Earmatch.Core`) ported from `Sources/EarmatchCore` with its tests ported from `Tests/EarmatchCoreTests`; Windows-only adapters live in the WPF app (`Earmatch.App`).
+- S5. Assumption (mirrors macOS, change if the user says otherwise): hold Right Alt to peek; Ctrl+Alt+Win+E turns Earmatch on or off; the tray icon menu replaces the macOS menu bar menu.
+- S6. Assumption: Windows needs no permission prompts (UI Automation and Windows.Graphics.Capture work without them), so the macOS permission lock has no Windows counterpart.
+
+## Tasks
+
+| ID | Specs | Route | Status | Evidence |
+| --- | --- | --- | --- | --- |
+| T1 | S4 | inline | done (0fd835c) | solution scaffold: Earmatch.Core, Earmatch.Core.Tests, Earmatch.App; `dotnet build` succeeds on macOS (WPF via EnableWindowsTargeting); no tests yet |
+| T2 | S1 S2 S4 S5 S6 | delegated (context backstop) | done (a830f3c fixtures, 6a6a2d1 code) | layout model + Windows UIA locator (fixture from the VM), settings, activation, status text, L10n en/es, hotkey recognizer, retry/backoff |
+| T2b | S4 | inline | pending | fixes from the T2 reviews: BPMDisplayFormatter.Parse throws on a trailing newline (.NET `$` matches before a final \n); PixelImage bounds checked only by Debug.Assert; Printf throws on a catalog/argument mismatch; es catalog may lack the option Explanation keys (Spanish length test vacuous); UiaDump.Parse accepts a window without a frame; dump-uia.ps1 parent/depth look flattened in the browser area |
+| T3 | S1 S4 | delegated (context backstop) | pending | beat grid, phase meter model/tracker/predictor, bar counter, cue countdown, BPM glyph mask, waveform overlay plan, live decks snapshot; Windows pixel fixtures |
+| T4 | S1 S4 | delegated | pending | practice session, mix, history, history file |
+| T5 | S1 S2 S3 | tbd | pending | app adapters: UIA reader, Windows.Graphics.Capture, overlay windows, tray menu, main window, hotkeys, settings store; verified in the VM |
+| T6 | S1 S2 | tbd | pending | installer, signing, updates |
+
+## Log
+
+- L1 (2026-11-12, user): "Si commitea y tambien quiero que empecemos este mismo programa, igual pero para windows"
+- L2 (2026-11-12, user): "Windows rekordbox 7 y dj que conozco no todos tienen macos por eso quiero hacer windows"
+- L3 (2026-11-12, user): "Si quieres usa https://vmpal.com/" then "Ok arranca"; test plan: VMPal VM for development, a DJ friend's x64 PC to validate before shipping.
+- L4 (2026-11-12, user): "arregla todo y empieza a programar el programa igual para windows"
+- L5 (2026-11-12): VM fixed twice. (1) rekordbox crashed in tensorflow_cc.dll with an illegal AVX instruction: Windows 26100.4349's x64 emulator exposed no AVX; updating to 26100.9711 (KB5127648) fixed it. (2) VMPal's hypervisor stopped the VM on rekordbox's OpenGL writes to mapped GPU memory; fixed with `vmpal set "Earmatch Windows" --gpu off`.
+- L6 (2026-11-12): recon: rekordbox for Windows is JUCE and exposes UI Automation with the same help texts as macOS (mode "PERFORMANCE", layout "2Deck Horizontal", "Deck BPM display", "Tempo Range", "MASTER"); the macOS "Capture"/"Matching" anchors are absent, the stacked waveform is a Custom group with two 138 px lanes. Frames are physical pixels. Stack chosen by the assistant: C#/.NET 10 + WPF (mature UI Automation and layered topmost windows, tests run on macOS); core ported sequentially because RekordboxLayout is used by most core files.
+- L7 (2026-11-12): T1 committed (0fd835c). Captured five more UIA fixtures in the VM by switching rekordbox's layout and mode (2Deck Vertical, 4Deck Horizontal, 4Deck Vertical, Browse, EXPORT); each fixture's ComboBox values were checked against the requested state. rekordbox was left in PERFORMANCE 2Deck Horizontal. T2 delegated to a writer (reason: long-session context backstop); fixtures will be committed with T2.
+- Engram mirror: pending (Engram tools are not available in this session).
+- L8 (2026-11-12, user): chose "Cadena hacia main" (stacked-to-main) for the PRs.
+- L9 (2026-11-12): T2 done by the writer, parent re-ran the checks: `dotnet build` 0 warnings, `dotnet test` 168 passed. ~3.9k lines (src + tests) in one commit because the units are interdependent (StatusText needs RekordboxLayout, etc.). rekordbox for Windows at 200% is exactly 2x the macOS point geometry; the locator scales macOS tolerances by DPI/96 and anchors on the zoom button "RST". Open: deck 1's Bars text is empty in the Vertical fixtures (asserted as captured); dump-uia.ps1 does not record the DPI yet (tests assume 2.0). T1 review approved (low risk; it also saw T2's then-uncommitted csproj edit: advisory that the EmbeddedResource glob is not covered by a test). T2 review running.
+- L10 (2026-11-12): T2 history rebuilt into small commits (identical final tree, 168 tests) because one commit exceeded the review budget. gentle-ai committed-range reviews, each commit against its parent (`.atl/` added to .git/info/exclude so the untracked-selection step no longer resets the base to main): approved and acknowledged 7ff133b, 3b23d46, c933942, 20985fe (after one reoffered reliability capture), 857557d, 2793e4f; 7be47e8 closed as low risk. NOT reviewable: fixture commits 3e6395f (151 KB), f937723 (178 KB), 13a574e (198 KB) fail with lens_context_budget_exceeded even alone ("retrying this exact candidate cannot succeed"); the whole-branch START from the stop hook fails the same way. Needs the user's decision: shrink those fixtures (rewrite + re-review) or keep them unreviewed (their content is asserted by the locator tests).
+- Next: user decision on the three fixtures; T2b; then T3 (beat grid, phase meter, cue countdown, live snapshot; needs Windows pixel fixtures captured in the VM).
