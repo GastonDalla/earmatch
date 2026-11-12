@@ -27,7 +27,7 @@ import EarmatchCore
     }
 
     static let activations: [OverlayActivation] = [
-        .accessibilityMissing, .rekordboxNotRunning, .mainWindowNotFound, .rekordboxNotFrontmost,
+        .accessibilityMissing, .screenRecordingMissing, .rekordboxNotRunning, .mainWindowNotFound, .rekordboxNotFrontmost,
         .wrongMode(.export), .wrongLayout("Browse"), .wrongLayout("4Deck Horizontal"), .wrongLayout(nil), .decksNotFound, .active,
     ]
 

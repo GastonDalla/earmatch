@@ -37,6 +37,10 @@
 "SYNC MASTER" = "MAESTRO SYNC";
 "development build" = "versión de desarrollo";
 "PERMISSIONS" = "PERMISOS";
+"Two permissions before you start" = "Dos permisos antes de empezar";
+"Earmatch only reads rekordbox and never controls it. Allow both in System Settings and the options open here." = "Earmatch solo lee rekordbox y nunca lo controla. Permite ambos en Ajustes del Sistema y las opciones se abren aquí.";
+"Earmatch starts once both are allowed" = "Earmatch se inicia cuando ambos estén permitidos";
+"Both allowed. Starting Earmatch…" = "Ambos permitidos. Iniciando Earmatch…";
 "LIVE DECKS" = "DECKS EN VIVO";
 "BPM PRECISION" = "PRECISIÓN DE BPM";
 "WAVEFORM" = "FORMA DE ONDA";
@@ -150,6 +154,7 @@
 "%@ ahead" = "%@ adelantado";
 "%@ behind" = "%@ atrasado";
 "Allow Earmatch in Privacy & Security › Accessibility" = "Permite Earmatch en Privacidad y seguridad › Accesibilidad";
+"Allow Earmatch in Privacy & Security › Screen Recording" = "Permite Earmatch en Privacidad y seguridad › Grabación de pantalla";
 "Waiting for rekordbox 7" = "Esperando rekordbox 7";
 "Waiting for the rekordbox window" = "Esperando la ventana de rekordbox";
 "Paused until rekordbox is in front" = "En pausa hasta que rekordbox esté al frente";
@@ -242,8 +247,6 @@
 "Waiting for rekordbox" = "Esperando a rekordbox";
 "Needs permission" = "Falta un permiso";
 "HOTKEYS" = "ATAJOS";
-"A permission is missing, so Earmatch can't read rekordbox yet." = "Falta un permiso, así que Earmatch todavía no puede leer rekordbox.";
-"Open Setup" = "Abrir Configuración";
 "Switch between sections" = "Cambiar de sección";
 "Sections" = "Secciones";
 "Status: %@" = "Estado: %@";

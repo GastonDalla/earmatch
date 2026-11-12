@@ -29,11 +29,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         let settings = store.settings
 
         menu.addItem(note(monitor.state.activation.message))
-        if !AccessibilityReader.isTrusted {
-            menu.addItem(ClosureMenuItem(title: L10n.text("Allow Accessibility…")) { Permissions.requestAccessibility() })
-        }
-        if !Permissions.isScreenRecordingGranted {
-            menu.addItem(ClosureMenuItem(title: L10n.text("Allow Screen Recording…")) { Permissions.requestScreenRecording() })
+        if monitor.state.activation.isPermissionMissing {
+            addLockedItems(to: menu)
+            return
         }
         menu.addItem(.separator())
 
@@ -65,6 +63,20 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         if let updates = AppUpdater.shared.makeMenuItem() { menu.addItem(updates) }
         menu.addItem(ClosureMenuItem(title: Credit.menuLine) { Credit.openProfile() })
         menu.addItem(note(L10n.text("Independent utility, not affiliated with AlphaTheta, Pioneer DJ or rekordbox")))
+        menu.addItem(withTitle: L10n.text("Quit Earmatch"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+    }
+
+    /// Until both permissions are allowed the menu only asks for them: no option can be changed yet.
+    private func addLockedItems(to menu: NSMenu) {
+        if !AccessibilityReader.isTrusted {
+            menu.addItem(ClosureMenuItem(title: L10n.text("Allow Accessibility…")) { Permissions.requestAccessibility() })
+        }
+        if !Permissions.isScreenRecordingGranted {
+            menu.addItem(ClosureMenuItem(title: L10n.text("Allow Screen Recording…")) { Permissions.requestScreenRecording() })
+        }
+        menu.addItem(.separator())
+        menu.addItem(ClosureMenuItem(title: L10n.text("Open Earmatch…")) { [weak self] in self?.onOpenMainWindow?() })
+        menu.addItem(.separator())
         menu.addItem(withTitle: L10n.text("Quit Earmatch"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
     }
 

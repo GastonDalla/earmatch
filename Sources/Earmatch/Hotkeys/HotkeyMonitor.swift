@@ -32,6 +32,7 @@ final class HotkeyMonitor {
     }
 
     func stop() {
+        guard localMonitor != nil else { return }
         [localMonitor, globalMonitor].compactMap { $0 }.forEach(NSEvent.removeMonitor)
         localMonitor = nil
         globalMonitor = nil

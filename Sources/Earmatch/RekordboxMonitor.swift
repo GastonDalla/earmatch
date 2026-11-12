@@ -26,6 +26,14 @@ final class RekordboxMonitor {
     private var frameReadRequested = false
     private var workspaceObserver: NSObjectProtocol?
 
+    // CGPreflightScreenCaptureAccess takes several milliseconds, far too slow for a 10 Hz tick on the main
+    // thread (the overlays draw there), so it is checked at most once a second on its own queue and cached here.
+    private let screenRecordingCheckInterval: TimeInterval = 1
+    private let permissionQueue = DispatchQueue(label: "earmatch.permissions", qos: .utility)
+    private var isScreenRecordingGranted = Permissions.isScreenRecordingGranted
+    private var screenRecordingCheckedAt = CACurrentMediaTime()
+    private var screenRecordingCheckInFlight = false
+
     func start() {
         guard timer == nil else { return }
         AccessibilityReader.applyGlobalTimeout()
@@ -69,10 +77,14 @@ final class RekordboxMonitor {
 
     private func tick() {
         guard !pollInFlight else { return }
+        refreshScreenRecording()
         let trusted = AccessibilityReader.isTrusted
-        guard trusted, let rekordbox = AccessibilityReader.runningRekordbox() else {
+        let screenRecording = isScreenRecordingGranted
+        guard trusted, screenRecording, let rekordbox = AccessibilityReader.runningRekordbox() else {
             queue.async { [reader] in reader.reset() }
-            publish(RekordboxState(activation: OverlayActivation.evaluate(isTrusted: trusted, isRunning: false, layout: nil, isFrontmost: false)))
+            publish(RekordboxState(activation: OverlayActivation.evaluate(
+                isTrusted: trusted, isScreenRecordingGranted: screenRecording, isRunning: false, layout: nil, isFrontmost: false
+            )))
             return
         }
         let pid = rekordbox.processIdentifier
@@ -90,11 +102,28 @@ final class RekordboxMonitor {
                     return
                 }
                 let activation = OverlayActivation.evaluate(
-                    isTrusted: true, isRunning: true, layout: poll.layout,
+                    isTrusted: true, isScreenRecordingGranted: true, isRunning: true, layout: poll.layout,
                     isFrontmost: rekordboxIsFrontmost && poll.mainWindowIsFocused && !poll.mainWindowIsMinimized
                 )
                 self.publish(RekordboxState(activation: activation, windowFrame: poll.windowFrame, layout: poll.layout, pid: pid))
                 if self.pollRequested { self.tick() }
+            }
+        }
+    }
+
+    private func refreshScreenRecording() {
+        let now = CACurrentMediaTime()
+        guard !screenRecordingCheckInFlight, now - screenRecordingCheckedAt >= screenRecordingCheckInterval else { return }
+        screenRecordingCheckInFlight = true
+        screenRecordingCheckedAt = now
+        permissionQueue.async { [weak self] in
+            let granted = Permissions.isScreenRecordingGranted
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.screenRecordingCheckInFlight = false
+                guard granted != self.isScreenRecordingGranted else { return }
+                self.isScreenRecordingGranted = granted
+                self.requestPoll()
             }
         }
     }

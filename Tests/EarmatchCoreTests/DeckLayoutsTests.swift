@@ -135,7 +135,7 @@ import EarmatchCore
     @Test(arguments: ["ax-7.2.19-2deck-vertical.json", "ax-7.2.19-4deck-horizontal.json", "ax-7.2.19-4deck-vertical.json"])
     func everySupportedLayoutActivates(name: String) throws {
         let layout = try Self.layout(name)
-        #expect(OverlayActivation.evaluate(isTrusted: true, isRunning: true, layout: layout, isFrontmost: true) == .active)
+        #expect(OverlayActivation.evaluate(isTrusted: true, isScreenRecordingGranted: true, isRunning: true, layout: layout, isFrontmost: true) == .active)
     }
 
     @Test func aLayoutWithoutItsWaveformAnchorsWaitsForTheWaveform() throws {
@@ -146,7 +146,7 @@ import EarmatchCore
         #expect(layout.stackedWaveform == nil)
         #expect(layout.decks.count == 4)
         #expect(!layout.isSupportedPerformanceLayout)
-        #expect(OverlayActivation.evaluate(isTrusted: true, isRunning: true, layout: layout, isFrontmost: true) == .decksNotFound)
+        #expect(OverlayActivation.evaluate(isTrusted: true, isScreenRecordingGranted: true, isRunning: true, layout: layout, isFrontmost: true) == .decksNotFound)
     }
 
     @Test func anUnknownLayoutAsksForASupportedOne() throws {
@@ -157,6 +157,6 @@ import EarmatchCore
 
         #expect(layout.arrangement == nil)
         #expect(!layout.isSupportedPerformanceLayout)
-        #expect(OverlayActivation.evaluate(isTrusted: true, isRunning: true, layout: layout, isFrontmost: true) == .wrongLayout("6Deck Horizontal"))
+        #expect(OverlayActivation.evaluate(isTrusted: true, isScreenRecordingGranted: true, isRunning: true, layout: layout, isFrontmost: true) == .wrongLayout("6Deck Horizontal"))
     }
 }

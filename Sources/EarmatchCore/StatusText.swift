@@ -40,13 +40,20 @@ public struct StatusContext: Equatable, Sendable {
 public enum StatusText {
     public static func connection(_ context: StatusContext) -> StatusLine {
         switch context.activation {
-        case .accessibilityMissing:
+        case .accessibilityMissing, .screenRecordingMissing:
             StatusLine(tone: .waiting, text: context.activation.message)
         case .rekordboxNotRunning:
             StatusLine(tone: .waiting, text: context.activation.message)
         default:
             StatusLine(tone: .live, text: connectedText(version: context.rekordboxVersion, layout: context.layoutName))
         }
+    }
+
+    /// The line under the permissions screen's rows: waiting until both are allowed, then starting.
+    public static func permissions(isWaiting: Bool) -> StatusLine {
+        isWaiting
+            ? StatusLine(tone: .waiting, text: L10n.text("Earmatch starts once both are allowed"))
+            : StatusLine(tone: .live, text: L10n.text("Both allowed. Starting Earmatch…"))
     }
 
     private static func connectedText(version: String?, layout: String?) -> String {

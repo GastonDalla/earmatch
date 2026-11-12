@@ -34,7 +34,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             render(monitor.state)
         }
         hotkeys.onToggleEnabled = { [weak self] in self?.store.update { $0.isEnabled.toggle() } }
-        hotkeys.start()
 
         overlay.onCaptureStatusChange = { [weak self, weak mainWindow] in
             guard let self, let mainWindow else { return }
@@ -53,9 +52,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        if !AccessibilityReader.isTrusted { AccessibilityReader.requestTrust() }
+        // No system prompt at launch: the window opens on its permissions screen and asks from there.
         monitor.start()
-        mainWindow.update(state: monitor.state)
+        render(monitor.state)
         mainWindow.show()
     }
 
@@ -65,6 +64,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func render(_ state: RekordboxState) {
+        // Until both permissions are allowed Earmatch stays locked: the activation keeps every overlay hidden,
+        // and the hotkeys stay off so they cannot change settings the window does not show yet.
+        if state.activation.isPermissionMissing {
+            hotkeys.stop()
+        } else {
+            hotkeys.start()
+        }
         overlay.update(state: state, settings: store.settings)
         let isActive = state.activation.isActive && store.settings.isEnabled
         if isActive != menuBarIconIsActive {
