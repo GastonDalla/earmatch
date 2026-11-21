@@ -139,10 +139,10 @@ import EarmatchCore
         #expect(abs(try #require(tracker.beatsPerSecond) - 2.25) < 0.05)
     }
 
-    @Test func aPausedDeckMeasuresZeroWithinFourFrames() throws {
+    @Test func aPausedDeckMeasuresZeroWithinAnEighthOfASecond() throws {
         var tracker = PhaseTracker()
         let last = feed(&tracker, from: 0, to: 0.5) { 1 + 2.25 * $0 }
-        feed(&tracker, from: last + 1.0 / 110, to: last + 4.0 / 110) { _ in 1 + 2.25 * 0.5 }
+        feed(&tracker, from: last + 1.0 / 110, to: last + 0.125) { _ in 1 + 2.25 * 0.5 }
 
         #expect(tracker.beatsPerSecond == 0)
     }
@@ -163,6 +163,21 @@ import EarmatchCore
         #expect(rates.allSatisfy { $0 <= 2.25 * 1.15 })
         #expect(abs(try #require(rates.last) - 2.25) < 0.1)
         #expect(abs(rates[5] - 2.25) < 2.25 * 0.3)
+    }
+
+    @Test func rekordboxsWholePointScrollingIsNotMistakenForAPause() throws {
+        var tracker = PhaseTracker()
+        var rates: [Double] = []
+        var time = 0.0
+        while time < 3 {
+            let phase = rekordboxScroll(from: 1, beatsPerSecond: 2.25, spacing: 60, at: time)
+            _ = tracker.update(reading(phase: phase, spacing: 60), at: time)
+            if time > 0.3 { rates.append(try #require(tracker.beatsPerSecond)) }
+            time += 1.0 / 110
+        }
+
+        #expect(rates.allSatisfy { $0 > 0 })
+        #expect(rates.allSatisfy { abs($0 - 2.25) < 2.25 * 0.25 })
     }
 
     @Test func aSeekKeepsTheTempo() throws {

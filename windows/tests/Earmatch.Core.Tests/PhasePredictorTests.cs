@@ -11,6 +11,7 @@ sealed class MeterSession
 
     public readonly record struct Drawn(double Time, double? Shown, double? Truth);
 
+    public double ReadingSpacing { get; init; } = Spacing;
     public PhaseTracker Tracker { get; } = new();
     public PhasePredictor Predictor { get; } = new();
     private double _nextFrame;
@@ -27,7 +28,7 @@ sealed class MeterSession
                 var time = _nextFrame;
                 _nextFrame += FrameInterval;
                 if (captures is not null && !captures(time)) continue;
-                var reading = truth(time) is { } phase ? new BeatGridReading(Spacing, [], [], Quantized(phase)) : null;
+                var reading = truth(time) is { } phase ? new BeatGridReading(ReadingSpacing, [], [], Quantized(phase)) : null;
                 var estimate = Tracker.Update(reading, time);
                 Predictor.Update(new PhaseAnchor(time, estimate.PhaseInBar, Tracker.BeatsPerSecond, estimate.Status == PhaseTrackerStatus.Live));
             }
@@ -44,6 +45,15 @@ sealed class MeterSession
     }
 
     public static double Difference(double a, double b) => Wrapped(a - b + 2) - 2;
+
+    public static double RekordboxScroll(double start, double beatsPerSecond, double spacing, double time)
+    {
+        const double audioBlock = 512.0 / 44_100;
+        const double pixelsPerPoint = 2.0;
+        var blockTime = Math.Floor(time / audioBlock) * audioBlock;
+        var pixels = (start + beatsPerSecond * blockTime) * spacing;
+        return Wrapped(Math.Floor(pixels / pixelsPerPoint) * pixelsPerPoint / spacing);
+    }
 
     public static double Quantized(double phase)
     {
@@ -91,7 +101,7 @@ public class PhasePredictorTests
         const double paused = 1 + Rate * 0.5;
         var drawn = new MeterSession().Run(1.0, time => Wrapped(1 + Rate * Math.Min(time, 0.5)));
 
-        foreach (var frame in drawn.Where(frame => frame.Time > 0.6)) Near(frame.Shown, paused, 0.01, frame.Time);
+        foreach (var frame in drawn.Where(frame => frame.Time > 0.65)) Near(frame.Shown, paused, 0.01, frame.Time);
         foreach (var frame in drawn)
         {
             Assert.True(frame.Shown is not null, $"nothing drawn at {frame.Time}");
@@ -180,5 +190,16 @@ public class PhasePredictorTests
         predictor.Update(new PhaseAnchor(0.01, null, null, IsMeasured: false));
 
         Assert.Null(predictor.Phase(0.02));
+    }
+
+    [Fact]
+    public void RekordboxsWholePointScrollingIsDrawnWithoutSteppingBackOrJumping()
+    {
+        var session = new MeterSession { ReadingSpacing = 60 };
+        var drawn = session.Run(3.0, time => MeterSession.RekordboxScroll(1, Rate, 60, time));
+
+        var playing = Steps(drawn.Where(frame => frame.Time > 0.3));
+        Assert.All(playing, step => Assert.True(step >= 0, $"{step}"));
+        Assert.All(playing, step => Assert.True(step < 2 * ExpectedStep, $"{step}"));
     }
 }

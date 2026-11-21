@@ -92,7 +92,7 @@ public struct PhaseTracker: Sendable {
 struct BeatRateEstimator: Sendable {
     static let window = 0.15
     static let minimumPairSpan = 0.02
-    static let stillSpanRange = 0.015 ... 0.1
+    static let stillSpan = 0.1
 
     private(set) var beatsPerSecond: Double?
     private var samples: [(time: Double, beats: Double)] = []
@@ -130,7 +130,7 @@ struct BeatRateEstimator: Sendable {
             beatsPerSecond = (beats - previous.beats) / (time - previous.time)
             return
         }
-        if let stillSince = stillSince(tolerance: tolerance, quantum: quantum) {
+        if let stillSince = stillSince(tolerance: tolerance) {
             beatsPerSecond = 0
             samples.removeFirst(stillSince)
             return
@@ -138,13 +138,11 @@ struct BeatRateEstimator: Sendable {
         beatsPerSecond = medianSlope() ?? beatsPerSecond
     }
 
-    private func stillSince(tolerance: Double, quantum: Double) -> Int? {
+    private func stillSince(tolerance: Double) -> Int? {
         guard let newest = samples.last else { return nil }
         var first = samples.count - 1
         while first > 0, abs(samples[first - 1].beats - newest.beats) <= tolerance { first -= 1 }
-        let speed = max(abs(beatsPerSecond ?? 0), 0.5)
-        let needed = min(max(quantum / speed, Self.stillSpanRange.lowerBound), Self.stillSpanRange.upperBound)
-        guard samples.count - first >= 3, newest.time - samples[first].time >= needed else { return nil }
+        guard samples.count - first >= 3, newest.time - samples[first].time >= Self.stillSpan else { return nil }
         return first
     }
 

@@ -13,6 +13,7 @@ struct MeterSession {
         let truth: Double?
     }
 
+    var spacing = MeterSession.spacing
     var tracker = PhaseTracker()
     var predictor = PhasePredictor()
     private var nextFrame = 0.0
@@ -27,7 +28,7 @@ struct MeterSession {
                 nextFrame += Self.frameInterval
                 guard captures(time) else { continue }
                 let reading = truth(time).map {
-                    BeatGridReading(beatSpacing: Self.spacing, beatXs: [], downbeatXs: [], phaseInBar: quantized($0))
+                    BeatGridReading(beatSpacing: spacing, beatXs: [], downbeatXs: [], phaseInBar: quantized($0))
                 }
                 let estimate = tracker.update(reading, at: time)
                 predictor.update(PhasePredictor.Anchor(
@@ -48,6 +49,14 @@ func wrapped(_ beats: Double) -> Double {
 }
 
 func difference(_ a: Double, _ b: Double) -> Double { wrapped(a - b + 2) - 2 }
+
+func rekordboxScroll(from start: Double, beatsPerSecond: Double, spacing: Double, at time: Double) -> Double {
+    let audioBlock = 512.0 / 44_100
+    let pixelsPerPoint = 2.0
+    let blockTime = (time / audioBlock).rounded(.down) * audioBlock
+    let pixels = (start + beatsPerSecond * blockTime) * spacing
+    return wrapped((pixels / pixelsPerPoint).rounded(.down) * pixelsPerPoint / spacing)
+}
 
 func quantized(_ phase: Double) -> Double {
     let quantum = 0.5 / MeterSession.spacing
@@ -79,7 +88,7 @@ func quantized(_ phase: Double) -> Double {
         let paused = 1 + rate * 0.5
         let drawn = session.run(until: 1.0, truth: { wrapped(1 + rate * min($0, 0.5)) })
 
-        for frame in drawn where frame.time > 0.6 {
+        for frame in drawn where frame.time > 0.65 {
             #expect(abs(difference(try #require(frame.shown), paused)) < 0.01)
         }
         for frame in drawn {
@@ -166,6 +175,16 @@ func quantized(_ phase: Double) -> Double {
         for frame in drawn where frame.time > 1.0 {
             #expect(abs(difference(try #require(frame.shown), try #require(frame.truth))) < 0.03)
         }
+    }
+
+    @Test func rekordboxsWholePointScrollingIsDrawnWithoutSteppingBackOrJumping() throws {
+        var session = MeterSession()
+        session.spacing = 60
+        let drawn = session.run(until: 3.0, truth: { rekordboxScroll(from: 1, beatsPerSecond: rate, spacing: 60, at: $0) })
+
+        let playing = try steps(drawn.filter { $0.time > 0.3 })
+        #expect(playing.allSatisfy { $0 >= 0 })
+        #expect(playing.allSatisfy { $0 < 2 * expectedStep })
     }
 
     @Test func aLostGridShowsNothing() {
