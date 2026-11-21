@@ -164,11 +164,11 @@ public class PhaseMeterTrackerTests
     }
 
     [Fact]
-    public void APausedDeckMeasuresZeroWithinFourFrames()
+    public void APausedDeckMeasuresZeroWithinAnEighthOfASecond()
     {
         var tracker = new PhaseTracker();
         var last = Feed(tracker, 0, 0.5, time => 1 + 2.25 * time);
-        Feed(tracker, last + 1.0 / 110, last + 4.0 / 110, _ => 1 + 2.25 * 0.5);
+        Feed(tracker, last + 1.0 / 110, last + 0.125, _ => 1 + 2.25 * 0.5);
 
         Assert.Equal(0, tracker.BeatsPerSecond);
     }
@@ -192,6 +192,21 @@ public class PhaseMeterTrackerTests
         Assert.All(rates, rate => Assert.True(rate <= 2.25 * 1.15, $"{rate}"));
         Assert.True(Math.Abs(rates[^1] - 2.25) < 0.1);
         Assert.True(Math.Abs(rates[5] - 2.25) < 2.25 * 0.3);
+    }
+
+    [Fact]
+    public void RekordboxsWholePointScrollingIsNotMistakenForAPause()
+    {
+        var tracker = new PhaseTracker();
+        var rates = new List<double>();
+        for (var time = 0.0; time < 3; time += 1.0 / 110)
+        {
+            tracker.Update(Reading(MeterSession.RekordboxScroll(1, 2.25, 60, time), 60), time);
+            if (time > 0.3) rates.Add(tracker.BeatsPerSecond ?? throw new Xunit.Sdk.XunitException($"no tempo at {time}"));
+        }
+
+        Assert.All(rates, rate => Assert.True(rate > 0, $"{rate}"));
+        Assert.All(rates, rate => Assert.True(Math.Abs(rate - 2.25) < 2.25 * 0.25, $"{rate}"));
     }
 
     [Fact]
@@ -226,7 +241,7 @@ public class PhaseMeterTrackerTests
         static double? StoppedRate(PhaseTracker tracker, double spacing)
         {
             var last = Feed(tracker, 0, 0.5, time => 1 + 2.25 * time, spacing);
-            for (var index = 1; index <= 4; index++)
+            for (var index = 1; index / 110.0 <= 0.125; index++)
             {
                 tracker.Update(Reading(2.125 + index % 2 * 0.006, spacing), last + index / 110.0);
             }

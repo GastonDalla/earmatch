@@ -89,8 +89,7 @@ internal sealed class BeatRateEstimator
 {
     internal const double Window = 0.15;
     internal const double MinimumPairSpan = 0.02;
-    internal const double StillSpanMinimum = 0.015;
-    internal const double StillSpanMaximum = 0.1;
+    internal const double StillSpan = 0.1;
 
     private readonly List<(double Time, double Beats)> _samples = new(32);
     private readonly List<double> _slopes = new(512);
@@ -124,7 +123,7 @@ internal sealed class BeatRateEstimator
             BeatsPerSecond = (beats - stopped.Beats) / (time - stopped.Time);
             return;
         }
-        if (StillSince(tolerance, quantum) is { } stillSince)
+        if (StillSince(tolerance) is { } stillSince)
         {
             BeatsPerSecond = 0;
             _samples.RemoveRange(0, stillSince);
@@ -133,15 +132,13 @@ internal sealed class BeatRateEstimator
         BeatsPerSecond = MedianSlope() ?? BeatsPerSecond;
     }
 
-    private int? StillSince(double tolerance, double quantum)
+    private int? StillSince(double tolerance)
     {
         if (_samples.Count == 0) return null;
         var newest = _samples[^1];
         var first = _samples.Count - 1;
         while (first > 0 && Math.Abs(_samples[first - 1].Beats - newest.Beats) <= tolerance) first--;
-        var speed = Math.Max(Math.Abs(BeatsPerSecond ?? 0), 0.5);
-        var needed = Math.Min(Math.Max(quantum / speed, StillSpanMinimum), StillSpanMaximum);
-        if (_samples.Count - first < 3 || !(newest.Time - _samples[first].Time >= needed)) return null;
+        if (_samples.Count - first < 3 || !(newest.Time - _samples[first].Time >= StillSpan)) return null;
         return first;
     }
 
