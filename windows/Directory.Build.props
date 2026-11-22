@@ -6,6 +6,6 @@
     <WarningsAsErrors>nullable</WarningsAsErrors>
     <Company>GastonDalla</Company>
     <Product>Earmatch</Product>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
   </PropertyGroup>
 </Project>
