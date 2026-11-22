@@ -24,6 +24,8 @@ public sealed class PhaseMeterBoard
     private readonly Dictionary<int, DrawnHistory> _drawn = [];
     private readonly Dictionary<int, PhasePredictor> _predictors = [];
     private readonly Dictionary<int, PhaseMeterDisplay?> _displays = [];
+    private readonly Dictionary<int, double> _drawnPhases = [];
+    private double? _drawnAt;
     private List<PhaseMeterDeckInput> _inputs = [];
     private List<PhaseMeterDeckInput> _previousInputs = [];
     private int? _previousMaster;
@@ -71,6 +73,8 @@ public sealed class PhaseMeterBoard
         _unmappedFrames = 0;
         _predictors.Clear();
         _drawn.Clear();
+        _drawnPhases.Clear();
+        _drawnAt = null;
         _displays.Clear();
         Invalidate();
         return problemCleared;
@@ -82,20 +86,36 @@ public sealed class PhaseMeterBoard
         _previousInputs.Clear();
     }
 
+    public void Draw(RekordboxLayout layout, double time)
+    {
+        _drawnPhases.Clear();
+        _drawnAt = time;
+        if (!HasFrame) return;
+        foreach (var deck in layout.Decks)
+        {
+            if (_predictors.GetValueOrDefault(deck.Number)?.Phase(time) is not { } phase) continue;
+            _drawnPhases[deck.Number] = phase;
+            if (_tracedStats is null) continue;
+            if (!_drawn.TryGetValue(deck.Number, out var history)) _drawn[deck.Number] = history = new DrawnHistory();
+            history.Append(time, phase);
+        }
+    }
+
+    public double WaveformShift(int deck) =>
+        Latest is { MappingProblem: null } latest && latest.Decks.TryGetValue(deck, out var reading) && _drawnPhases.TryGetValue(deck, out var drawn)
+            ? WaveformScroll.Shift(reading.Phase.PhaseInBar, drawn, reading.Phase.BeatSpacing, 1)
+            : 0;
+
     public bool Compute(RekordboxLayout layout, OverlaySettings settings, double time)
     {
+        if (_drawnAt != time) Draw(layout, time);
         var hasFrame = HasFrame;
         (_inputs, _previousInputs) = (_previousInputs, _inputs);
         _inputs.Clear();
         foreach (var deck in layout.Decks)
         {
             var predictor = _predictors.GetValueOrDefault(deck.Number);
-            var phase = hasFrame ? predictor?.Phase(time) : null;
-            if (_tracedStats is not null && phase is { } drawn)
-            {
-                if (!_drawn.TryGetValue(deck.Number, out var history)) _drawn[deck.Number] = history = new DrawnHistory();
-                history.Append(time, drawn);
-            }
+            double? phase = _drawnPhases.TryGetValue(deck.Number, out var drawn) ? drawn : null;
             _inputs.Add(new PhaseMeterDeckInput(deck.Number, phase, Counter(deck, phase, hasFrame, settings, predictor, time)));
         }
         if (!_isStale && _inputs.SequenceEqual(_previousInputs) && Master == _previousMaster && hasFrame == _previousHadFrame) return false;

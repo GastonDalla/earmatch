@@ -17,6 +17,9 @@ internal sealed class WaveformPanelView : Canvas
     private double _scale = 1;
     private CapturedFrame? _shownFrame;
     private int? _shownMaster;
+    private double _shownMasterShift;
+
+    public bool ShowsWaveforms => _plan?.AllowsMasterWaveform == true;
 
     public WaveformPanelView()
     {
@@ -68,19 +71,20 @@ internal sealed class WaveformPanelView : Canvas
         }
     }
 
-    public void ShowFrame(CapturedFrame? frame, int? master)
+    public void ShowFrame(CapturedFrame? frame, int? master, Func<int, double> shift)
     {
         if (_plan is not { } plan) return;
         var showsWaveforms = plan.AllowsMasterWaveform;
         _shownFrame = showsWaveforms ? frame : null;
         _shownMaster = master;
-        ScreenRect? masterStrip = master is { } number && _strips.TryGetValue(number, out var strip) ? strip : null;
+        _shownMasterShift = master is { } shifted ? shift(shifted) : 0;
+        ScreenRect? masterStrip = master is { } number && _strips.TryGetValue(number, out var strip) ? strip.Offset(_shownMasterShift, 0) : null;
         foreach (var spec in plan.Panes)
         {
             if (!_panes.TryGetValue(spec.Deck, out var pane)) continue;
             if (showsWaveforms && frame is not null)
             {
-                pane.ShowWaveform(frame, spec.Source);
+                pane.ShowWaveform(frame, spec.Source.Offset(shift(spec.Deck), 0));
                 pane.ShowMasterWaveform(master == spec.Deck ? null : frame, masterStrip, _scale);
             }
             else
@@ -96,7 +100,7 @@ internal sealed class WaveformPanelView : Canvas
         if (!_panes.TryGetValue(deck, out var pane)) return;
         pane.Meter.Display = pane.ShowsMeter ? display : null;
         if (pane.Meter.IsWaitingForMasterWaveform && _shownMaster is { } master && master != deck && _strips.TryGetValue(master, out var strip))
-            pane.ShowMasterWaveform(_shownFrame, strip, _scale);
+            pane.ShowMasterWaveform(_shownFrame, strip.Offset(_shownMasterShift, 0), _scale);
     }
 
     private void Place(FrameworkElement element, ScreenRect frame)
@@ -170,11 +174,14 @@ internal sealed class WaveformPanelView : Canvas
 internal sealed class PixelCopy
 {
     private WriteableBitmap? _bitmap;
+    private (CapturedFrame Frame, PixelRect Rect)? _copied;
 
     public WriteableBitmap? From(CapturedFrame frame, ScreenRect source)
     {
         var rect = frame.PixelRect(source);
         if (rect.Width <= 0 || rect.Height <= 0) return null;
+        if (_bitmap is not null && _copied is { } copied && ReferenceEquals(copied.Frame, frame) && copied.Rect == rect) return _bitmap;
+        _copied = (frame, rect);
         if (_bitmap is null || _bitmap.PixelWidth != rect.Width || _bitmap.PixelHeight != rect.Height)
             _bitmap = new WriteableBitmap(rect.Width, rect.Height, 96, 96, PixelFormats.Bgr32, null);
         var pixels = frame.Pixels;

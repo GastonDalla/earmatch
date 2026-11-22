@@ -90,7 +90,7 @@ nonisolated final class PhaseMeterLayer: CALayer {
 
     var isWaitingForMasterWaveform: Bool { bandRect != nil && shownSurface == nil && !isHidden }
 
-    func showMasterWaveform(_ frame: FrameReading?, strip: CGRect?) {
+    func showMasterWaveform(_ frame: FrameReading?, strip: CGRect?, shift: CGFloat) {
         guard let frame, let strip, let bandRect, let surface = frame.surface,
               frame.pixelSize.width > 0, frame.pixelSize.height > 0
         else {
@@ -107,7 +107,7 @@ nonisolated final class PhaseMeterLayer: CALayer {
             shownSurface = surface
         }
         let source = CGRect(x: strip.midX - bandRect.width / 2, y: strip.minY, width: bandRect.width, height: strip.height)
-        let pixels = frame.pixelRect(source)
+        let pixels = frame.pixelRect(source).offsetBy(dx: shift, dy: 0)
         bandImage.contentsRect = CGRect(x: pixels.minX / frame.pixelSize.width, y: pixels.minY / frame.pixelSize.height,
                                         width: pixels.width / frame.pixelSize.width, height: pixels.height / frame.pixelSize.height)
     }

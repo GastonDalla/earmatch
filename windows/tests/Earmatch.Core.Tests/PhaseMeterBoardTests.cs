@@ -67,6 +67,32 @@ public class PhaseMeterBoardTests
     }
 
     [Fact]
+    public void EachWaveformIsMovedToWhereItsDeckIsDrawnThisRefresh()
+    {
+        var board = new PhaseMeterBoard();
+        var layout = Layout(Deck(1), Deck(2));
+        board.Accept(Frame(1, new() { [1] = Reading(1.0), [2] = Reading(null) }), layout, out _);
+
+        board.Draw(layout, 1.05);
+
+        Assert.Equal(2, board.WaveformShift(1));
+        Assert.Equal(0, board.WaveformShift(2));
+        Assert.Equal(0, board.WaveformShift(3));
+    }
+
+    [Fact]
+    public void AFrameThatDoesNotMapOntoTheWindowMovesNoWaveform()
+    {
+        var board = new PhaseMeterBoard();
+        var layout = Layout(Deck(1));
+        board.Accept(Frame(1, new() { [1] = Reading(1.0) }, new FrameMappingProblem(10, 10, 20, 20)), layout, out _);
+
+        board.Draw(layout, 1.05);
+
+        Assert.Equal(0, board.WaveformShift(1));
+    }
+
+    [Fact]
     public void TheMetersMoveOnAtTheMeasuredTempoBetweenFrames()
     {
         var board = new PhaseMeterBoard();

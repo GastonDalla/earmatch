@@ -10,6 +10,9 @@ final class WaveformOverlayView: LayerHostView {
     private var strips: [Int: CGRect] = [:]
     private var shownFrame: FrameReading?
     private var shownMaster: Int?
+    private var shownShifts: [Int: CGFloat] = [:]
+
+    var showsWaveforms: Bool { plan?.allowsMasterWaveform == true }
 
     func configure(plan: WaveformOverlayPlan, strips: [Int: CGRect]) {
         guard plan != self.plan || strips != self.strips else { return }
@@ -53,20 +56,22 @@ final class WaveformOverlayView: LayerHostView {
         }
     }
 
-    func showFrame(_ frame: FrameReading?, master: Int?) {
+    func showFrame(_ frame: FrameReading?, master: Int?, shifts: [Int: CGFloat]) {
         guard let plan else { return }
         let showsWaveforms = plan.allowsMasterWaveform
         shownFrame = showsWaveforms ? frame : nil
         shownMaster = master
+        shownShifts = shifts
         let masterStrip = master.flatMap { strips[$0] }
+        let masterShift = master.flatMap { shifts[$0] } ?? 0
         for spec in plan.panes {
             guard let pane = panes[spec.deck] else { continue }
             if showsWaveforms, let frame {
-                pane.showWaveform(frame, source: spec.source)
-                pane.meter.showMasterWaveform(master == spec.deck ? nil : frame, strip: masterStrip)
+                pane.showWaveform(frame, source: spec.source, shift: shifts[spec.deck] ?? 0)
+                pane.meter.showMasterWaveform(master == spec.deck ? nil : frame, strip: masterStrip, shift: masterShift)
             } else {
-                pane.showWaveform(nil, source: .zero)
-                pane.meter.showMasterWaveform(nil, strip: nil)
+                pane.showWaveform(nil, source: .zero, shift: 0)
+                pane.meter.showMasterWaveform(nil, strip: nil, shift: 0)
             }
         }
     }
@@ -76,7 +81,7 @@ final class WaveformOverlayView: LayerHostView {
         if let pane = panes[deck] {
             pane.meter.show(pane.showsMeter ? display : nil, scale: scale)
             if pane.meter.isWaitingForMasterWaveform, let master = shownMaster, master != deck, let strip = strips[master] {
-                pane.meter.showMasterWaveform(shownFrame, strip: strip)
+                pane.meter.showMasterWaveform(shownFrame, strip: strip, shift: shownShifts[master] ?? 0)
             }
         }
         bands[deck]?.show(display, scale: scale)
@@ -135,7 +140,7 @@ nonisolated private final class DeckPane: CALayer {
         if !showsMeter { meter.isHidden = true }
     }
 
-    func showWaveform(_ frame: FrameReading?, source: CGRect) {
+    func showWaveform(_ frame: FrameReading?, source: CGRect, shift: CGFloat) {
         guard let frame, let surface = frame.surface, frame.pixelSize.width > 0, frame.pixelSize.height > 0 else {
             waveform.isHidden = true
             waveform.contents = nil
@@ -147,7 +152,7 @@ nonisolated private final class DeckPane: CALayer {
             waveform.contents = surface
             shownSurface = surface
         }
-        let pixels = frame.pixelRect(source)
+        let pixels = frame.pixelRect(source).offsetBy(dx: shift, dy: 0)
         waveform.contentsRect = CGRect(x: pixels.minX / frame.pixelSize.width, y: pixels.minY / frame.pixelSize.height,
                                        width: pixels.width / frame.pixelSize.width, height: pixels.height / frame.pixelSize.height)
     }
