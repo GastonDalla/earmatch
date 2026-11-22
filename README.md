@@ -60,7 +60,8 @@ Earmatch only reads rekordbox. It never clicks, types into or controls it.
 | --- | --- | --- |
 | Needs | macOS 14 or later, Apple silicon or Intel | Windows 10 (2004 or later) or 11, x64 or Arm64 |
 | Download | `Earmatch-<version>.dmg` | `Earmatch-win-x64-Setup.exe` (Windows on Arm: `-arm64-`) |
-| First run | Drag Earmatch to Applications, open it and allow **Accessibility** and **Screen Recording** | Run the installer. Until it is signed, SmartScreen asks: **More info** › **Run anyway** |
+| Or with one command | `brew install --cask gastondalla/tap/earmatch` | |
+| First run | Drag Earmatch to Applications (Homebrew does it for you), open it and allow **Accessibility** and **Screen Recording** | Run the installer. Until it is signed, SmartScreen asks: **More info** › **Run anyway** |
 
 Both use rekordbox 7 in **PERFORMANCE** mode with a 2Deck or 4Deck layout, and update themselves.
 

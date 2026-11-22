@@ -188,6 +188,35 @@ The script runs `dotnet tool restore` too, so this only checks that it works.
 - **Testing an update before publishing it.** Pack a higher version into a local folder (for example `0.1.3-test.1` with `dotnet publish … -p:Version=0.1.3-test.1` and the script's `vpk [win] pack` line with `--outputDir <folder>`), copy the folder to the PC, set the user environment variable `EARMATCH_UPDATE_FEED` to its full path (`C:\…`) and start the installed Earmatch: it reads that folder instead of GitHub. Anything that is not a full Windows folder path turns updates off rather than reading another feed. Remove the variable afterwards.
 - **Uninstalling** (Settings › Apps › Installed apps › Earmatch › Uninstall) quits Earmatch and removes `%LocalAppData%\Earmatch`, the shortcuts and the Apps entry. Settings and the practice history stay in `%APPDATA%\Earmatch`.
 
+## Package managers
+
+Both read the GitHub release, so publish it with the Mac and Windows files first.
+
+### Homebrew
+
+The cask is `Casks/earmatch.rb` in [GastonDalla/homebrew-tap](https://github.com/GastonDalla/homebrew-tap), installed with `brew install --cask gastondalla/tap/earmatch`. Its **Update Earmatch** workflow runs every day: when the latest release's version differs from the cask, it downloads `Earmatch-<version>.dmg`, writes the new version and SHA-256 into the cask and commits to `main`. To update it right away:
+
+```sh
+gh workflow run update-earmatch.yml --repo GastonDalla/homebrew-tap
+```
+
+It needs the tag `v<version>` and the DMG name `Earmatch-<version>.dmg`. GitHub turns off scheduled workflows in a public repository after 60 days without activity; if it shows as disabled, run `gh workflow enable update-earmatch.yml --repo GastonDalla/homebrew-tap`. Installed copies update themselves with Sparkle (`auto_updates true`), so `brew upgrade` skips them unless run with `--greedy`.
+
+### winget
+
+Each version is a pull request to [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) under `manifests/g/GastonDalla/Earmatch/<version>/`, package `GastonDalla.Earmatch`. [Komac](https://github.com/russellbanks/Komac) writes and submits it from a Mac:
+
+```sh
+brew install komac
+komac token add --token="$(gh auth token)"
+komac update GastonDalla.Earmatch --version <version> \
+  --urls https://github.com/GastonDalla/earmatch/releases/download/v<version>/Earmatch-win-x64-Setup.exe \
+         https://github.com/GastonDalla/earmatch/releases/download/v<version>/Earmatch-win-arm64-Setup.exe \
+  --submit
+```
+
+A winget-pkgs moderator merges the pull request, and `winget upgrade` offers the version after that. Installed copies also update themselves with Velopack.
+
 ## Troubleshooting
 
 - **Notarization status `Invalid`:** run the `xcrun notarytool log …` command the script prints; it lists every file Apple rejected and why.
