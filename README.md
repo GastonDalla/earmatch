@@ -64,7 +64,13 @@ brew install --cask gastondalla/tap/earmatch
 
 Or download `Earmatch-<version>.dmg` from the [latest release](https://github.com/GastonDalla/earmatch/releases/latest) and drag Earmatch to Applications. Open it and allow **Accessibility** and **Screen Recording**.
 
-**Windows** (10 version 2004 or later, or 11). Download and run [`Earmatch-win-x64-Setup.exe`](https://github.com/GastonDalla/earmatch/releases/latest/download/Earmatch-win-x64-Setup.exe), or [`Earmatch-win-arm64-Setup.exe`](https://github.com/GastonDalla/earmatch/releases/latest/download/Earmatch-win-arm64-Setup.exe) on Windows on Arm. Until the installer is signed, SmartScreen asks: **More info** › **Run anyway**.
+**Windows** (10 version 2004 or later, or 11). With winget:
+
+```powershell
+winget install GastonDalla.Earmatch
+```
+
+Microsoft is still approving the package, so until then winget does not find it. Meanwhile, download and run [`Earmatch-win-x64-Setup.exe`](https://github.com/GastonDalla/earmatch/releases/latest/download/Earmatch-win-x64-Setup.exe), or [`Earmatch-win-arm64-Setup.exe`](https://github.com/GastonDalla/earmatch/releases/latest/download/Earmatch-win-arm64-Setup.exe) on Windows on Arm. Until the installer is signed, SmartScreen asks: **More info** › **Run anyway**.
 
 Both use rekordbox 7 in **PERFORMANCE** mode with a 2Deck or 4Deck layout, and update themselves.
 
@@ -73,7 +79,7 @@ Both use rekordbox 7 in **PERFORMANCE** mode with a 2Deck or 4Deck layout, and u
 
 - **Update:** Earmatch checks for new versions by itself, or choose **Check for Updates…**. Homebrew leaves it to that, so `brew upgrade` skips it unless you add `--greedy`.
 - **Uninstall on a Mac:** drag Earmatch to the Trash, or run `brew uninstall --cask earmatch`. Add `--zap` to also delete your settings and practice history.
-- **Uninstall on Windows:** Settings › Apps › Installed apps › Earmatch › **Uninstall**.
+- **Uninstall on Windows:** Settings › Apps › Installed apps › Earmatch › **Uninstall**, or `winget uninstall GastonDalla.Earmatch`.
 
 </details>
 
