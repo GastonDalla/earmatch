@@ -34,6 +34,8 @@ final class OverlayController {
     private var unmappedFrames = 0
     private var master: Int?
     private var predictors: [Int: PhasePredictor] = [:]
+    private var drawnPhases: [Int: Double] = [:]
+    private var waveformShifts: [Int: CGFloat] = [:]
     private var meterInputs: [PhaseMeterDeckInput] = []
     private var previousMeterInputs: [PhaseMeterDeckInput] = []
     private var previousMeterMaster: Int?
@@ -272,8 +274,10 @@ final class OverlayController {
         let newFrame = takeNewestFrame()
         let liveDue = onLiveUpdate != nil && targetTime - lastLiveUpdate >= Self.liveUpdateInterval - 0.002
         let drawsMeters = showsMeters
+        let scrollsWaveforms = waveformPanel?.isVisible == true && waveformView.showsWaveforms
+        if drawsMeters || liveDue || scrollsWaveforms { drawPhases(layout: layout, at: targetTime) }
         LayerHostView.withoutAnimation {
-            if newFrame { drawFrame(layout: layout) }
+            if newFrame { drawFrame(layout: layout) } else if scrollsWaveforms { showWaveforms() }
             if drawsMeters || liveDue { computeMeters(layout: layout, at: targetTime) }
             if waveformPanel?.isVisible == true {
                 for deck in layout.decks {
@@ -331,13 +335,14 @@ final class OverlayController {
         previousMeterInputs.removeAll(keepingCapacity: true)
         unmappedFrames = 0
         predictors.removeAll(keepingCapacity: true)
+        drawnPhases.removeAll(keepingCapacity: true)
         drawnHistory.removeAll(keepingCapacity: true)
         if problemCleared { onCaptureStatusChange?() }
     }
 
     private func drawFrame(layout: RekordboxLayout) {
         let frame = latest.flatMap { $0.mappingProblem == nil ? $0 : nil }
-        if waveformPanel?.isVisible == true { waveformView.showFrame(frame, master: frame == nil ? nil : master) }
+        if waveformPanel?.isVisible == true { showWaveforms() }
         for deck in layout.decks {
             guard let mask = masks[deck.number], mask.panel.isVisible, let jog = deck.jogBPMFrame else { continue }
             let measured = frame?.decks[deck.number]?.bpmCovers?.cover(for: settings.bpmLimit)
@@ -347,13 +352,36 @@ final class OverlayController {
         }
     }
 
+    private func showWaveforms() {
+        let frame = latest.flatMap { $0.mappingProblem == nil ? $0 : nil }
+        waveformShifts.removeAll(keepingCapacity: true)
+        if let frame {
+            for (number, deck) in frame.decks {
+                waveformShifts[number] = CGFloat(WaveformScroll.shift(
+                    framePhase: deck.phase.phaseInBar, drawnPhase: drawnPhases[number],
+                    beatSpacing: deck.phase.beatSpacing, pixelsPerUnit: Double(frame.scale)
+                ))
+            }
+        }
+        waveformView.showFrame(frame, master: frame == nil ? nil : master, shifts: waveformShifts)
+    }
+
+    private func drawPhases(layout: RekordboxLayout, at time: Double) {
+        drawnPhases.removeAll(keepingCapacity: true)
+        guard latest?.mappingProblem == nil, latest != nil else { return }
+        for deck in layout.decks {
+            guard let phase = predictors[deck.number]?.phase(at: time) else { continue }
+            drawnPhases[deck.number] = phase
+            if FrameStats.isTracing { drawnHistory[deck.number, default: DrawnHistory()].append(time: time, phase: phase) }
+        }
+    }
+
     private func computeMeters(layout: RekordboxLayout, at time: Double) {
         let hasFrame = latest?.mappingProblem == nil && latest != nil
         swap(&meterInputs, &previousMeterInputs)
         meterInputs.removeAll(keepingCapacity: true)
         for deck in layout.decks {
-            let phase = hasFrame ? predictors[deck.number]?.phase(at: time) : nil
-            if FrameStats.isTracing, let phase { drawnHistory[deck.number, default: DrawnHistory()].append(time: time, phase: phase) }
+            let phase = drawnPhases[deck.number]
             meterInputs.append(PhaseMeterDeckInput(number: deck.number, phaseInBar: phase,
                                                    counter: counter(for: deck, phase: phase, hasFrame: hasFrame, at: time)))
         }

@@ -258,7 +258,10 @@ internal sealed class OverlayController : IDisposable
         var newFrame = TakeNewestFrame(layout);
         var liveDue = LiveUpdate is not null && targetTime - _lastLiveUpdate >= LiveUpdateInterval - 0.002;
         var drawsMeters = ShowsMeters;
+        var scrollsWaveforms = _panelWindow?.IsShown == true && _panel.ShowsWaveforms;
+        if (drawsMeters || liveDue || scrollsWaveforms) _board.Draw(layout, targetTime);
         if (newFrame) DrawFrame(layout);
+        else if (scrollsWaveforms) ShowWaveforms();
         if (drawsMeters || liveDue) _board.Compute(layout, _settings, targetTime);
         if (_panelWindow?.IsShown == true)
         {
@@ -311,14 +314,20 @@ internal sealed class OverlayController : IDisposable
         _latest?.Pixels.Release();
         _latest = null;
         _committedFrameTime = null;
-        _panel.ShowFrame(null, null);
+        _panel.ShowFrame(null, null, _ => 0);
         if (_board.Reset()) CaptureStatusChanged?.Invoke();
+    }
+
+    private void ShowWaveforms()
+    {
+        var frame = _board.HasFrame ? _latest : null;
+        _panel.ShowFrame(frame, frame is null ? null : _board.Master, _board.WaveformShift);
     }
 
     private void DrawFrame(RekordboxLayout layout)
     {
         var frame = _board.HasFrame ? _latest : null;
-        if (_panelWindow?.IsShown == true) _panel.ShowFrame(frame, frame is null ? null : _board.Master);
+        if (_panelWindow?.IsShown == true) ShowWaveforms();
         foreach (var deck in layout.Decks)
         {
             if (!_masks.TryGetValue(deck.Number, out var mask) || !mask.Window.IsShown || deck.JogBPMFrame is not { } jog) continue;
