@@ -56,14 +56,26 @@ Earmatch only reads rekordbox. It never clicks, types into or controls it.
 
 ## Install
 
-| | Mac | Windows |
-| --- | --- | --- |
-| Needs | macOS 14 or later, Apple silicon or Intel | Windows 10 (2004 or later) or 11, x64 or Arm64 |
-| Download | `Earmatch-<version>.dmg` | `Earmatch-win-x64-Setup.exe` (Windows on Arm: `-arm64-`) |
-| Or with one command | `brew install --cask gastondalla/tap/earmatch` | |
-| First run | Drag Earmatch to Applications (Homebrew does it for you), open it and allow **Accessibility** and **Screen Recording** | Run the installer. Until it is signed, SmartScreen asks: **More info** › **Run anyway** |
+**Mac** (macOS 14 or later, Apple silicon or Intel). With [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask gastondalla/tap/earmatch
+```
+
+Or download `Earmatch-<version>.dmg` from the [latest release](https://github.com/GastonDalla/earmatch/releases/latest) and drag Earmatch to Applications. Open it and allow **Accessibility** and **Screen Recording**.
+
+**Windows** (10 version 2004 or later, or 11). Download and run [`Earmatch-win-x64-Setup.exe`](https://github.com/GastonDalla/earmatch/releases/latest/download/Earmatch-win-x64-Setup.exe), or [`Earmatch-win-arm64-Setup.exe`](https://github.com/GastonDalla/earmatch/releases/latest/download/Earmatch-win-arm64-Setup.exe) on Windows on Arm. Until the installer is signed, SmartScreen asks: **More info** › **Run anyway**.
 
 Both use rekordbox 7 in **PERFORMANCE** mode with a 2Deck or 4Deck layout, and update themselves.
+
+<details>
+<summary><b>Update or uninstall</b></summary>
+
+- **Update:** Earmatch checks for new versions by itself, or choose **Check for Updates…**. Homebrew leaves it to that, so `brew upgrade` skips it unless you add `--greedy`.
+- **Uninstall on a Mac:** drag Earmatch to the Trash, or run `brew uninstall --cask earmatch`. Add `--zap` to also delete your settings and practice history.
+- **Uninstall on Windows:** Settings › Apps › Installed apps › Earmatch › **Uninstall**.
+
+</details>
 
 ## Hotkeys
 
