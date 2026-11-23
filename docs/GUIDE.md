@@ -6,7 +6,7 @@ Earmatch is a native overlay for rekordbox 7 on macOS and Windows for practising
 
 Earmatch only reads rekordbox. It never clicks, types into or controls rekordbox, and it never posts keyboard or mouse events.
 
-Download it from the [latest release](https://github.com/GastonDalla/earmatch/releases/latest): `Earmatch-<version>.dmg` for the Mac, `Earmatch-win-x64-Setup.exe` for most Windows PCs and `Earmatch-win-arm64-Setup.exe` for Windows on Arm. Both apps do the same things; the sections below describe the Mac app, and [Windows](#windows) lists what differs on Windows.
+Download it from the [latest release](https://github.com/GastonDalla/earmatch/releases/latest): `Earmatch-<version>.dmg` for the Mac, `Earmatch-win-x64-Setup.exe` for most Windows PCs and `Earmatch-win-arm64-Setup.exe` for Windows on Arm. On a Mac you can also install it with Homebrew, `brew install --cask gastondalla/tap/earmatch`, and remove it with `brew uninstall --cask earmatch` (`--zap` also deletes your settings and practice history). Both apps do the same things; the sections below describe the Mac app, and [Windows](#windows) lists what differs on Windows.
 
 ## Requirements
 
